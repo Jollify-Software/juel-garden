@@ -9,6 +9,10 @@ export class JuelScene extends LitElement {
     engine: Engine;
     scene: Scene;
 
+    getScene() {
+        return this.scene;
+    }
+
     createRenderRoot() {
         return this;
     }
