@@ -1,5 +1,6 @@
 import { Engine, Scene } from "babylonjs";
 import { customElement, LitElement } from "lit-element";
+import { JuelGarden } from "../JuelGarden";
 
 @customElement("juel-scene")
 export class JuelScene extends LitElement {
@@ -41,6 +42,8 @@ export class JuelScene extends LitElement {
             this.engine.resize();
         });
         this.engine.resize();
+
+        JuelGarden.scene = this.scene;
     }
 
 }
