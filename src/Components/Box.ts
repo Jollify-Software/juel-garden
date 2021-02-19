@@ -1,5 +1,6 @@
 import { MeshBuilder } from "babylonjs";
 import { customElement, LitElement } from "lit-element";
+import { Modifier } from "../Modifiers/Modifier";
 import { JuelScene } from "./Scene";
 
 @customElement("juel-box")
@@ -11,5 +12,6 @@ export class JuelBox extends LitElement {
         let sceneEl = this.parentElement as JuelScene;
 
         const box = MeshBuilder.CreateBox("box", {}, sceneEl.scene);
+        Modifier.modifyMesh(this, box);
     }
 }
