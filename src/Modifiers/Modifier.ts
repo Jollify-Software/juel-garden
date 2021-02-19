@@ -1,13 +1,12 @@
 import { Mesh } from "babylonjs";
-import { ModifyPositionSetter } from "./ModifyPositionSetter";
 import { ModifyRotationSetter } from "./ModifyRotationSetter";
-import { ModifyScaleSetter } from "./ModifyScaleSetter";
+import { ModifyVector3Setter } from "./ModifyVector3Setter";
 
 export module Modifier {
     var map = {
-        'position': ModifyPositionSetter,
+        'position': ModifyVector3Setter('position'),
         'rotation': ModifyRotationSetter,
-        'scale': ModifyScaleSetter
+        'scale': ModifyVector3Setter('scale', 'scaling')
     }
 
     export var modifyMesh = function(el: HTMLElement, mesh: Mesh) {

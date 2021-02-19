@@ -1,10 +1,12 @@
-import { OptionWidthSetter } from "./OptiionWidthSetter";
-import { OptionHeightSetter } from "./OptionHeightSetter";
+import { FloatSetter } from "./OptionsFloatSetter";
 
 export module OptionsBuilder {
     var map = {
-        'width': OptionWidthSetter,
-        'height': OptionHeightSetter
+        'width': FloatSetter('width'),
+        'height': FloatSetter('height'),
+        'depth': FloatSetter('depth'),
+        'diameter': FloatSetter('diameter'),
+        'tessellation': FloatSetter('tessellation')
     }
 
     export var build = function(el: HTMLElement): object {
