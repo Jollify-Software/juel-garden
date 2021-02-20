@@ -1,14 +1,10 @@
 import { ArcRotateCamera, Vector3 } from "babylonjs";
 import { customElement, LitElement } from "lit-element";
+import { GardenElement } from "../GardenElement";
 import { JuelScene } from "./Scene";
 
 @customElement("juel-camera")
-export class JuelCamera extends LitElement {
-
-    createRenderRoot() {
-        return this;
-    }
-
+export class JuelCamera extends GardenElement {
     firstUpdated() {
         let sceneEl = this.parentElement as JuelScene
         let scene = sceneEl.scene

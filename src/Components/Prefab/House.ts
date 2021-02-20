@@ -1,8 +1,17 @@
+import { Mesh } from "babylonjs";
 import { customElement, html } from "lit-element";
-import { GardenElement } from "../../GardenElement";
+import { GardenMesh } from "../../GardenMesh";
 
 @customElement("juel-house")
-export class JuelHouse extends GardenElement {
+export class JuelHouse extends GardenMesh {
+    firstUpdated() {
+        let house = this.firstElementChild as GardenMesh;
+        let roof = house.firstElementChild as GardenMesh;
+        Promise.all([house.updateComplete, roof.updateComplete]).then(() => {
+            this.mesh = Mesh.MergeMeshes([house.mesh, roof.mesh], true, false, null, false, true);
+            this.modifyMesh();
+        });
+    }
     render() {
         return html`
         <juel-box position="0 0.5 0"

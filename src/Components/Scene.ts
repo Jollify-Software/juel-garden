@@ -1,5 +1,6 @@
 import { Engine, Scene } from "babylonjs";
 import { customElement, LitElement } from "lit-element";
+import { GardenElement } from "../GardenElement";
 import { JuelGarden } from "../JuelGarden";
 
 @customElement("juel-scene")
@@ -38,16 +39,20 @@ export class JuelScene extends LitElement {
         }`;
         document.head.appendChild(styles);
 
-        this.engine.runRenderLoop(() => {
-            this.scene.render();
+        setTimeout(() => {
+            let cameraEl = this.querySelector("juel-camera") as GardenElement;
+            console.log(this.children.length)
+            cameraEl.updateComplete.then(() => {
+                this.engine.runRenderLoop(() => {
+                    this.scene.render();
+                });
+                // Watch for browser/canvas resize events
+                window.addEventListener("resize", () => {
+                    this.engine.resize();
+                });
+                this.engine.resize();    
+            });
         });
-        // Watch for browser/canvas resize events
-        window.addEventListener("resize", () => {
-            this.engine.resize();
-        });
-        this.engine.resize();
-
-        JuelGarden.scene = this.scene;
     }
 
 }
