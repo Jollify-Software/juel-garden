@@ -1,8 +1,6 @@
 import { MeshBuilder } from "babylonjs";
-import { customElement, LitElement } from "lit-element";
+import { customElement } from "lit-element";
 import { GardenMesh } from "../GardenMesh";
-import { Modifier } from "../Modifiers/Modifier";
-import { JuelScene } from "./Scene";
 
 @customElement("juel-box")
 export class JuelBox extends GardenMesh {
@@ -10,9 +8,9 @@ export class JuelBox extends GardenMesh {
         return this;
     }
     firstUpdated() {
-        let sceneEl = this.parentElement as JuelScene;
-
-        this.mesh = MeshBuilder.CreateBox("box", this.buildOptions(), sceneEl.scene);
+        let scene = this.getScene();
+        let options = this.buildOptions();
+        this.mesh = MeshBuilder.CreateBox("box", options, scene);
         this.modifyMesh();
     }
 }

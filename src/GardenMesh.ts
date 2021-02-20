@@ -1,4 +1,4 @@
-import { Mesh, Scene } from "babylonjs";
+import { Material, Mesh, Scene } from "babylonjs";
 import { GardenElement } from "./GardenElement";
 import { Modifier } from "./Modifiers/Modifier";
 
@@ -6,13 +6,20 @@ export class GardenMesh extends GardenElement {
     mesh: Mesh;
 
     getPosition() {
-        return this.mesh.position;
+        return this.mesh?.position;
     }
     getRotation() {
-        return this.mesh.rotation;
+        return this.mesh?.rotation;
     }
     getScale() {
-        return this.mesh.scaling;
+        return this.mesh?.scaling;
+    }
+
+    getMaterial() {
+        return this.mesh?.material;
+    }
+    setMaterial(material: Material) {
+        this.mesh.material = material;
     }
 
     getScene(): Scene {
@@ -24,6 +31,8 @@ export class GardenMesh extends GardenElement {
     }
 
     modifyMesh(): void {
-        Modifier.modifyMesh(this, this.mesh);
+        if (this.mesh != null) {
+            Modifier.modifyMesh(this, this.mesh);
+        }
     }
 }

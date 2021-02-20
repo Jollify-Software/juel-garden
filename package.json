@@ -4,7 +4,7 @@
   "description": "A-Frame inspired custom element library for BabylonJS",
   "main": "index.js",
   "scripts": {
-    "build": "parcel build juel-garden.ts --no-source-maps",
+    "build": "parcel build juel-garden.ts --no-source-maps --no-minify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

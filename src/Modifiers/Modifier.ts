@@ -1,12 +1,16 @@
 import { Mesh } from "babylonjs";
+import { ModifyColourSetter } from "./ModifyColourSetter";
 import { ModifyRotationSetter } from "./ModifyRotationSetter";
+import { ModifyTextureSetter } from "./ModifyTextureSetter";
 import { ModifyVector3Setter } from "./ModifyVector3Setter";
 
 export module Modifier {
     var map = {
         'position': ModifyVector3Setter('position'),
         'rotation': ModifyRotationSetter,
-        'scale': ModifyVector3Setter('scale', 'scaling')
+        'scale': ModifyVector3Setter('scale', 'scaling'),
+        'colour': ModifyColourSetter,
+        'texture': ModifyTextureSetter
     }
 
     export var modifyMesh = function(el: HTMLElement, mesh: Mesh) {

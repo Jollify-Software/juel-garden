@@ -1,5 +1,5 @@
 import { Vector3 } from "babylonjs";
-import { Vector3Convert } from "../Converters/Vector3";
+import { Vector3Convert } from "../Converters/Vector3Convert";
 import { Utility } from "../Utility";
 
 export function ModifyVector3Setter(name: string, property: string = null) {

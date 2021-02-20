@@ -1,13 +1,12 @@
+import { MeshBuilder } from "babylonjs";
 import { customElement, LitElement } from "lit-element";
+import { GardenMesh } from "../GardenMesh";
 import { OptionsBuilder } from "../Options/OptionsBuilder";
 
 @customElement("juel-ground")
-export class JuelGround extends LitElement {
-    createRenderRoot() {
-        return this;
-    }
+export class JuelGround extends GardenMesh {
     firstUpdated() {
-        let options = OptionsBuilder.build(this)
-        let ground = BABYLON.MeshBuilder.CreateGround("ground", options);
+        this.mesh = MeshBuilder.CreateGround("ground", OptionsBuilder.build(this));
+        this.modifyMesh();
     }
 }

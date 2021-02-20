@@ -3,15 +3,14 @@
         <script src="../../dist/juel-garden.js"></script>
     </head>
     <body>
+        <!-- https://www.babylonjs-playground.com/textures/floor.png -->
         <juel-scene>
             <juel-camera></juel-camera>
             <juel-light></juel-light>
 
-            <juel-box position="0 0.5 0">
-                <juel-cylinder position="0 0.72 0" scale="-0.25 0 0" rotation="0 0 90"
-                    diameter="1.3" height="1.2" tessellation="3"></juel-cylinder>
-            </juel-box>
-            <juel-ground width="10" height="10">
+            <juel-semi-house></juel-semi-house>
+
+            <juel-ground width="10" height="10" colour="green">
             </juel-ground>
             
         </juel-scene>

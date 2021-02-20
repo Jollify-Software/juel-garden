@@ -1,5 +1,5 @@
 import { Vector3 } from "babylonjs";
-import { Vector3Convert } from "../Converters/Vector3";
+import { Vector3Convert } from "../Converters/Vector3Convert";
 import { ISetter } from "../ISetter";
 
 export var ModifyRotationSetter : ISetter = function(el: HTMLElement, attr: Attr[], options: object) {
