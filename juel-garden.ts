@@ -4,6 +4,8 @@ import "./src/Components/Light";
 import "./src/Components/Box";
 import "./src/Components/Cylinder";
 import "./src/Components/Ground";
+import "./src/Components/MeshModel";
+import "./src/Components/Animation";
 
 import "./src/Components/Replicate";
 

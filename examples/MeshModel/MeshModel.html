@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <script src="../../dist/juel-garden.js"></script>
+    </head>
+    <body>
+        <!-- https://www.babylonjs-playground.com/textures/floor.png -->
+        <juel-scene>
+            <juel-camera></juel-camera>
+            <juel-light></juel-light>
+
+            <juel-mesh-model id="chap" meshNames="him" root="https://playground.babylonjs.com/scenes/Dude/" filename="Dude.babylon"
+                scale="0.25 0.25 0.25">
+                <juel-animation target="chap" event="load" type="skeleton" from="0" to="100" loop="true" speed="1.0"></juel-animation>
+            </juel-mesh-model>
+
+            <juel-ground width="15" height="16" colour="green">
+            </juel-ground>
+            
+        </juel-scene>
+    </body>
+</html>
