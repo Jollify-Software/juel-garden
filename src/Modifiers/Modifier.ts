@@ -23,7 +23,6 @@ export module Modifier {
                 map[key](el, collection, options);
             }
         }
-        
         for (let key in options) {
             mesh[key] = options[key];
         }

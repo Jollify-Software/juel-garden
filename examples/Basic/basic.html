@@ -3,44 +3,17 @@
         <script src="../../dist/juel-garden.js"></script>
     </head>
     <body>
-        <!-- https://www.babylonjs-playground.com/textures/floor.png -->
         <juel-scene>
             <juel-camera></juel-camera>
             <juel-light></juel-light>
 
-            <juel-house id="house" position="-6.8 0 2.5" rotation="0 -(Math.PI/16) 0"></juel-house>
-            <juel-semi-house id="semi" position="-4.5 0 3" rotation="0 -(Math.PI/16) 0"></juel-semi-house>
-            <juel-replicate instances='["house","semi"]'
-                positions="0:-6.8 0 2.5, 1:-4.5 0 3, 1:-1.5 0 4, 1: 1.5 0 6, 1: -6.4 0 -1.5, 0:-4.1 0 -1, 1:-2.1 0 -0.5,0:0 0 -1,
-                0: 0.5 0 -3, 1: 0.75 0 -5, 0: 0.75 0 -7, 1: 4.75 0 -1, 0: 4.5 0 -3, 1: 4.75 0 -5, 0: 4.75 0 -7, 1: 5.25 0 2, 0: 6 0 4"
-                rotations="0: 0 -(Math.PI/16) 0, 1: 0 -(Math.PI/16) 0, 1: 0 -(Math.PI/16) 0, 1: 0 -(Math.PI/3) 0, 1: 0 (15*Math.PI/16) 0, 0: 0 (15*Math.PI/16) 0,
-                1: 0 (15*Math.PI/16) 0, 0: 0 (5*Math.PI/4) 0, 0: 0 (Math.PI+Math.PI/2.5) 0, 1: 0 (Math.PI+Math.PI/2.1) 0, 0: 0 (Math.PI+Math.PI/2.25) 0,
-                1: 0 (Math.PI/1.9) 0, 0: 0 (Math.PI/1.95) 0, 1: 0 (Math.PI/1.9) 0, 1: 0 (Math.PI/1.9) 0, 1: 0 -(Math.PI/3) 0, 0: 0 -(Math.PI/3) 0">
-            </juel-replicate>
-<!--
-            places.push([1, -Math.PI / 16, -6.8, 2.5 ]);
-            places.push([2, -Math.PI / 16, -4.5, 3 ]);
-            places.push([2, -Math.PI / 16, -1.5, 4 ]);
-            places.push([2, -Math.PI / 3, 1.5, 6 ]);
-            places.push([2, 15 * Math.PI / 16, -6.4, -1.5 ]);
-            places.push([1, 15 * Math.PI / 16, -4.1, -1 ]);
-            places.push([2, 15 * Math.PI / 16, -2.1, -0.5 ]);
-            places.push([1, 5 * Math.PI / 4, 0, -1 ]);
-            places.push([1, Math.PI + Math.PI / 2.5, 0.5, -3 ]);
-            places.push([2, Math.PI + Math.PI / 2.1, 0.75, -5 ]);
-            places.push([1, Math.PI + Math.PI / 2.25, 0.75, -7 ]);
-            places.push([2, Math.PI / 1.9, 4.75, -1 ]);
-            places.push([1, Math.PI / 1.95, 4.5, -3 ]);
-            places.push([2, Math.PI / 1.9, 4.75, -5 ]);
-            places.push([1, Math.PI / 1.9, 4.75, -7 ]);
-            places.push([2, -Math.PI / 3, 5.25, 2 ]);
-            places.push([1, -Math.PI / 3, 6, 4 ]);
-        
--->
+            <juel-box position="-1 0.5 -3" rotation="0 45 0" colour="#4CC3D9"></juel-box>
+            <juel-sphere position="0 1.25 -5" diameter="2.50" colour="#EF2D5E"></juel-sphere>
+            <juel-cylinder position="1 0.75 -3" diameter="1" height="1.5" colour="#FFC65D"></juel-cylinder>
+            <juel-ground position="0 0 -4" width="4" height="4" colour="#7BC8A4"></juel-ground>
 
-            <juel-ground width="15" height="16" colour="green">
-            </juel-ground>
-            
-        </juel-scene>
+            <a-sky color="#ECECEC"></a-sky>
+
+          </juel-scene>
     </body>
 </html>
