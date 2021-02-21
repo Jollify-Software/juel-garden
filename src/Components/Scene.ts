@@ -41,7 +41,6 @@ export class JuelScene extends LitElement {
 
         setTimeout(() => {
             let cameraEl = this.querySelector("juel-camera") as GardenElement;
-            console.log(this.children.length)
             cameraEl.updateComplete.then(() => {
                 this.engine.runRenderLoop(() => {
                     this.scene.render();

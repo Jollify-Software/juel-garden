@@ -5,6 +5,7 @@ import { ISetter } from "../ISetter";
 export var ModifyRotationSetter : ISetter = function(el: HTMLElement, attr: Attr[], options: object) {
     let v = Vector3Convert.rotationString(attr.find(x => x.name == 'rotation').value);
 
+    // TODO: Don't do this, we add mesh as parent
     let getMethod = 'getRotation';
         if (getMethod in el.parentElement) {
             let v2 = el.parentElement[getMethod]() as Vector3

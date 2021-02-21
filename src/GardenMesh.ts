@@ -34,5 +34,8 @@ export class GardenMesh extends GardenElement {
         if (this.mesh != null) {
             Modifier.modifyMesh(this, this.mesh);
         }
+        if ((!this.parentElement.hasAttribute("merge")) && 'mesh' in this.parentElement) {
+            this.mesh = (<GardenMesh>this.parentElement).mesh;
+        }
     }
 }
