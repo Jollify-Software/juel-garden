@@ -14,7 +14,7 @@ export class JuelSemiHouse extends GardenMesh {
     }
     render() {
         return html`
-        <juel-box merge position="0 0.5 0" width="2"
+        <juel-box position="0 0.5 0" width="2"
                 texture="https://assets.babylonjs.com/environments/semihouse.png"
                 faceuv="0.6 0.0 1.0 1.0,0.0 0.0 0.4 1.0,0.4 0 0.6 1.0,0.4 0 0.6 1.0" wrap="true">
 

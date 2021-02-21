@@ -1,5 +1,6 @@
-import { Tools, Vector3 } from "babylonjs";
+import { Tools, Vector3, Vector4 } from "babylonjs";
 import { NameValue } from "../NameValue";
+import { ShapeFunctions } from "../ShapeFunctions";
 
 export module Vector3Convert {
     var splityReg = /\s+(?=[^\])}]*([\[({]|$))/;
@@ -17,6 +18,29 @@ export module Vector3Convert {
     export var rotationString = (str: string) => {
         let ray = str.trim().split(' ').map(s => getFloat(s, true));
         return new Vector3(ray[0], ray[1], ray[2]);
+    }
+    export var array = (str: string) => {
+        let toInsert: {index: number, points: Vector3[]}[] = [];
+        let ray = str.split(',').map((x, index) => {
+            if (x.indexOf('(') >= 0) {
+                let point = (new Function('Shape', `return ${x}`))(ShapeFunctions) as Vector3[];
+                toInsert.push({
+                    index: index,
+                    points: point
+                });
+                return null;
+            } else {
+                let r = x.trim().split(' ').map(v => parseFloat(v));
+                return new Vector3(r[0], r[1], r[2]);
+            }
+        });
+        if (toInsert.length > 0) {
+            for (var p of toInsert) {
+                var args = [p.index, 1].concat(<any>p.points);
+                Array.prototype.splice.apply(ray, args);
+            }
+        }
+        return ray;
     }
     export var keyedArray = (str: string): NameValue<Vector3>[] => {
         let ray = str.split(',').map(s => {

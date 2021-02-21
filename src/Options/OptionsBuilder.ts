@@ -1,6 +1,7 @@
 import { BooleanSetter } from "./BooleanSetter";
 import { OptionFaceUVSetter } from "./OptionsFaceUVSetter";
 import { FloatSetter } from "./OptionsFloatSetter";
+import { OptionsVector3ArraySetter } from "./OptionsVector3ArraySetter";
 
 export module OptionsBuilder {
     var map = {
@@ -10,7 +11,8 @@ export module OptionsBuilder {
         'diameter': FloatSetter('diameter'),
         'tessellation': FloatSetter('tessellation'),
         'wrap': BooleanSetter('wrap'),
-        'faceuv': OptionFaceUVSetter
+        'faceuv': OptionFaceUVSetter,
+        'points': OptionsVector3ArraySetter('points')
     }
 
     export var build = function(el: HTMLElement): object {

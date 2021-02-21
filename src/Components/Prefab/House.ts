@@ -14,7 +14,7 @@ export class JuelHouse extends GardenMesh {
     }
     render() {
         return html`
-        <juel-box merge position="0 0.5 0"
+        <juel-box position="0 0.5 0"
                 texture="https://assets.babylonjs.com/environments/cubehouse.png"
                 faceuv="0.5 0.0 0.75 1.0,0.0 0.0 0.25 1.0,0.25 0 0.5 1.0,0.75 0 1.0 1.0" wrap="true">
 

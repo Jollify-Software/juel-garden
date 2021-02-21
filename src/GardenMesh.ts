@@ -1,4 +1,5 @@
 import { Material, Mesh, Scene } from "babylonjs";
+import { Behaviours } from "./Behaviours/Behaviours";
 import { GardenElement } from "./GardenElement";
 import { Modifier } from "./Modifiers/Modifier";
 
@@ -33,9 +34,10 @@ export class GardenMesh extends GardenElement {
     modifyMesh(): void {
         if (this.mesh != null) {
             Modifier.modifyMesh(this, this.mesh);
+            Behaviours.applyBehaviours(this, this.mesh);
         }
-        if ((!this.parentElement.hasAttribute("merge")) && 'mesh' in this.parentElement) {
-            this.mesh = (<GardenMesh>this.parentElement).mesh;
+        if (this.parentElement.hasAttribute("parent")) {
+           this.mesh = (<GardenMesh>this.parentElement).mesh;
         }
     }
 }
