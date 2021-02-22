@@ -7,6 +7,7 @@ import "./src/Components/Line";
 import "./src/Components/Cylinder";
 import "./src/Components/Ground";
 import "./src/Components/Polygon";
+import "./src/Components/Clone";
 import "./src/Components/MeshModel";
 import "./src/Components/Animation";
 

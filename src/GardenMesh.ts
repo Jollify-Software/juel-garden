@@ -33,11 +33,13 @@ export class GardenMesh extends GardenElement {
 
     modifyMesh(): void {
         if (this.mesh != null) {
+            
+            if (this.parentElement.hasAttribute("parent")) {
+                this.mesh.parent = (<GardenMesh>this.parentElement).mesh;
+             }
+             
             Modifier.modifyMesh(this, this.mesh);
             Behaviours.applyBehaviours(this, this.mesh);
-        }
-        if (this.parentElement.hasAttribute("parent")) {
-           this.mesh = (<GardenMesh>this.parentElement).mesh;
         }
     }
 }

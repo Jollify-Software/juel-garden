@@ -10,7 +10,7 @@ export class JuelExtrude extends GardenMesh {
     update() {
         if (this.extrude == true) {
             if (this.mesh)
-                this.mesh.dispose();
+                this.mesh.dispose(); // TODO: We need replace, dispose will remove children
 
             this.mesh = MeshBuilder.ExtrudePolygon(
                 this.id ?? "extrude",
