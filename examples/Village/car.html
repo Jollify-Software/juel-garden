@@ -15,9 +15,12 @@
 
             <juel-polygon parent extrude="true" depth="0.2" shape="-0.3 0 -0.1, 0.2 0 -0.1, (Shape.curve()), 0 0 0.1, -0.3 0 0.1"
                 faceuv="0 0.5 0.38 1, 0 0 1 0.5, 0.38 1 0 0.5" wrap="true"
-                texture="https://assets.babylonjs.com/environments/car.png">
+                texture="https://assets.babylonjs.com/environments/car.png"
+                rotation="(-Math.PI/2) 0 0">
                 <juel-cylinder position="-0.2 0.035 -0.1" diameter="0.125" height="0.05"
                     faceuv="0 0 1 1, 0 0.5 0 0.5, 0 0 1 1" texture="https://assets.babylonjs.com/environments/wheel.png">
+                    <juel-animation event="load" property="rotation.y" from="0" to="30" speed="30" type="float" loop="true" loopmode="cycle"
+                        keyframes="0 0, 30 (2*Math.PI)"></juel-animation>
                     <juel-clone absolute position="0.1 0.035 -0.1">
                         <juel-clone absolute position="0.1 (-0.2-0.035) -0.1"></juel-clone>
                     </juel-clone>

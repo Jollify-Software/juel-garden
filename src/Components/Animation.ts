@@ -1,4 +1,7 @@
+import { Animation } from "babylonjs";
 import { customElement, property } from "lit-element";
+import { ObjectConverter } from "../Converters/ObjectConverter";
+import { StaticConvert } from "../Converters/StaticConvert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
@@ -6,22 +9,41 @@ import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 @customElement("juel-animation")
 export class JuelAnimation extends GardenElement {
     @property() target: string;
+    @property() property: string;
     @property() event: string;
     @property() type: string;
     @property({ type: Number }) from: number;
     @property({ type: Number }) to: number;
     @property({ type: Boolean }) loop: boolean = false;
+    @property() loopmode: string;
+    @property() keyframes: string;
     @property({ type: Number }) speed: number;
 
-    play() {
-        let targetEl = document.getElementById(this.target);
+    play(el: GardenMesh) {
+        let targetEl = el;
+        if (this.target) {
+            targetEl = document.getElementById(this.target) as GardenMesh;
+        }
+        console.log(targetEl)
         let target: any;
+        let scene = this.getScene();
         switch (this.type) {
             case "skeleton":
                 target = (<GardenSkeletonMesh>targetEl).skeleton;
+                scene.beginAnimation(target, this.from, this.to, this.loop, this.speed);
+                break;
+            default:
+                let anime = new Animation("animation", this.property, this.speed,
+                    StaticConvert.animationType(this.type), StaticConvert.animationLoopMode(this.loopmode));
+                anime.setKeys(ObjectConverter.keyframeRay(this.keyframes));
+                if (!targetEl.mesh.animations)
+                    targetEl.mesh.animations = []
+                targetEl.mesh.animations.push(anime);
+                target = targetEl.mesh;
+                scene.beginAnimation(target, this.from, this.to, this.loop);
+                break;
         }
 
-        let scene = this.getScene();
-        scene.beginAnimation(target, this.from, this.to, this.loop, this.speed);
+        
     }
 }
