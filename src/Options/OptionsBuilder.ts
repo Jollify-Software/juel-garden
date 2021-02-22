@@ -12,7 +12,8 @@ export module OptionsBuilder {
         'tessellation': FloatSetter('tessellation'),
         'wrap': BooleanSetter('wrap'),
         'faceuv': OptionFaceUVSetter,
-        'points': OptionsVector3ArraySetter('points')
+        'points': OptionsVector3ArraySetter('points'),
+        'shape': OptionsVector3ArraySetter('shape')
     }
 
     export var build = function(el: HTMLElement): object {

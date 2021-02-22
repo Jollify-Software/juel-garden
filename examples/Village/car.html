@@ -1,0 +1,27 @@
+<html>
+    <head>
+        <script src="../../dist/juel-garden.js"></script>
+		<style id="rules">
+		juel-polygon {
+			depth: 0.2;
+		}
+		</style>
+    </head>
+    <body>
+        <!-- https://www.babylonjs-playground.com/textures/floor.png -->
+        <juel-scene>
+            <juel-camera></juel-camera>
+            <juel-light></juel-light>
+
+            <juel-polygon parent extrude="true" shape="-0.3 0 -0.1, 0.2 0 -0.1, (Shape.curve()), 0 0 0.1, -0.3 0 0.1">
+                <juel-cylinder position="-0.2 0.035 -0.1" diameter="0.125" height="0.05">
+                    <juel-clone position="0.1 0 0">
+                        <juel-clone position="0 (-0.2-0.035) 0"></juel-clone>
+                    </juel-clone>
+                    <juel-clone position="0 (-0.2-0.035) 0"></juel-clone>
+                </juel-cylinder>
+            </juel-polygon>
+
+        </juel-scene>
+    </body>
+</html>

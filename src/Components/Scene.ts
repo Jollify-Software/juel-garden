@@ -2,6 +2,7 @@ import { Engine, Scene } from "babylonjs";
 import { customElement, LitElement } from "lit-element";
 import { GardenElement } from "../GardenElement";
 import { JuelGarden } from "../JuelGarden";
+import { Utility } from "../Utility";
 
 @customElement("juel-scene")
 export class JuelScene extends LitElement {
@@ -40,6 +41,8 @@ export class JuelScene extends LitElement {
         document.head.appendChild(styles);
 
         setTimeout(() => {
+            Utility.applyRules(this);
+            
             let cameraEl = this.querySelector("juel-camera") as GardenElement;
             cameraEl.updateComplete.then(() => {
                 this.engine.runRenderLoop(() => {
