@@ -31,7 +31,7 @@ export abstract class GardenMesh extends GardenElement {
             return null;
         }
     }
-    
+
     setMesh(mesh: Mesh) {
         if (this.mesh)
             this.mesh.dispose(); // TODO: We need replace, dispose will remove children
@@ -42,19 +42,18 @@ export abstract class GardenMesh extends GardenElement {
 
     modifyMesh(): void {
         if (this.mesh != null) {
-            
+
             if (this.parentElement.hasAttribute("parent")) {
                 this.mesh.parent = (<GardenMesh>this.parentElement).mesh;
-             }
-             
+            }
+
             Modifier.modifyMesh(this, this.mesh);
             Behaviours.applyBehaviours(this, this.mesh);
 
-            
+
             setTimeout(() => {
                 let loadAnimations = (<HTMLElement[]>Array.prototype.slice.call(this.children))
                     .filter(el => el.matches('juel-animation[event="load"]')) as JuelAnimation[];
-                console.log(loadAnimations)
                 for (var animation of loadAnimations) {
                     animation.play(this);
                 }

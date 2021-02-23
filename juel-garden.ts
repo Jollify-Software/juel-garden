@@ -11,6 +11,7 @@ import "./src/Components/Clone";
 import "./src/Components/MeshModel";
 import "./src/Components/Animation";
 import "./src/Components/HeightMap";
+import "./src/Components/Sky";
 
 import "./src/Components/Replicate";
 

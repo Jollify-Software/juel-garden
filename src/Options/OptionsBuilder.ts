@@ -7,6 +7,7 @@ export module OptionsBuilder {
     var map = {
         'width': FloatSetter('width'),
         'height': FloatSetter('height'),
+        'size': FloatSetter('size'),
         'depth': FloatSetter('depth'),
         'diameter': FloatSetter('diameter'),
         'tessellation': FloatSetter('tessellation'),
