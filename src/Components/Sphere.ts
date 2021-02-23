@@ -4,8 +4,7 @@ import { GardenMesh } from "../GardenMesh";
 
 @customElement("juel-sphere")
 export class JuelSphere extends GardenMesh {
-    firstUpdated() {
+    createMesh() {
         this.mesh = MeshBuilder.CreateSphere(this.id ?? "sphere", this.buildOptions(), this.getScene());
-        this.modifyMesh();
     }
 }

@@ -3,7 +3,7 @@ import { GardenMesh } from "../GardenMesh";
 
 @customElement("juel-clone")
 export class JuelClone extends GardenMesh {
-    update() {
+    createMesh() {
         let parent = this.parentElement as GardenMesh;
         if ('mesh' in parent) {
             this.mesh = parent.mesh.clone(this.id ?? "clone");
@@ -14,7 +14,6 @@ export class JuelClone extends GardenMesh {
                     this.appendChild(el.cloneNode());
                 }
             }
-            this.modifyMesh()
         }
     }
 }
