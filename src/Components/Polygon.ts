@@ -7,13 +7,15 @@ import earcut from "earcut";
 export class JuelExtrude extends GardenMesh {
     @property({ type: Boolean }) extrude = false;
 
-    createMesh() {
+    updated() {
         if (this.extrude == true) {
-            this.mesh = MeshBuilder.ExtrudePolygon(
+            this.setMesh(
+                MeshBuilder.ExtrudePolygon(
                 this.id ?? "extrude",
                 <any>this.buildOptions(),
                 this.getScene(),
                 earcut
+            )
             );
         }
     }

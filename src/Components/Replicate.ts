@@ -10,7 +10,7 @@ export class JuelReplicate extends GardenElement {
     @property() positions: string;
     @property() rotations: string;
 
-    firstUpdated() {
+    updated() {
         let els: GardenMesh[] = [];
         for (var id of this.instances) {
             els.push(
@@ -24,7 +24,10 @@ export class JuelReplicate extends GardenElement {
         ).then(() => {
             let meshes = els.map(x => x.mesh);
             for (var i = 0; i < posRay.length; i++) {
+                console.log((i))
+                
                 let pos = posRay[i];
+                console.log(pos);
                 let rot = rotRay[i];
                 let mesh = meshes[parseInt(pos.name)].createInstance(`mesh-instance-${i}`);
                 mesh.position = pos.value;

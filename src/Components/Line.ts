@@ -4,7 +4,9 @@ import { GardenMesh } from "../GardenMesh";
 
 @customElement("juel-line")
 export class JuelLine extends GardenMesh {
-    createMesh() {
-        this.mesh = MeshBuilder.CreateLines("triangle", <any>this.buildOptions(), this.getScene());
+    updated() {
+        this.setMesh(
+            MeshBuilder.CreateLines("triangle", <any>this.buildOptions(), this.getScene())
+        );
     }
 }

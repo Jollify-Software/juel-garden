@@ -4,13 +4,16 @@ import { GardenMesh } from "../../GardenMesh";
 
 @customElement("juel-semi-house")
 export class JuelSemiHouse extends GardenMesh {
-    firstUpdated() {
-        let house = this.firstElementChild as GardenMesh;
-        let roof = house.firstElementChild as GardenMesh;
-        Promise.all([house.updateComplete, roof.updateComplete]).then(() => {
-            this.mesh = Mesh.MergeMeshes([house.mesh, roof.mesh], true, false, null, false, true);
-            this.modifyMesh();
-        });
+    updated() {
+            let house = this.firstElementChild as GardenMesh;
+            let roof = house.firstElementChild as GardenMesh;
+            Promise.all([house.updateComplete, roof.updateComplete]).then(() => {
+                this.setMesh(
+                    Mesh.MergeMeshes([house.mesh, roof.mesh], true, false, null, false, true)
+                );
+
+            });
+
     }
     render() {
         return html`

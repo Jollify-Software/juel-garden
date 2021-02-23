@@ -4,9 +4,11 @@ import { GardenMesh } from "../GardenMesh";
 
 @customElement("juel-box")
 export class JuelBox extends GardenMesh {
-    createMesh() {
+    updated() {
         let scene = this.getScene();
         let options = this.buildOptions();
-        this.mesh = MeshBuilder.CreateBox("box", options, scene);
+        this.setMesh(
+            MeshBuilder.CreateBox("box", options, scene)
+        );
     }
 }

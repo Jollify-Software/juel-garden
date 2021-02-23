@@ -17,29 +17,13 @@
                 1: 0 (15*Math.PI/16) 0, 0: 0 (5*Math.PI/4) 0, 0: 0 (Math.PI+Math.PI/2.5) 0, 1: 0 (Math.PI+Math.PI/2.1) 0, 0: 0 (Math.PI+Math.PI/2.25) 0,
                 1: 0 (Math.PI/1.9) 0, 0: 0 (Math.PI/1.95) 0, 1: 0 (Math.PI/1.9) 0, 1: 0 (Math.PI/1.9) 0, 1: 0 -(Math.PI/3) 0, 0: 0 -(Math.PI/3) 0">
             </juel-replicate>
-<!--
-            places.push([1, -Math.PI / 16, -6.8, 2.5 ]);
-            places.push([2, -Math.PI / 16, -4.5, 3 ]);
-            places.push([2, -Math.PI / 16, -1.5, 4 ]);
-            places.push([2, -Math.PI / 3, 1.5, 6 ]);
-            places.push([2, 15 * Math.PI / 16, -6.4, -1.5 ]);
-            places.push([1, 15 * Math.PI / 16, -4.1, -1 ]);
-            places.push([2, 15 * Math.PI / 16, -2.1, -0.5 ]);
-            places.push([1, 5 * Math.PI / 4, 0, -1 ]);
-            places.push([1, Math.PI + Math.PI / 2.5, 0.5, -3 ]);
-            places.push([2, Math.PI + Math.PI / 2.1, 0.75, -5 ]);
-            places.push([1, Math.PI + Math.PI / 2.25, 0.75, -7 ]);
-            places.push([2, Math.PI / 1.9, 4.75, -1 ]);
-            places.push([1, Math.PI / 1.95, 4.5, -3 ]);
-            places.push([2, Math.PI / 1.9, 4.75, -5 ]);
-            places.push([1, Math.PI / 1.9, 4.75, -7 ]);
-            places.push([2, -Math.PI / 3, 5.25, 2 ]);
-            places.push([1, -Math.PI / 3, 6, 4 ]);
-        
--->
 
-            <juel-ground width="15" height="16" colour="green">
-            </juel-ground>
+            <juel-ground width="24" height="24"
+                texture="https://assets.babylonjs.com/environments/villagegreen.png"></juel-ground>
+
+            <juel-height-map position="0 -0.01 0" url="https://assets.babylonjs.com/environments/villageheightmap.png"
+                width="150" height="150" subdivisions="20" minheight="0" maxheight="10"
+                texture="https://assets.babylonjs.com/environments/valleygrass.png"></juel-height-map>
             
         </juel-scene>
     </body>

@@ -4,7 +4,7 @@ import { JuelAnimation } from "./Components/Animation";
 import { GardenElement } from "./GardenElement";
 import { Modifier } from "./Modifiers/Modifier";
 
-export class GardenMesh extends GardenElement {
+export abstract class GardenMesh extends GardenElement {
     mesh: Mesh;
 
     getPosition() {
@@ -31,16 +31,13 @@ export class GardenMesh extends GardenElement {
             return null;
         }
     }
-    update() {
+    
+    setMesh(mesh: Mesh) {
         if (this.mesh)
             this.mesh.dispose(); // TODO: We need replace, dispose will remove children
 
-        this.createMesh()
+        this.mesh = mesh;
         this.modifyMesh();
-    }
-
-    createMesh() {
-
     }
 
     modifyMesh(): void {

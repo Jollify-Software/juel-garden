@@ -13,7 +13,10 @@ export module OptionsBuilder {
         'wrap': BooleanSetter('wrap'),
         'faceuv': OptionFaceUVSetter,
         'points': OptionsVector3ArraySetter('points'),
-        'shape': OptionsVector3ArraySetter('shape')
+        'shape': OptionsVector3ArraySetter('shape'),
+        'subdivisions': FloatSetter('subdivisions'),
+        'minheigh': FloatSetter('minheight', 'minHeight'),
+        'maxheight': FloatSetter('maxheight', 'maxHeight')
     }
 
     export var build = function(el: HTMLElement): object {

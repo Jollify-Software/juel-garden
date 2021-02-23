@@ -9,11 +9,12 @@ export class JuelMeshModel extends GardenSkeletonMesh {
     @property() root: string;
     @property() filename: string;
 
-    createMesh() {
+    updated() {
         let scene = this.getScene();
         SceneLoader.ImportMeshAsync(this.meshNames, this.root, this.filename, scene).then((result) => {
-            this.mesh = result.meshes[0] as Mesh;
-            this.modifyMesh();
+            this.setMesh(
+                result.meshes[0] as Mesh
+            );
             if (result.skeletons.length > 0) {
                 this.skeleton = result.skeletons[0];
             }

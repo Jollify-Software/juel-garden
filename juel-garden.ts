@@ -10,6 +10,7 @@ import "./src/Components/Polygon";
 import "./src/Components/Clone";
 import "./src/Components/MeshModel";
 import "./src/Components/Animation";
+import "./src/Components/HeightMap";
 
 import "./src/Components/Replicate";
 

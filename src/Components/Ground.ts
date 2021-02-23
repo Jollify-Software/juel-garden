@@ -5,7 +5,9 @@ import { OptionsBuilder } from "../Options/OptionsBuilder";
 
 @customElement("juel-ground")
 export class JuelGround extends GardenMesh {
-    createMesh() {
-        this.mesh = MeshBuilder.CreateGround("ground", OptionsBuilder.build(this));
+    updated() {
+        this.setMesh(
+            MeshBuilder.CreateGround("ground", OptionsBuilder.build(this))
+        );
     }
 }

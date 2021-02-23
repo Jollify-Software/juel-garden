@@ -3,10 +3,12 @@ import { GardenMesh } from "../GardenMesh";
 
 @customElement("juel-clone")
 export class JuelClone extends GardenMesh {
-    createMesh() {
+    updated() {
         let parent = this.parentElement as GardenMesh;
         if ('mesh' in parent) {
-            this.mesh = parent.mesh.clone(this.id ?? "clone");
+            this.setMesh(
+                parent.mesh.clone(this.id ?? "clone")
+            );
             let childAnimations = (<HTMLElement[]>Array.prototype.slice.call(parent.children))
                 .filter(el => el.nodeName == "JUEL-ANIMATION")
             if (childAnimations && childAnimations.length > 0) {

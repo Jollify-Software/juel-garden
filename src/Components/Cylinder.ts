@@ -4,7 +4,9 @@ import { GardenMesh } from "../GardenMesh";
 
 @customElement("juel-cylinder")
 export class JuelCylinder extends GardenMesh {
-    createMesh() {
-        this.mesh = MeshBuilder.CreateCylinder("roof", this.buildOptions(), this.getScene());
+    updated() {
+        this.setMesh(
+            MeshBuilder.CreateCylinder("roof", this.buildOptions(), this.getScene())
+        );
     }
 }
