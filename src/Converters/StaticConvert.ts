@@ -1,4 +1,4 @@
-import { Animation } from "babylonjs";
+import { Animation, Mesh } from "babylonjs";
 
 export module StaticConvert {
     export var animationLoopMode = (str: string) => {
@@ -31,6 +31,20 @@ export module StaticConvert {
                 return Animation.ANIMATIONTYPE_VECTOR2;
             case "vector3":
                 return Animation.ANIMATIONTYPE_VECTOR3;
+        }
+    }
+    export var sideOrientation = (str: string) => {
+        switch (str) {
+            case "default":
+                return Mesh.DEFAULTSIDE;
+            case "front":
+                return Mesh.FRONTSIDE;
+            case "back":
+                return Mesh.BACKSIDE;
+            case "double":
+                return Mesh.DOUBLESIDE;
+            default:
+                return Mesh.DEFAULTSIDE;
         }
     }
 }

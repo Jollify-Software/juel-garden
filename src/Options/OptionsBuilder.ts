@@ -1,4 +1,6 @@
+import { StaticConvert } from "../Converters/StaticConvert";
 import { BooleanSetter } from "./BooleanSetter";
+import { ConverterSetter } from "./OptionsConverterSetter";
 import { OptionFaceUVSetter } from "./OptionsFaceUVSetter";
 import { FloatSetter } from "./OptionsFloatSetter";
 import { OptionsVector3ArraySetter } from "./OptionsVector3ArraySetter";
@@ -17,7 +19,8 @@ export module OptionsBuilder {
         'shape': OptionsVector3ArraySetter('shape'),
         'subdivisions': FloatSetter('subdivisions'),
         'minheigh': FloatSetter('minheight', 'minHeight'),
-        'maxheight': FloatSetter('maxheight', 'maxHeight')
+        'maxheight': FloatSetter('maxheight', 'maxHeight'),
+        'sideorientation': ConverterSetter('sideorientation', 'sideOrientation', StaticConvert.sideOrientation)
     }
 
     export var build = function(el: HTMLElement): object {
