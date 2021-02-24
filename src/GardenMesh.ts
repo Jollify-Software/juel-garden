@@ -1,6 +1,7 @@
-import { Material, Mesh, Scene } from "babylonjs";
+import { Material, Mesh, PointerEventTypes, Scene } from "babylonjs";
 import { Behaviours } from "./Behaviours/Behaviours";
 import { JuelAnimation } from "./Components/Animation";
+import { JuelParticle } from "./Components/Particle";
 import { GardenElement } from "./GardenElement";
 import { Modifier } from "./Modifiers/Modifier";
 
@@ -52,10 +53,42 @@ export abstract class GardenMesh extends GardenElement {
 
 
             setTimeout(() => {
-                let loadAnimations = (<HTMLElement[]>Array.prototype.slice.call(this.children))
-                    .filter(el => el.matches('juel-animation[event="load"]')) as JuelAnimation[];
-                for (var animation of loadAnimations) {
+                let scene = this.getScene();
+                let animations: JuelAnimation[] = [];
+                let particles: JuelParticle[] = [];
+
+                (<HTMLElement[]>Array.prototype.slice.call(this.children))
+                    .forEach(el => {
+                        if (el.matches('juel-animation')) {
+                            animations.push(el as JuelAnimation);
+                        } else if (el.matches('juel-particle')) {
+                            particles.push(el as JuelParticle);
+                        }
+                    });
+
+                for (var animation of animations) {
                     animation.play(this);
+                }
+
+                for (var p of particles) {
+                    switch (p.event) {
+                        case "load":
+                            p.play();
+                            break;
+                        case "pointerdown":
+                            scene.onPointerObservable.add((pointerInfo) => {            
+                                switch (pointerInfo.type) {
+                                    case PointerEventTypes.POINTERDOWN:
+                                        if(pointerInfo.pickInfo.hit &&
+                                            pointerInfo.pickInfo.pickedMesh == this.mesh) {
+                                            p.toggle();
+                                        }
+                                    break;
+                                }
+                            });
+                        default:
+                            break;
+                    }
                 }
             });
         }

@@ -21,7 +21,12 @@
             </juel-replicate>
 
             <juel-lathe sideorientation="double" shape="0 0 0, 0.5 0 0, 0.5 0.2 0, 0.4 0.2 0, 0.4 0.05 0, 0.05 0.1 0, 0.05 0.8 0, 0.15 0.9 0"
-                position="-4 0 -6"></juel-lathe>
+                position="-4 0 -6">
+                <juel-particle event="pointerdown" capacity="5000" emitter="-4 0.8 -6" minEmitBox="-1 0 0" maxEmitBox="1 0 0" colour1="0.7 0.8 1.0 1.0" colour2="0.2 0.5 1.0 1.0" colourDead="0 0 0.2 0.0"
+                    minSize="0.1" maxSize="0.5" minLifeTime="2" maxLifeTime="3.5" emitRate="1500" direction1="-2 8 2" direction2="2 8 -2" gravity="0 -9.81 0"
+                    minAngularSpeed="0" maxAngularSpeed="3" minEmitPower="1" maxEmitPower="3" updateSpeed="0.025"
+                    url="https://playground.babylonjs.com/textures/flare.png"></juel-particle>
+            </juel-lathe>
 
             <juel-sprite capacity="2000" count="500" width="512" height="1024" url="https://playground.babylonjs.com/textures/palm.png"
                 positions="(Math.random()*(-30)) 0.5 (Math.random()*20+8), (Math.random()*(25)+7) 0.5 (Math.random()*-35+8)"></juel-sprite>

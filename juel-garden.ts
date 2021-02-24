@@ -16,6 +16,7 @@ import "./src/Components/Sky";
 import "./src/Components/Sprite";
 
 import "./src/Components/Replicate";
+import "./src/Components/Particle";
 
 import "./src/Components/Prefab/House";
 import "./src/Components/Prefab/SemiHouse";
