@@ -1,4 +1,4 @@
-import { Material, Mesh, PointerEventTypes, Scene } from "babylonjs";
+import { Material, Mesh, PointerEventTypes, Scene, Vector3 } from "babylonjs";
 import { Behaviours } from "./Behaviours/Behaviours";
 import { JuelAnimation } from "./Components/Animation";
 import { JuelParticle } from "./Components/Particle";
@@ -16,6 +16,16 @@ export abstract class GardenMesh extends GardenElement {
     }
     getScale() {
         return this.mesh?.scaling;
+    }
+
+    setPosition(position: Vector3) {
+        this.mesh.position = position;
+    }
+    setRotation(rotation: Vector3) {
+        this.mesh.rotation = rotation;
+    }
+    setScale(scale: Vector3) {
+        this.mesh.scaling = scale;
     }
 
     getMaterial() {

@@ -11,11 +11,11 @@ export class JuelAnimation extends GardenElement {
     @property() target: string;
     @property() property: string;
     @property() event: string;
-    @property() type: string;
+    @property({ converter: StaticConvert.animationType }) type: number;
     @property({ type: Number }) from: number;
     @property({ type: Number }) to: number;
     @property({ type: Boolean }) loop: boolean = false;
-    @property() loopmode: string;
+    @property({ converter: StaticConvert.animationLoopMode }) loopmode: number;
     @property() keyframes: string;
     @property({ type: Number }) speed: number;
 
@@ -34,7 +34,7 @@ export class JuelAnimation extends GardenElement {
                 break;
             default:
                 let anime = new Animation("animation", this.property, this.speed,
-                    StaticConvert.animationType(this.type), StaticConvert.animationLoopMode(this.loopmode));
+                    this.type, this.loopmode);
                 anime.setKeys(ObjectConverter.keyframeRay(this.keyframes));
                 if (!targetEl.mesh.animations)
                     targetEl.mesh.animations = []

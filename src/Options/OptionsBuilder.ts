@@ -12,6 +12,7 @@ export module OptionsBuilder {
         'size': FloatSetter('size'),
         'depth': FloatSetter('depth'),
         'diameter': FloatSetter('diameter'),
+        'segments': FloatSetter('segments'),
         'tessellation': FloatSetter('tessellation'),
         'wrap': BooleanSetter('wrap'),
         'faceuv': OptionFaceUVSetter,

@@ -4,13 +4,20 @@
     </head>
     <body>
         <juel-scene>
-            <juel-camera></juel-camera>
+            <juel-camera type="free">
+                <juel-waypoint offset="0 2 0" waypoints="wp1 wp2 wp3 wp4"></juel-waypoint>
+            </juel-camera>
             <juel-light></juel-light>
 
             <juel-box position="-1 0.5 -3" rotation="0 45 0" colour="#4CC3D9"></juel-box>
             <juel-sphere position="0 1.25 -5" diameter="2.50" colour="#EF2D5E"></juel-sphere>
             <juel-cylinder position="1 0.75 -3" diameter="1" height="1.5" colour="#FFC65D"></juel-cylinder>
             <juel-ground position="0 0 -4" width="4" height="4" colour="#7BC8A4"></juel-ground>
+
+            <juel-cylinder id="wp1" position="0 0 3" diameter="1" height="0.25" colour="#FFC65D"></juel-cylinder>
+            <juel-cylinder id="wp4" position="3 0 3" diameter="1" height="0.25" colour="#FFC65D"></juel-cylinder>
+            <juel-cylinder id="wp3" position="6 0 3" diameter="1" height="0.25" colour="#FFC65D"></juel-cylinder>
+            <juel-cylinder id="wp2" position="9 0 3" diameter="1" height="0.25" colour="#FFC65D"></juel-cylinder>
 
             <a-sky color="#ECECEC"></a-sky>
 

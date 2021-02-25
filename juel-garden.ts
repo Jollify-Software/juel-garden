@@ -1,5 +1,6 @@
 import "./src/Components/Scene";
 import "./src/Components/Camera";
+import "./src/Components/Waypoint";
 import "./src/Components/Light";
 import "./src/Components/Box";
 import "./src/Components/Sphere";
@@ -17,6 +18,7 @@ import "./src/Components/Sprite";
 
 import "./src/Components/Replicate";
 import "./src/Components/Particle";
+import "./src/Components/Boolean";
 
 import "./src/Components/Prefab/House";
 import "./src/Components/Prefab/SemiHouse";
