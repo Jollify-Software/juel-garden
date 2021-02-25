@@ -5,14 +5,20 @@
     <body>
         <juel-scene>
             <juel-camera type="free">
-                <juel-waypoint offset="0 2 0" waypoints="wp1 wp2 wp3 wp4"></juel-waypoint>
+                <juel-waypoint offset="0 2 0" waypoints="wp1 wp2 wp3 wp4 wp5"></juel-waypoint>
             </juel-camera>
             <juel-light></juel-light>
+
+            <juel-sky root="https://playground.babylonjs.com/textures/skybox" size="150"></juel-sky>
 
             <juel-box position="-1 0.5 -3" rotation="0 45 0" colour="#4CC3D9"></juel-box>
             <juel-sphere position="0 1.25 -5" diameter="2.50" colour="#EF2D5E"></juel-sphere>
             <juel-cylinder position="1 0.75 -3" diameter="1" height="1.5" colour="#FFC65D"></juel-cylinder>
             <juel-ground position="0 0 -4" width="4" height="4" colour="#7BC8A4"></juel-ground>
+
+            <juel-sphere position="6 0 -9" diameter="5.25" colour="yellow">
+                <juel-cylinder id="wp5" colour="purple" position="6 0 0" diameter="1" height="0.25" orbit orbit-angle="0.001"></juel-sphere>
+            </juel-sphere>
 
             <juel-cylinder id="wp1" position="0 0 3" diameter="1" height="0.25" colour="#FFC65D"></juel-cylinder>
             <juel-cylinder id="wp4" position="3 0 3" diameter="1" height="0.25" colour="#FFC65D"></juel-cylinder>

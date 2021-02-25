@@ -1,9 +1,11 @@
 import { Mesh } from "babylonjs";
+import { BehaviourOrbit } from "./BehaviourOrbit";
 import { BehaviourTrack } from "./BehaviourTrack";
 
 export module Behaviours {
     var map = {
-        'track': BehaviourTrack
+        'track': BehaviourTrack,
+        'orbit': BehaviourOrbit
     }
 
     export var applyBehaviours = function(el: HTMLElement, mesh: Mesh) {

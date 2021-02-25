@@ -11,6 +11,7 @@ export class JuelWaypoint extends GardenElement {
     @property({ converter: Vector3Convert.fromString }) offset: Vector3;
     @property({ type: Number }) speed: number;
     index: number = 0;
+    prevWaypoint: GardenMesh;
 
     updated() {
         setTimeout(() => {
@@ -26,6 +27,15 @@ export class JuelWaypoint extends GardenElement {
                             if (pointerInfo.pickInfo.hit) {
                                 let wp = this.waypoints.find(x => x.mesh == pointerInfo.pickInfo.pickedMesh)
                                 if (wp) {
+                                    this.prevWaypoint = this.waypoints[this.index];
+                                    if ('leave' in this.prevWaypoint) {
+                                        (<any>this.prevWaypoint).leave(
+                                            (<Camera>(<any>this.parentElement).camera)
+                                        );
+                                    }
+                                    if ('enter' in wp) {
+                                        (<any>wp).enter((<Camera>(<any>this.parentElement).camera));
+                                    }
                                     this.moveToPosition(wp.getPosition());
                                     this.index = this.waypoints.indexOf(wp);
                                 }
@@ -53,7 +63,7 @@ export class JuelWaypoint extends GardenElement {
         (<Camera>(<any>this.parentElement).camera).animations = [];
         (<Camera>(<any>this.parentElement).camera).animations.push(anime);
         console.log((<any>this.parentElement).camera);
-        scene.beginAnimation((<any>this.parentElement).camera, 0, 100, false);
+        scene.beginAnimation((<any>this.parentElement).camera, 0, 100, false, 1.0);
     }
 
     setPosition(pos: Vector3) {
