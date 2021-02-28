@@ -23,6 +23,7 @@ export class JuelScene extends LitElement {
         this.canvas = document.createElement("canvas");
         this.engine = new Engine(this.canvas, true);
         this.scene = new Scene(this.engine);
+
         this.appendChild(this.canvas);
         let styles = document.createElement("style");
         styles.id = "juel-garden-styles";
@@ -55,6 +56,14 @@ export class JuelScene extends LitElement {
                 this.engine.resize();    
             });
         });
+
+        this.scene.onPointerDown = function (evt, pickResult) {
+            // We try to pick an object
+            if (pickResult.hit && 'element' in pickResult.pickedMesh) {
+                let el = (<any>pickResult.pickedMesh).element as GardenElement;
+                el.activate();
+            }
+        };
     }
 
 }

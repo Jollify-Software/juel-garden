@@ -1,4 +1,4 @@
-import { Material, Mesh, PointerEventTypes, Scene, Vector3 } from "babylonjs";
+import { Material, Mesh, PointerEventTypes, Scene, TransformNode, Vector3 } from "babylonjs";
 import { Behaviours } from "./Behaviours/Behaviours";
 import { JuelAnimation } from "./Components/Animation";
 import { JuelParticle } from "./Components/Particle";
@@ -7,6 +7,10 @@ import { Modifier } from "./Modifiers/Modifier";
 
 export abstract class GardenMesh extends GardenElement {
     mesh: Mesh;
+
+    getNode(): TransformNode {
+        return this.mesh;
+    }
 
     getPosition() {
         return this.mesh?.position;
@@ -47,6 +51,7 @@ export abstract class GardenMesh extends GardenElement {
         if (this.mesh)
             this.mesh.dispose(); // TODO: We need replace, dispose will remove children
 
+        (<any>mesh).element = this;
         this.mesh = mesh;
         this.modifyMesh();
     }
@@ -55,7 +60,7 @@ export abstract class GardenMesh extends GardenElement {
         if (this.mesh != null) {
 
             if (this.parentElement.hasAttribute("parent")) {
-                this.mesh.parent = (<GardenMesh>this.parentElement).mesh;
+                this.mesh.parent = (<GardenElement>this.parentElement).getNode();
             }
 
             Modifier.modifyMesh(this, this.mesh);

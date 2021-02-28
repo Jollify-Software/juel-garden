@@ -20,5 +20,8 @@ import "./src/Components/Replicate";
 import "./src/Components/Particle";
 import "./src/Components/Boolean";
 
+import "./src/Components/Info";
+import "./src/Components/Gui/Text";
+
 import "./src/Components/Prefab/House";
 import "./src/Components/Prefab/SemiHouse";
