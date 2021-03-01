@@ -17,6 +17,7 @@ import "./src/Components/Sky";
 import "./src/Components/Sprite";
 
 import "./src/Components/Replicate";
+import "./src/Components/DuplicateVertices";
 import "./src/Components/Particle";
 import "./src/Components/Boolean";
 
