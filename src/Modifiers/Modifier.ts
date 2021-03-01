@@ -1,5 +1,6 @@
 import { Mesh } from "babylonjs";
 import { ModifyColourSetter } from "./ModifyColourSetter";
+import { ModifyFloatSetter } from "./ModifyFloatSetter";
 import { ModifyRotationSetter } from "./ModifyRotationSetter";
 import { ModifyTextureSetter } from "./ModifyTextureSetter";
 import { ModifyVector3Setter } from "./ModifyVector3Setter";
@@ -9,8 +10,18 @@ export module Modifier {
         'position': ModifyVector3Setter('position'),
         'rotation': ModifyRotationSetter,
         'scale': ModifyVector3Setter('scale', 'scaling'),
-        'colour': ModifyColourSetter,
-        'texture': ModifyTextureSetter
+        'colour': ModifyColourSetter(),
+        'diffuse-colour': ModifyColourSetter(),
+        'texture': ModifyTextureSetter(),
+        'diffuse-texture': ModifyTextureSetter(),
+
+        'bump-texture': ModifyTextureSetter("bump"),
+        'bump-texture-uscale': ModifyFloatSetter('bump-texture-uscale', 'mat.bumpTexture-uScale'),
+        'bump-texture-vscale': ModifyFloatSetter('bump-texture-vscale', 'mat.bumpTexture-vScale'),
+
+        'reflection-texture': ModifyTextureSetter("reflection"),
+        'reflection-texture-level': ModifyFloatSetter('reflection-texture-level', 'mat.reflectionTexture-level'),
+        'reflection-texture-coordinates': ModifyFloatSetter('reflection-texture-coordinates', 'mat.reflectionTexture-coordinatesMode'),
     }
 
     export var modifyMesh = function(el: HTMLElement, mesh: Mesh) {
