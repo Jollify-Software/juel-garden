@@ -26,3 +26,5 @@ import "./src/Components/Gui/Text";
 
 import "./src/Components/Prefab/House";
 import "./src/Components/Prefab/SemiHouse";
+
+import "./src/Components/Prefab/Stairs";
