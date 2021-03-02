@@ -13,11 +13,22 @@
             <juel-camera></juel-camera>
             <juel-light></juel-light>
 
-            <juel-sphere segments="16" diameter="4" position="0 5 0">
-                <juel-boolean subtract="box1" position="-10 0 0"></juel-boolean>
+            <juel-sphere id="sphere" segments="16" diameter="4" position="0 5 0"
+                wireframe="true" backface-culling="true">
+                <juel-boolean subtract="box1" position="10 0 0"
+                    colour="0.8 0.2 0.2" backface-culling="true"></juel-boolean>
+                <juel-boolean intersect="box1" position="0 0 10"
+                    colour="0.8 0.2 0.2" backface-culling="true"></juel-boolean>
             </juel-sphere>
-            <juel-box id="box1" size="4" position="0 2.5 0"></juel-box>
-            <juel-box id="box2" size="4" position="0 3.5 0" rotation="0 (Math.PI/8.0) 0"></juel-box>
+            <juel-box id="box1" size="4" position="0 2.5 0">
+                <juel-boolean subtract="sphere" position="-10 0 0"
+                    colour="0.8 0.2 0.2" backface-culling="true"></juel-boolean>
+                <juel-boolean subtract="box2" position="0 0 -10"
+                colour="0.8 0.2 0.2" backface-culling="true"></juel-boolean>
+            </juel-box>
+            <juel-box id="box2" size="4" position="0 3.5 0" rotation="0 (Math.PI/8.0) 0">
+                
+            </juel-box>
 
         </juel-scene>
     </body>

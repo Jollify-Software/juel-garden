@@ -29,3 +29,4 @@ import "./src/Components/Prefab/SemiHouse";
 
 import "./src/Components/Prefab/Stairs";
 import "./src/Components/Prefab/Room";
+import "./src/Components/Prefab/Doorway";

@@ -5,6 +5,8 @@ import { GardenMesh } from "../GardenMesh";
 @customElement("juel-boolean")
 export class JuelBoolean extends GardenMesh {
     @property() subtract: string;
+    @property() subtractTo: string;
+    @property() intersect: string;
 
     updated() {
         setTimeout(() => {
@@ -15,6 +17,17 @@ export class JuelBoolean extends GardenMesh {
             if (this.subtract) {
                 let otherMesh = document.getElementById(this.subtract) as GardenMesh;
                 this.setMesh(csg.subtract(
+                   CSG.FromMesh(otherMesh.mesh)
+                ).toMesh(this.id ?? "csg", null, scene));
+            } else if (this.subtractTo) {
+                let otherMesh = document.getElementById(this.subtractTo) as GardenMesh;
+                let otherCsg = CSG.FromMesh(otherMesh.mesh);
+                otherMesh.setMesh(otherCsg.subtract(
+                   csg
+                ).toMesh(otherMesh.id ?? "csg", null, scene));
+            } else if (this.intersect) {
+                let otherMesh = document.getElementById(this.intersect) as GardenMesh;
+                this.setMesh(csg.intersect(
                    CSG.FromMesh(otherMesh.mesh)
                 ).toMesh(this.id ?? "csg", null, scene));
             }
