@@ -54,6 +54,9 @@ export abstract class GardenMesh extends GardenElement {
         (<any>mesh).element = this;
         this.mesh = mesh;
         this.modifyMesh();
+
+        if (this.hasAttribute("collisions"))
+            this.mesh.checkCollisions = true;
     }
 
     modifyMesh(): void {

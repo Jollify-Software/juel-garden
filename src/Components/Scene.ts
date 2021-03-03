@@ -1,11 +1,13 @@
-import { Engine, Scene } from "babylonjs";
-import { customElement, LitElement } from "lit-element";
+import { Engine, Scene, Vector3 } from "babylonjs";
+import { customElement, LitElement, property } from "lit-element";
+import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { JuelGarden } from "../JuelGarden";
 import { Utility } from "../Utility";
 
 @customElement("juel-scene")
 export class JuelScene extends LitElement {
+    @property({ converter: Vector3Convert.fromString }) gravity: Vector3;
 
     canvas: HTMLCanvasElement;
     engine: Engine;
@@ -23,6 +25,12 @@ export class JuelScene extends LitElement {
         this.canvas = document.createElement("canvas");
         this.engine = new Engine(this.canvas, true);
         this.scene = new Scene(this.engine);
+
+        if (this.gravity)
+            this.scene.gravity = this.gravity;
+
+        if (this.hasAttribute("collisions"))
+            this.scene.collisionsEnabled = true;
 
         this.appendChild(this.canvas);
         let styles = document.createElement("style");
