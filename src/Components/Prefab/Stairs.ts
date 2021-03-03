@@ -5,19 +5,21 @@ import { GardenMesh } from "../../GardenMesh";
 @customElement("garden-stairs")
 export class GardenStairs extends GardenMesh {
     @property({ type: Number }) width: number;
-    @property({ type: Number }) height: number = 40;
+    @property({ type: Number }) height: number;
     @property({ type: Number }) depth: number;
 
     updated() {
         let boxes: Mesh[] = [];
         let numSteps = 10;
-        for (let i=0;i<(this.height / numSteps);i++) {
+        let stepHeight = 0.5;
+        for (let i=1;i<(this.height / stepHeight);i+=stepHeight) {
             let b = MeshBuilder.CreateBox("b" + i, {
                 width: 4,
-                height: (1 + i),
-                depth: 1
+                height: stepHeight * i,
+                depth: 0.1
             });
-            b.position = new Vector3(0, 0 + i, 0 + i)
+            let xz = ((stepHeight * i) / 2) - (this.height / 2);
+            b.position = new Vector3(0, xz, xz)
             boxes.push(b);
         }
         this.setMesh(
