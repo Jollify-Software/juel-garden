@@ -16,6 +16,9 @@ export function ModifyVector3Setter(name: string, property: string = null) {
         }
     }
 
+    if (options[property ?? name] && (<Vector3>options[property ?? name]) != Vector3.Zero()) {
+        v = v.add(options[property ?? name]);
+    }
         options[property ?? name] = v;
     }
 }
