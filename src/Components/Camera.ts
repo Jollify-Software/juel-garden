@@ -9,6 +9,7 @@ export class JuelCamera extends GardenElement {
     @property() type: string = 'arc';
     @property({ type: Number }) speed: number = 0.4;
     @property({ converter: Vector3Convert.fromString }) position: Vector3;
+    @property({ converter: Vector3Convert.fromString }) ellipsoid: Vector3 = new Vector3(1, 1, 1);
 
     camera: Camera;
 
@@ -29,7 +30,9 @@ export class JuelCamera extends GardenElement {
                 break;
             case 'free':
                 let cam = new FreeCamera("camera", new Vector3(0, 5, -10), scene);
-                
+                if (this.ellipsoid)
+                    cam.ellipsoid = this.ellipsoid;
+                    
         if (this.hasAttribute("collisions")) {
             cam.checkCollisions = true;
             cam.applyGravity = true;

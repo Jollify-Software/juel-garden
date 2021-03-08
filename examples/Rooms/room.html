@@ -3,16 +3,21 @@
 <head>
     <script src="../../dist/juel-garden.js"></script>
 </head>
-
+<!-- https://playground.babylonjs.com/#UJ28QI -->
 <body>
-    <juel-scene>
-        <juel-camera>
+    <juel-scene gravity="0 -0.2 0" collisions>
+        <juel-camera type="free" collisions>
         </juel-camera>
         <juel-light></juel-light>
 
-        <garden-room id="r1"></garden-room>
-        <garden-doorway between="r1 r2" position="0 1 -4" width="2" height="2" depth="0.4"></garden-doorway>
-        <garden-room id="r2" position="0 0 -8"></garden-room>
+        <garden-room id="r1" collisions></garden-room>
+        <garden-opening between="r1 r2" position="0 1 -4" width="2" height="2" depth="0.4"></garden-opening>
+        <garden-room id="r2" position="0 0 -8" collisions></garden-room>
+        <garden-opening between="r2 s1" position="0 1 -12" width="2" height="2" depth="0.4"></garden-opening>
+        <garden-stairs id="s1" position="2 -5 -12" height="5" depth="20" collisions></garden-stairs>
+        
+        <juel-ground width="150" height="160" colour="green" position="0 -5 0" collisions>
+        </juel-ground>
             
     </juel-scene>
 </body>

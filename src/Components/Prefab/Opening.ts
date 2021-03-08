@@ -4,7 +4,7 @@ import { Vector3Convert } from "../../Converters/Vector3Convert";
 import { GardenElement } from "../../GardenElement";
 import { GardenMesh } from "../../GardenMesh";
 
-@customElement("garden-doorway")
+@customElement("garden-opening")
 export class GardenDoorway extends GardenMesh {
     @property() type: string = "square";
     @property() between: string;
@@ -22,7 +22,7 @@ export class GardenDoorway extends GardenMesh {
             
         switch (this.type) {
             case "square":
-                this.mesh = MeshBuilder.CreateBox("doorway", {
+                this.mesh = MeshBuilder.CreateBox("opening", {
                     width: this.width,
                     height: this.height,
                     depth: this.depth
@@ -34,7 +34,7 @@ export class GardenDoorway extends GardenMesh {
         }
         if (this.position) {
             this.mesh.position = this.position.add(
-                this.step ? new Vector3(0, 0.2, 0) : new Vector3(0, 0.1, 0)
+                this.step ? new Vector3(0, 0.2, 0) : new Vector3(0, 0.01, 0)
             );
         }
 
@@ -48,7 +48,9 @@ export class GardenDoorway extends GardenMesh {
                 let thatCsg = CSG.FromMesh(el.mesh);
                 let mat = el.getMaterial();
                 el.mesh.dispose();
-                el.mesh = thatCsg.subtract(thisCsg).toMesh(el.id, mat, scene, true);
+                el.setMesh(
+                    thatCsg.subtract(thisCsg).toMesh(el.id, mat, scene, true)
+                );
             }
         }
     });
