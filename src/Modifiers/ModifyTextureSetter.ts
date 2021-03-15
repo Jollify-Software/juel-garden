@@ -1,4 +1,5 @@
 import { Scene, StandardMaterial, Texture } from "babylonjs";
+import { HtmlTexture } from "../HtmlTexture2";
 import { ISetter } from "../ISetter";
 
 export var ModifyTextureSetter = (prefix: string = "diffuse"): ISetter => {
@@ -13,7 +14,12 @@ export var ModifyTextureSetter = (prefix: string = "diffuse"): ISetter => {
                 material = new StandardMaterial('material', scene);
                 (<any>el).setMaterial(material);
             }
-            material[`${prefix}Texture`] = new Texture(value, scene);
+            if (value == "html") {
+                let htmlTexture = new HtmlTexture(el);
+                ///material[`${prefix}Texture`] = htmlTexture.texture;
+            } else {
+                material[`${prefix}Texture`] = new Texture(value, scene);
+            }
         }
     }
 }
