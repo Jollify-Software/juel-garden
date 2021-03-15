@@ -2,6 +2,7 @@ import { Engine, Scene, Vector3 } from "babylonjs";
 import { customElement, LitElement, property } from "lit-element";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
+import { GardenMesh } from "../GardenMesh";
 import { JuelGarden } from "../JuelGarden";
 import { Utility } from "../Utility";
 
@@ -12,6 +13,8 @@ export class JuelScene extends LitElement {
     canvas: HTMLCanvasElement;
     engine: Engine;
     scene: Scene;
+
+    selectedElement: GardenMesh;
 
     getScene() {
         return this.scene;
@@ -65,10 +68,11 @@ export class JuelScene extends LitElement {
             });
         });
 
-        this.scene.onPointerDown = function (evt, pickResult) {
+        this.scene.onPointerDown = (evt, pickResult) => {
             // We try to pick an object
             if (pickResult.hit && 'element' in pickResult.pickedMesh) {
-                let el = (<any>pickResult.pickedMesh).element as GardenElement;
+                let el = (<any>pickResult.pickedMesh).element as GardenMesh;
+                this.selectedElement = el;
                 el.activate();
             }
         };

@@ -1,0 +1,27 @@
+<html>
+
+<head>
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+
+<body>
+<div>
+    <button onclick="document.getElementById('gizmo').enablePosition()">Position</button>
+    <button onclick="document.getElementById('gizmo').enableRotation()">Rotation</button>
+    <button onclick="document.getElementById('gizmo').enableScale()">Scale</button>
+</div>
+
+    <juel-scene>
+        <juel-camera>
+        </juel-camera>
+        <juel-light></juel-light>
+
+
+        <juel-sphere id="sphere" diameter="2.50" colour="#EF2D5E"></juel-sphere>
+
+        <garden-gizmo id="gizmo" elements="#sphere"></garden-gizmo>
+
+    </juel-scene>
+</body>
+
+</html>

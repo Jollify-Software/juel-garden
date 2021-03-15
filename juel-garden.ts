@@ -20,6 +20,7 @@ import "./src/Components/Replicate";
 import "./src/Components/DuplicateVertices";
 import "./src/Components/Particle";
 import "./src/Components/Boolean";
+import "./src/Components/Gizmo";
 
 import "./src/Components/Info";
 import "./src/Components/Gui/Text";
