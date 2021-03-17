@@ -1,5 +1,6 @@
 import { JuelScene } from "./Components/Scene";
-import { toJSON } from 'cssjson';;
+import { toJSON } from 'cssjson'; import { Mesh, TransformNode } from "babylonjs";
+;
 
 export module Utility {
     export var capitalize = (s) => {
@@ -26,5 +27,14 @@ export module Utility {
                 }
             }
         }
+    }
+    export var nodeFromMesh = (mesh: Mesh, node: TransformNode = null) => {
+        if (!node)
+            node = new TransformNode("node", mesh.getScene());
+
+        node.position = mesh.position;
+        node.rotation = mesh.rotation;
+        node.scaling = mesh.scaling;
+        return node;
     }
 }

@@ -1,11 +1,14 @@
-import { Color4, ParticleSystem, Texture, Vector3 } from "babylonjs";
+import { Color4, ParticleHelper, ParticleSystem, Texture, Vector3 } from "babylonjs";
 import { customElement, property } from "lit-element";
 import { Colour4Convert } from "../Converters/Colour4Convert";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
+import { GardenMesh } from "../GardenMesh";
+import { Utility } from "../Utility";
 
 @customElement("juel-particle")
 export class JuelParticle extends GardenElement {
+    @property() effect: string;
     @property() event: string;
     @property({ type: Number }) capacity: number;
     @property({ type: Number }) minSize: number;
@@ -36,8 +39,24 @@ export class JuelParticle extends GardenElement {
     isPlaying: boolean = false;
 
     updated() {
-        console.log(this.emitter)
         let scene = this.getScene();
+        if (this.effect) {
+            ParticleHelper.CreateAsync(this.effect, scene).then((set) => {
+                if ('mesh' in this.parentElement) {
+                    //var node = Utility.nodeFromMesh(
+                    //    (<GardenMesh>this.parentElement).mesh
+                    //);
+                    set.systems.forEach(s => s.emitter = (<GardenMesh>this.parentElement).mesh.position)
+                }
+                if (this.parentElement.hasAttribute("height")) {
+                    let h = Number(this.parentElement.getAttribute("height"));
+                    set.systems.forEach(s => s.emitter = (<Vector3>s.emitter).add(
+                        new Vector3(0, h, 0)
+                    ));
+                }
+                set.start();
+            });
+        } else {
         this.particleSystem = new ParticleSystem("particles", this.capacity, scene);
         this.particleSystem.particleTexture = new Texture(this.url, scene);
 
@@ -64,7 +83,7 @@ this.particleSystem.maxEmitPower = this.maxEmitPower;
 this.particleSystem.updateSpeed = this.updateSpeed;
 
 this.particleSystem.gravity = this.gravity;
-
+        }
     }
 
     play() {
