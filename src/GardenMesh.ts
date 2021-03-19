@@ -1,11 +1,18 @@
 import { Material, Mesh, PointerEventTypes, Scene, TransformNode, Vector3 } from "babylonjs";
+import { CSG } from "babylonjs";
+import { property } from "lit-element";
 import { Behaviours } from "./Behaviours/Behaviours";
 import { JuelAnimation } from "./Components/Animation";
 import { JuelParticle } from "./Components/Particle";
+import { Vector3Convert } from "./Converters/Vector3Convert";
 import { GardenElement } from "./GardenElement";
 import { Modifier } from "./Modifiers/Modifier";
 
 export abstract class GardenMesh extends GardenElement {
+    static defaultHollowScale = new Vector3(.75, .75, .75);
+
+    @property({ converter: Vector3Convert.fromString }) hollow: Vector3;
+
     mesh: Mesh;
 
     getNode(): TransformNode {
@@ -51,12 +58,26 @@ export abstract class GardenMesh extends GardenElement {
         if (this.mesh)
             this.mesh.dispose(); // TODO: We need replace, dispose will remove children
 
+        if (this.hasAttribute("hollow")) {
+            mesh = this.hollowMesh(mesh, this.hollow ?? GardenMesh.defaultHollowScale);
+        }
         (<any>mesh).element = this;
         this.mesh = mesh;
         this.modifyMesh();
 
         if (this.hasAttribute("collisions"))
             this.mesh.checkCollisions = true;
+    }
+
+    hollowMesh(mesh: Mesh, hollowScale: Vector3) {
+        let clone = mesh.clone("hollowClone");
+        clone.scaling = hollowScale;
+        let toReturn = CSG.FromMesh(mesh)
+            .subtract(CSG.FromMesh(clone))
+                .toMesh(mesh.id, mesh.material, this.getScene());
+        clone.dispose();
+        mesh.dispose();
+        return toReturn;
     }
 
     modifyMesh(): void {

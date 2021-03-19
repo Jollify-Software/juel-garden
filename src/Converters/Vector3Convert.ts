@@ -12,6 +12,9 @@ export module Vector3Convert {
         }
     }
     export var fromString = (str: string) => {
+        if (!str) {
+            return undefined;
+        }
         let ray = str.trim().split(' ').map(s => getFloat(s));
         return new Vector3(ray[0], ray[1], ray[2]);
     }
