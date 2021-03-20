@@ -1,5 +1,6 @@
 import { Material, Mesh, PointerEventTypes, Scene, TransformNode, Vector3 } from "babylonjs";
 import { CSG } from "babylonjs";
+import { MeshBuilder } from "babylonjs";
 import { property } from "lit-element";
 import { Behaviours } from "./Behaviours/Behaviours";
 import { JuelAnimation } from "./Components/Animation";
@@ -12,6 +13,7 @@ export abstract class GardenMesh extends GardenElement {
     static defaultHollowScale = new Vector3(.75, .75, .75);
 
     @property({ converter: Vector3Convert.fromString }) hollow: Vector3;
+    @property() split: string;
 
     mesh: Mesh;
 
@@ -58,9 +60,13 @@ export abstract class GardenMesh extends GardenElement {
         if (this.mesh)
             this.mesh.dispose(); // TODO: We need replace, dispose will remove children
 
+        if (this.hasAttribute("split")) {
+            mesh = this.splitMesh(mesh, this.split);
+        }
         if (this.hasAttribute("hollow")) {
             mesh = this.hollowMesh(mesh, this.hollow ?? GardenMesh.defaultHollowScale);
         }
+
         (<any>mesh).element = this;
         this.mesh = mesh;
         this.modifyMesh();
@@ -70,6 +76,7 @@ export abstract class GardenMesh extends GardenElement {
     }
 
     hollowMesh(mesh: Mesh, hollowScale: Vector3) {
+        console.log(hollowScale)
         let clone = mesh.clone("hollowClone");
         clone.scaling = hollowScale;
         let toReturn = CSG.FromMesh(mesh)
@@ -77,6 +84,33 @@ export abstract class GardenMesh extends GardenElement {
                 .toMesh(mesh.id, mesh.material, this.getScene());
         clone.dispose();
         mesh.dispose();
+        return toReturn;
+    }
+
+    splitMesh(mesh: Mesh, splitty: string) {
+        let bounds = mesh.getBoundingInfo();
+        let vectorsWorld = bounds.boundingBox.vectorsWorld; 
+        let width = Number(vectorsWorld[1].x-(vectorsWorld[0].x));
+        let height = Number(vectorsWorld[1].y-(vectorsWorld[0].y));
+        let depth = Number(vectorsWorld[1].z-(vectorsWorld[0].z));
+        let splittyMesh: Mesh;
+        switch (splitty) {
+            default:
+            case 'half':
+                splittyMesh = MeshBuilder.CreateBox("splittyMesh", {
+                    width: width,
+                    height: height,
+                    depth: depth
+                });
+                splittyMesh.position.y = -(height/2);
+                break;
+        
+        }
+        let toReturn = CSG.FromMesh(mesh)
+            .subtract(CSG.FromMesh(splittyMesh))
+            .toMesh(mesh.id, mesh.material, this.getScene(), true);
+        mesh.dispose();
+        splittyMesh.dispose();
         return toReturn;
     }
 
