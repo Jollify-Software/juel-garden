@@ -5,6 +5,7 @@ import earcut from "earcut";
 import { ShapeFunctions } from "../../ShapeFunctions";
 import { VertexData } from "babylonjs";
 import { Utility } from "../../Utility";
+import { StairsFunctions, StepType } from "../../ShapeFunctions/Stairs";
 
 @customElement("garden-stairs")
 export class GardenStairs extends GardenMesh {
@@ -14,10 +15,20 @@ export class GardenStairs extends GardenMesh {
     @property({ type: Number }) curvature: number;
 
     updated() {
+        let scene = this.getScene();
+        let mesh: Mesh;
+
         if (this.curvature) {
-            this.curbStaors();
+            mesh = StairsFunctions.curved(scene, this.height, this.width, StepType.STEP_HEIGHT, 2, .5, this.curvature);
         } else {
-            this.straightStairs();
+            mesh = StairsFunctions.straight(scene, this.width, this.height, this.depth, StepType.STEP_HEIGHT, 2, .5, true);
+            //this.straightStairs();
+        }
+
+        if (mesh) {
+            this.setMesh(
+                mesh
+            );
         }
     }
 
