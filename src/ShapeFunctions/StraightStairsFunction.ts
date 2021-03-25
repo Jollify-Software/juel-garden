@@ -19,7 +19,7 @@ import { StepType } from "./Stairs";
  * limitations under the License.
  */
 
-export function StraightStairs(scene: Scene, width: number = 1, height: number = 2, depth: number = 2, stepType: StepType = StepType.NUM_STEPS, numSteps: number = 6, userStepHeight: number = .5, sides: boolean = true): Mesh {
+export function StraightStairs(scene: Scene, width: number = 1, height: number = 2, depth: number = 2, stepType: StepType = StepType.NUM_STEPS, numSteps: number = 6, userStepHeight: number = .2, sides: boolean = true): Mesh {
     var verts = [];
     var faces = [];
     var uvs = [];

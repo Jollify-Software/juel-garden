@@ -19,9 +19,9 @@ export class GardenStairs extends GardenMesh {
         let mesh: Mesh;
 
         if (this.curvature) {
-            mesh = StairsFunctions.curved(scene, this.height, this.width, StepType.STEP_HEIGHT, 2, .5, this.curvature);
+            mesh = StairsFunctions.curved(scene, this.height, this.width, StepType.STEP_HEIGHT, 2, .2, this.curvature);
         } else {
-            mesh = StairsFunctions.straight(scene, this.width, this.height, this.depth, StepType.STEP_HEIGHT, 2, .5, true);
+            mesh = StairsFunctions.straight(scene, this.width, this.height, this.depth, StepType.STEP_HEIGHT, 2, .2, true);
             //this.straightStairs();
         }
 

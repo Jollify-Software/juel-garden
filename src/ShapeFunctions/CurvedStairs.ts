@@ -19,7 +19,7 @@ import { StepType } from "./Stairs";
  * limitations under the License.
  */
 
-export function CurvedStairs(scene: Scene, height: number = 2, stepWidth: number = 1, stepType: StepType = StepType.NUM_STEPS, numSteps: number = 6, userStepHeight: number = .5, curvature: number = 60, innerRadius: number = 3, ccw: boolean = false, sides: boolean = true): Mesh {
+export function CurvedStairs(scene: Scene, height: number = 2, stepWidth: number = 1, stepType: StepType = StepType.NUM_STEPS, numSteps: number = 6, userStepHeight: number = .2, curvature: number = 60, innerRadius: number = 3, ccw: boolean = false, sides: boolean = true): Mesh {
     const toRadians = Math.PI / 180;
 
     var verts = [];
