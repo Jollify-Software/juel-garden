@@ -2,8 +2,8 @@ import { MeshBuilder } from "babylonjs";
 import { customElement, property } from "lit-element";
 import { GardenMesh } from "../GardenMesh";
 
-@customElement("juel-height-map")
-export class JuelHeightMap extends GardenMesh {
+@customElement("garden-height-map")
+export class GardenHeightMap extends GardenMesh {
     @property() url: string;
     updated() {
         this.setMesh(

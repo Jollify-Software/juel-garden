@@ -2,8 +2,8 @@ import { Sprite, SpriteManager } from "babylonjs";
 import { customElement, property } from "lit-element";
 import { GardenElement } from "../GardenElement";
 
-@customElement("juel-sprite")
-export class JuelSprite extends GardenElement {
+@customElement("garden-sprite")
+export class GardenSprite extends GardenElement {
     @property({ type: Number }) capacity: number;
     @property() url: string;
     @property({ type: Number }) count: number;

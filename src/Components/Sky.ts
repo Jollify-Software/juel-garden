@@ -2,8 +2,8 @@ import { MeshBuilder, StandardMaterial, CubeTexture, Texture, Color3 } from "bab
 import { customElement, property } from "lit-element";
 import { GardenMesh } from "../GardenMesh";
 
-@customElement("juel-sky")
-export class JuelSky extends GardenMesh {
+@customElement("garden-sky")
+export class GardenSky extends GardenMesh {
     @property() root: string;
 
     updated() {

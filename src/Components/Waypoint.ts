@@ -5,8 +5,8 @@ import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
-@customElement("juel-waypoint")
-export class JuelWaypoint extends GardenElement {
+@customElement("garden-waypoint")
+export class GardenWaypoint extends GardenElement {
     @property() waypoints: GardenMesh[];
     @property({ converter: Vector3Convert.fromString }) offset: Vector3;
     @property({ type: Number }) speed: number;

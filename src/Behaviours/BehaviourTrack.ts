@@ -1,10 +1,10 @@
 import { Axis, Vector3 } from "babylonjs";
-import { JuelLine } from "../Components/Line";
+import { GardenLine } from "../Components/Line";
 import { GardenMesh } from "../GardenMesh";
 
 export function BehaviourTrack(el: HTMLElement, attr: Attr[]) {
-    if (el.parentElement.tagName == "JUEL-LINE") {
-        let line = el.parentElement as JuelLine;
+    if (el.parentElement.tagName == "GARDEN-LINE") {
+        let line = el.parentElement as GardenLine;
         let scene = (<GardenMesh>el).getScene();
         let mesh = (<GardenMesh>el).mesh;
 

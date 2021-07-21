@@ -1,5 +1,5 @@
 import { Axis, Camera, Mesh, Space, TransformNode, Vector3 } from "babylonjs";
-import { JuelLine } from "../Components/Line";
+import { GardenLine } from "../Components/Line";
 import { GardenMesh } from "../GardenMesh";
 
 export function BehaviourOrbit(el: HTMLElement, attr: Attr[]) {

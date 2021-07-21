@@ -6,8 +6,8 @@ import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { Utility } from "../Utility";
 
-@customElement("juel-particle")
-export class JuelParticle extends GardenElement {
+@customElement("garden-particle")
+export class GardenParticle extends GardenElement {
     @property() effect: string;
     @property() event: string;
     @property({ type: Number }) capacity: number;

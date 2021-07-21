@@ -6,8 +6,8 @@ import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 
-@customElement("juel-animation")
-export class JuelAnimation extends GardenElement {
+@customElement("garden-animation")
+export class GardenAnimation extends GardenElement {
     @property() target: string;
     @property() property: string;
     @property() event: string;

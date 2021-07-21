@@ -1,6 +1,6 @@
 import { TextBlock } from "babylonjs-gui";
 import { customElement } from "lit-element";
-import { JuelInfo } from "../Info";
+import { GardenInfo } from "../Info";
 import { GardenControl } from "./Control";
 
 @customElement("garden-text")
@@ -13,7 +13,7 @@ export class GardenText extends GardenControl {
             
             this.applyProperties(label);
 
-            (<JuelInfo>this.parentElement).container.addControl(label);
+            (<GardenInfo>this.parentElement).container.addControl(label);
         });
     }
 }

@@ -2,10 +2,10 @@ import { ArcRotateCamera, Camera, FreeCamera, Vector3 } from "babylonjs";
 import { customElement, LitElement, property } from "lit-element";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
-import { JuelScene } from "./Scene";
+import { GardenScene } from "./Scene";
 
-@customElement("juel-camera")
-export class JuelCamera extends GardenElement {
+@customElement("garden-camera")
+export class GardenCamera extends GardenElement {
     @property() type: string = 'arc';
     @property({ type: Number }) speed: number = 0.4;
     @property({ converter: Vector3Convert.fromString }) position: Vector3;
@@ -21,7 +21,7 @@ export class JuelCamera extends GardenElement {
         this.camera.position = position;
     }
     updated() {
-        let sceneEl = this.parentElement as JuelScene
+        let sceneEl = this.parentElement as GardenScene
         let scene = sceneEl.scene
 
         switch (this.type) {

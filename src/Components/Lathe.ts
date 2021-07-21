@@ -2,8 +2,8 @@ import { MeshBuilder } from "babylonjs";
 import { customElement } from "lit-element";
 import { GardenMesh } from "../GardenMesh";
 
-@customElement("juel-lathe")
-export class JuelLathe extends GardenMesh {
+@customElement("garden-lathe")
+export class GardenLathe extends GardenMesh {
     updated() {
         let scene = this.getScene();
         this.setMesh(

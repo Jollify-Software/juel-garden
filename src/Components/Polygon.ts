@@ -3,8 +3,8 @@ import { customElement, property } from "lit-element";
 import { GardenMesh } from "../GardenMesh";
 import earcut from "earcut";
 
-@customElement("juel-polygon")
-export class JuelExtrude extends GardenMesh {
+@customElement("garden-polygon")
+export class GardenExtrude extends GardenMesh {
     @property({ type: Boolean }) extrude = false;
 
     updated() {

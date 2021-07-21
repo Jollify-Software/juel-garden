@@ -2,36 +2,36 @@
     <head>
         <script src="../../dist/juel-garden.js"></script>
 		<style>
-		juel-polygon {
+		garden-polygon {
 			depth: 0.2;
 		}
 		</style>
     </head>
     <body>
         <!-- https://www.babylonjs-playground.com/textures/floor.png -->
-        <juel-scene>
-            <juel-camera></juel-camera>
-            <juel-light></juel-light>
+        <garden-scene>
+            <garden-camera></garden-camera>
+            <garden-light></garden-light>
 
-            <juel-polygon parent extrude="true" depth="0.2" shape="-0.3 0 -0.1, 0.2 0 -0.1, (Shape.curve()), 0 0 0.1, -0.3 0 0.1"
+            <garden-polygon parent extrude="true" depth="0.2" shape="-0.3 0 -0.1, 0.2 0 -0.1, (Shape.curve()), 0 0 0.1, -0.3 0 0.1"
                 faceuv="0 0.5 0.38 1, 0 0 1 0.5, 0.38 1 0 0.5" wrap="true"
                 texture="https://assets.babylonjs.com/environments/car.png"
                 rotation="(-Math.PI/2) 0 0">
-                <juel-animation event="load" property="position.x" from="0" to="210" speed="30" type="float" loop="true" loopmode="cycle"
-                    keyframes="0 -4, 150 4, 210 4"></juel-animation>
+                <garden-animation event="load" property="position.x" from="0" to="210" speed="30" type="float" loop="true" loopmode="cycle"
+                    keyframes="0 -4, 150 4, 210 4"></garden-animation>
 
-                <juel-cylinder position="-0.2 0.035 -0.1" diameter="0.125" height="0.05"
+                <garden-cylinder position="-0.2 0.035 -0.1" diameter="0.125" height="0.05"
                     faceuv="0 0 1 1, 0 0.5 0 0.5, 0 0 1 1" texture="https://assets.babylonjs.com/environments/wheel.png">
-                    <juel-animation event="load" property="rotation.y" from="0" to="30" speed="30" type="float" loop="true" loopmode="cycle"
-                        keyframes="0 0, 30 (2*Math.PI)"></juel-animation>
+                    <garden-animation event="load" property="rotation.y" from="0" to="30" speed="30" type="float" loop="true" loopmode="cycle"
+                        keyframes="0 0, 30 (2*Math.PI)"></garden-animation>
 
-                    <juel-clone absolute position="0.1 0.035 -0.1">
-                        <juel-clone absolute position="0.1 (-0.2-0.035) -0.1"></juel-clone>
-                    </juel-clone>
-                    <juel-clone absolute position="-0.2 (-0.2-0.035) -0.1"></juel-clone>
-                </juel-cylinder>
-            </juel-polygon>
+                    <garden-clone absolute position="0.1 0.035 -0.1">
+                        <garden-clone absolute position="0.1 (-0.2-0.035) -0.1"></garden-clone>
+                    </garden-clone>
+                    <garden-clone absolute position="-0.2 (-0.2-0.035) -0.1"></garden-clone>
+                </garden-cylinder>
+            </garden-polygon>
 
-        </juel-scene>
+        </garden-scene>
     </body>
 </html>

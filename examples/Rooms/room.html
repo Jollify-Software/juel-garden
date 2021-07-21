@@ -5,10 +5,10 @@
 </head>
 <!-- https://playground.babylonjs.com/#UJ28QI -->
 <body>
-    <juel-scene gravity="0 -0.2 0" collisions>
-        <juel-camera type="free" collisions>
-        </juel-camera>
-        <juel-light></juel-light>
+    <garden-scene gravity="0 -0.2 0" collisions>
+        <garden-camera type="free" collisions>
+        </garden-camera>
+        <garden-light></garden-light>
 
         <garden-room id="r1" collisions></garden-room>
         <garden-opening between="r1 r2" position="0 1 -4" width="2" height="2" depth="0.4"></garden-opening>
@@ -16,10 +16,10 @@
         <garden-opening between="r2 s1" position="0 1 -12" width="2" height="2" depth="0.4"></garden-opening>
 
         <garden-column position="-4 -5 -22" diameter="1" height="6" collisions>
-            <juel-particle effect="fire"></juel-particle>
+            <garden-particle effect="fire"></garden-particle>
         </garden-column>
         <garden-column position="4 -5 -22" diameter="1" height="6" collisions>
-            <juel-particle effect="fire"></juel-particle>
+            <garden-particle effect="fire"></garden-particle>
         </garden-column>
         <garden-stairs id="s1" position="0 -5 -32" height="5" depth="20" collisions>
             <garden-sound loop="true" autoplay="true" maxdistance="20"
@@ -27,10 +27,10 @@
             </garden-sound>
         </garden-stairs>
         
-        <juel-ground width="150" height="160" colour="green" position="0 -5 0" collisions>
-        </juel-ground>
+        <garden-ground width="150" height="160" colour="green" position="0 -5 0" collisions>
+        </garden-ground>
             
-    </juel-scene>
+    </garden-scene>
 </body>
 
 </html>

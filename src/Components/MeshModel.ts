@@ -1,10 +1,10 @@
 import { Mesh, SceneLoader } from "babylonjs";
 import { customElement, property } from "lit-element";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
-import { JuelAnimation } from "./Animation";
+import { GardenAnimation } from "./Animation";
 
-@customElement("juel-mesh-model")
-export class JuelMeshModel extends GardenSkeletonMesh {
+@customElement("jueGarden-mesh-model")
+export class GardenMeshModel extends GardenSkeletonMesh {
     @property() meshNames: string;
     @property() root: string;
     @property() filename: string;

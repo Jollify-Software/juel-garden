@@ -22,7 +22,7 @@ export class HtmlTexture {
             html2canvas(el, {
                 height: 100,
                 ignoreElements: (el) => {
-                    if (el.tagName.startsWith("JUEL") || el.tagName.startsWith("GARDEN")) {
+                    if (el.tagName.startsWith("GARDEN")) {
                         return true;
                     } else {
                         return false;

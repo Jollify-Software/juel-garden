@@ -1,4 +1,4 @@
-import { JuelScene } from "./Components/Scene";
+import { GardenScene } from "./Components/Scene";
 import { toJSON } from 'cssjson'; import { Mesh, TransformNode } from "babylonjs";
 ;
 
@@ -7,7 +7,7 @@ export module Utility {
         if (typeof s !== 'string') return ''
         return s.charAt(0).toUpperCase() + s.slice(1)
     }
-    export var applyRules = (sceneEl: JuelScene) => {
+    export var applyRules = (sceneEl: GardenScene) => {
         let styles = document.getElementById("rules") as HTMLStyleElement;
         if (styles) {
             let props = toJSON(styles.textContent);

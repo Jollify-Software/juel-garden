@@ -3,8 +3,8 @@ import { CSG } from "babylonjs";
 import { MeshBuilder } from "babylonjs";
 import { property } from "lit-element";
 import { Behaviours } from "./Behaviours/Behaviours";
-import { JuelAnimation } from "./Components/Animation";
-import { JuelParticle } from "./Components/Particle";
+import { GardenAnimation } from "./Components/Animation";
+import { GardenParticle } from "./Components/Particle";
 import { Vector3Convert } from "./Converters/Vector3Convert";
 import { GardenElement } from "./GardenElement";
 import { Modifier } from "./Modifiers/Modifier";
@@ -127,15 +127,15 @@ export abstract class GardenMesh extends GardenElement {
 
             setTimeout(() => {
                 let scene = this.getScene();
-                let animations: JuelAnimation[] = [];
-                let particles: JuelParticle[] = [];
+                let animations: GardenAnimation[] = [];
+                let particles: GardenParticle[] = [];
 
                 (<HTMLElement[]>Array.prototype.slice.call(this.children))
                     .forEach(el => {
-                        if (el.matches('juel-animation')) {
-                            animations.push(el as JuelAnimation);
-                        } else if (el.matches('juel-particle')) {
-                            particles.push(el as JuelParticle);
+                        if (el.matches('garden-animation')) {
+                            animations.push(el as GardenAnimation);
+                        } else if (el.matches('garden-particle')) {
+                            particles.push(el as GardenParticle);
                         }
                     });
 

@@ -4,8 +4,8 @@ import { customElement } from "lit-element";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
-@customElement("juel-info")
-export class JuelInfo extends GardenElement {
+@customElement("garden-info")
+export class GardenInfo extends GardenElement {
     advTexture: AdvancedDynamicTexture
 
     info: Rectangle;

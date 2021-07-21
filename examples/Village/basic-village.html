@@ -4,40 +4,40 @@
     </head>
     <body>
         <!-- https://www.babylonjs-playground.com/textures/floor.png -->
-        <juel-scene>
-            <juel-camera></juel-camera>
-            <juel-light></juel-light>
+        <garden-scene>
+            <garden-camera></garden-camera>
+            <garden-light></garden-light>
 
-            <juel-sky root="https://playground.babylonjs.com/textures/skybox" size="150"></juel-sky>
+            <garden-sky root="https://playground.babylonjs.com/textures/skybox" size="150"></garden-sky>
 
-            <juel-house id="house" position="-6.8 0 2.5" rotation="0 -(Math.PI/16) 0"></juel-house>
-            <juel-semi-house id="semi" position="-4.5 0 3" rotation="0 -(Math.PI/16) 0"></juel-semi-house>
-            <juel-replicate instances='["house","semi"]'
+            <garden-house id="house" position="-6.8 0 2.5" rotation="0 -(Math.PI/16) 0"></garden-house>
+            <garden-semi-house id="semi" position="-4.5 0 3" rotation="0 -(Math.PI/16) 0"></garden-semi-house>
+            <garden-replicate instances='["house","semi"]'
                 positions="0:-6.8 0 2.5, 1:-4.5 0 3, 1:-1.5 0 4, 1: 1.5 0 6, 1: -6.4 0 -1.5, 0:-4.1 0 -1, 1:-2.1 0 -0.5,0:0 0 -1,
                 0: 0.5 0 -3, 1: 0.75 0 -5, 0: 0.75 0 -7, 1: 4.75 0 -1, 0: 4.5 0 -3, 1: 4.75 0 -5, 0: 4.75 0 -7, 1: 5.25 0 2, 0: 6 0 4"
                 rotations="0: 0 -(Math.PI/16) 0, 1: 0 -(Math.PI/16) 0, 1: 0 -(Math.PI/16) 0, 1: 0 -(Math.PI/3) 0, 1: 0 (15*Math.PI/16) 0, 0: 0 (15*Math.PI/16) 0,
                 1: 0 (15*Math.PI/16) 0, 0: 0 (5*Math.PI/4) 0, 0: 0 (Math.PI+Math.PI/2.5) 0, 1: 0 (Math.PI+Math.PI/2.1) 0, 0: 0 (Math.PI+Math.PI/2.25) 0,
                 1: 0 (Math.PI/1.9) 0, 0: 0 (Math.PI/1.95) 0, 1: 0 (Math.PI/1.9) 0, 1: 0 (Math.PI/1.9) 0, 1: 0 -(Math.PI/3) 0, 0: 0 -(Math.PI/3) 0">
-            </juel-replicate>
+            </garden-replicate>
 
-            <juel-lathe sideorientation="double" shape="0 0 0, 0.5 0 0, 0.5 0.2 0, 0.4 0.2 0, 0.4 0.05 0, 0.05 0.1 0, 0.05 0.8 0, 0.15 0.9 0"
+            <garden-lathe sideorientation="double" shape="0 0 0, 0.5 0 0, 0.5 0.2 0, 0.4 0.2 0, 0.4 0.05 0, 0.05 0.1 0, 0.05 0.8 0, 0.15 0.9 0"
                 position="-4 0 -6">
-                <juel-particle event="pointerdown" capacity="5000" emitter="-4 0.8 -6" minEmitBox="-1 0 0" maxEmitBox="1 0 0" colour1="0.7 0.8 1.0 1.0" colour2="0.2 0.5 1.0 1.0" colourDead="0 0 0.2 0.0"
+                <garden-particle event="pointerdown" capacity="5000" emitter="-4 0.8 -6" minEmitBox="-1 0 0" maxEmitBox="1 0 0" colour1="0.7 0.8 1.0 1.0" colour2="0.2 0.5 1.0 1.0" colourDead="0 0 0.2 0.0"
                     minSize="0.1" maxSize="0.5" minLifeTime="2" maxLifeTime="3.5" emitRate="1500" direction1="-2 8 2" direction2="2 8 -2" gravity="0 -9.81 0"
                     minAngularSpeed="0" maxAngularSpeed="3" minEmitPower="1" maxEmitPower="3" updateSpeed="0.025"
-                    url="https://playground.babylonjs.com/textures/flare.png"></juel-particle>
-            </juel-lathe>
+                    url="https://playground.babylonjs.com/textures/flare.png"></garden-particle>
+            </garden-lathe>
 
-            <juel-sprite capacity="2000" count="500" width="512" height="1024" url="https://playground.babylonjs.com/textures/palm.png"
-                positions="(Math.random()*(-30)) 0.5 (Math.random()*20+8), (Math.random()*(25)+7) 0.5 (Math.random()*-35+8)"></juel-sprite>
+            <garden-sprite capacity="2000" count="500" width="512" height="1024" url="https://playground.babylonjs.com/textures/palm.png"
+                positions="(Math.random()*(-30)) 0.5 (Math.random()*20+8), (Math.random()*(25)+7) 0.5 (Math.random()*-35+8)"></garden-sprite>
 
-            <juel-ground width="24" height="24"
-                texture="https://assets.babylonjs.com/environments/villagegreen.png"></juel-ground>
+            <garden-ground width="24" height="24"
+                texture="https://assets.babylonjs.com/environments/villagegreen.png"></garden-ground>
 
-            <juel-height-map position="0 -0.01 0" url="https://assets.babylonjs.com/environments/villageheightmap.png"
+            <garden-height-map position="0 -0.01 0" url="https://assets.babylonjs.com/environments/villageheightmap.png"
                 width="150" height="150" subdivisions="20" minheight="0" maxheight="10"
-                texture="https://assets.babylonjs.com/environments/valleygrass.png"></juel-height-map>
+                texture="https://assets.babylonjs.com/environments/valleygrass.png"></garden-height-map>
             
-        </juel-scene>
+        </garden-scene>
     </body>
 </html>

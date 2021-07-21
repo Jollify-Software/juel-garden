@@ -2,8 +2,8 @@ import { CSG } from "babylonjs";
 import { customElement, property } from "lit-element";
 import { GardenMesh } from "../GardenMesh";
 
-@customElement("juel-boolean")
-export class JuelBoolean extends GardenMesh {
+@customElement("garden-boolean")
+export class GardenBoolean extends GardenMesh {
     @property() subtract: string;
     @property() subtractTo: string;
     @property() intersect: string;

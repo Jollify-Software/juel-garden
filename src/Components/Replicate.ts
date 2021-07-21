@@ -3,8 +3,8 @@ import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
-@customElement("juel-replicate")
-export class JuelReplicate extends GardenElement {
+@customElement("Garden-replicate")
+export class GardenReplicate extends GardenElement {
 
     @property({ type: Array }) instances: string[];
     @property() positions: string;

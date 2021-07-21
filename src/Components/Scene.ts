@@ -6,8 +6,8 @@ import { GardenMesh } from "../GardenMesh";
 import { JuelGarden } from "../JuelGarden";
 import { Utility } from "../Utility";
 
-@customElement("juel-scene")
-export class JuelScene extends LitElement {
+@customElement("garden-scene")
+export class GardenScene extends LitElement {
     @property({ converter: Vector3Convert.fromString }) gravity: Vector3;
 
     canvas: HTMLCanvasElement;
@@ -37,7 +37,7 @@ export class JuelScene extends LitElement {
 
         this.appendChild(this.canvas);
         let styles = document.createElement("style");
-        styles.id = "juel-garden-styles";
+        styles.id = "garden-garden-styles";
         styles.textContent = `html, body {
             overflow: hidden;
             width: 100%;
@@ -55,7 +55,7 @@ export class JuelScene extends LitElement {
         setTimeout(() => {
             Utility.applyRules(this);
             
-            let cameraEl = this.querySelector("juel-camera") as GardenElement;
+            let cameraEl = this.querySelector("garden-camera") as GardenElement;
             cameraEl.updateComplete.then(() => {
                 this.engine.runRenderLoop(() => {
                     this.scene.render();
