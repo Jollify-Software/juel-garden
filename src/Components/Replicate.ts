@@ -3,7 +3,7 @@ import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
-@customElement("Garden-replicate")
+@customElement("garden-replicate")
 export class GardenReplicate extends GardenElement {
 
     @property({ type: Array }) instances: string[];

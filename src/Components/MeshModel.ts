@@ -3,7 +3,7 @@ import { customElement, property } from "lit-element";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 import { GardenAnimation } from "./Animation";
 
-@customElement("jueGarden-mesh-model")
+@customElement("garden-mesh-model")
 export class GardenMeshModel extends GardenSkeletonMesh {
     @property() meshNames: string;
     @property() root: string;
