@@ -1,5 +1,6 @@
 import { Scene, TransformNode, Vector3 } from "babylonjs";
-import { customElement, LitElement, property } from "lit-element";
+import { LitElement } from "lit";
+import {customElement, property} from 'lit/decorators.js';
 import { Vector3Convert } from "./Converters/Vector3Convert";
 import { OptionsBuilder } from "./Options/OptionsBuilder";
 

@@ -1,5 +1,6 @@
 import { HemisphericLight, Vector3 } from "babylonjs";
-import { customElement, LitElement } from "lit-element";
+import { LitElement } from "lit";
+import { customElement } from "lit/decorators";
 import { GardenScene } from "./Scene";
 
 @customElement("garden-light")

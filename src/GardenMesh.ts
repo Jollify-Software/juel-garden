@@ -1,7 +1,7 @@
 import { Material, Mesh, PointerEventTypes, Scene, TransformNode, Vector3 } from "babylonjs";
 import { CSG } from "babylonjs";
 import { MeshBuilder } from "babylonjs";
-import { property } from "lit-element";
+import { property } from "lit/decorators";
 import { Behaviours } from "./Behaviours/Behaviours";
 import { GardenAnimation } from "./Components/Animation";
 import { GardenParticle } from "./Components/Particle";

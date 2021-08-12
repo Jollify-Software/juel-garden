@@ -1,5 +1,5 @@
 import { MeshBuilder } from "babylonjs";
-import { customElement, LitElement } from "lit-element";
+import { customElement } from "lit/decorators";
 import { GardenMesh } from "../GardenMesh";
 import { OptionsBuilder } from "../Options/OptionsBuilder";
 

@@ -1,5 +1,6 @@
 import { Engine, Scene, Vector3 } from "babylonjs";
-import { customElement, LitElement, property } from "lit-element";
+import { LitElement } from "lit";
+import { customElement, property } from "lit/decorators";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";

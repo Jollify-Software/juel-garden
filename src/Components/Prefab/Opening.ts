@@ -1,5 +1,5 @@
 import { CSG, MeshBuilder, Scene, Vector3 } from "babylonjs";
-import { customElement, html, property } from "lit-element";
+import { customElement, property } from "lit/decorators";
 import { Vector3Convert } from "../../Converters/Vector3Convert";
 import { GardenElement } from "../../GardenElement";
 import { GardenMesh } from "../../GardenMesh";

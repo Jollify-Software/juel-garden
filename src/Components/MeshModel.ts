@@ -1,5 +1,5 @@
 import { Mesh, SceneLoader } from "babylonjs";
-import { customElement, property } from "lit-element";
+import { customElement, property } from "lit/decorators";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 import { GardenAnimation } from "./Animation";
 

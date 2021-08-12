@@ -1,7 +1,7 @@
 import { MeshBuilder } from "babylonjs";
-import { customElement, property } from "lit-element";
 import { GardenMesh } from "../GardenMesh";
 import earcut from "earcut";
+import { customElement, property } from "lit/decorators";
 
 @customElement("garden-polygon")
 export class GardenExtrude extends GardenMesh {

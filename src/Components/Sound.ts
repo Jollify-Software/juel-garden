@@ -1,5 +1,5 @@
 import { Sound } from "babylonjs";
-import { customElement, property } from "lit-element";
+import { customElement, property } from "lit/decorators";
 import { GardenElement } from "../GardenElement";
 
 @customElement("garden-sound")

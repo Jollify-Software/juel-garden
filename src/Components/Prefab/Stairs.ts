@@ -1,11 +1,11 @@
 import { Mesh, MeshBuilder, PolygonMeshBuilder, Vector2, Vector3 } from "babylonjs";
-import { customElement, property } from "lit-element";
 import { GardenMesh } from "../../GardenMesh";
 import earcut from "earcut";
 import { ShapeFunctions } from "../../ShapeFunctions";
 import { VertexData } from "babylonjs";
 import { Utility } from "../../Utility";
 import { StairsFunctions, StepType } from "../../ShapeFunctions/Stairs";
+import { customElement, property } from "lit/decorators";
 
 @customElement("garden-stairs")
 export class GardenStairs extends GardenMesh {

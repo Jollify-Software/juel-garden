@@ -1,5 +1,5 @@
 import { Color4, ParticleHelper, ParticleSystem, Texture, Vector3 } from "babylonjs";
-import { customElement, property } from "lit-element";
+import { customElement, property } from "lit/decorators";
 import { Colour4Convert } from "../Converters/Colour4Convert";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";

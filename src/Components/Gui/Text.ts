@@ -1,5 +1,5 @@
 import { TextBlock } from "babylonjs-gui";
-import { customElement } from "lit-element";
+import { customElement } from "lit/decorators";
 import { GardenInfo } from "../Info";
 import { GardenControl } from "./Control";
 

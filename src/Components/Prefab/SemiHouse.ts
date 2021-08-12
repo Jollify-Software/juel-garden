@@ -1,5 +1,6 @@
 import { Mesh, MeshBuilder } from "babylonjs";
-import { customElement, html } from "lit-element";
+import { html } from "lit";
+import { customElement } from "lit/decorators";
 import { GardenMesh } from "../../GardenMesh";
 
 @customElement("garden-semi-house")
