@@ -6,14 +6,20 @@ import { GardenMesh } from "../../GardenMesh";
 
 @customElement("garden-opening")
 export class GardenDoorway extends GardenMesh {
-    @property() type: string = "square";
+    @property() type: string;
     @property() between: string;
-    @property({ type: Boolean }) step: boolean = false;
+    @property({ type: Boolean }) step: boolean;
     @property({ type: Number }) width: number;
     @property({ type: Number }) height: number;
     @property({ type: Number }) depth: number;
 
     @property({ converter: Vector3Convert.fromString }) position: Vector3;
+
+    constructor() {
+        super();
+        this.step = false;
+        this.type = "square";
+    }
 
     updated() {
         if (this.between) {

@@ -6,7 +6,12 @@ import { GardenMesh } from "../../GardenMesh";
 @customElement("garden-column")
 export class GardenColumn extends GardenMesh {
     @property({ type: Number }) height: number;
-    @property() type: string = "round";
+    @property({ type: String }) type: string;
+
+    constructor() {
+        super();
+        this.type = "round";
+    }
 
     updated() {
         let scene = this.getScene();

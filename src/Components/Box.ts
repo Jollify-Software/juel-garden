@@ -7,8 +7,10 @@ export class GardenBox extends GardenMesh {
     updated() {
         let scene = this.getScene();
         let options = this.buildOptions();
+        console.log(options)
         this.setMesh(
             MeshBuilder.CreateBox("box", options, scene)
         );
+        super.updated();
     }
 }

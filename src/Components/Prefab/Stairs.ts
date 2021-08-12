@@ -14,6 +14,13 @@ export class GardenStairs extends GardenMesh {
     @property({ type: Number }) depth: number = 4;
     @property({ type: Number }) curvature: number;
 
+    constructor() {
+        super();
+        this.width = 4;
+        this.height = 4;
+        this.depth = 4;
+    }
+
     updated() {
         let scene = this.getScene();
         let mesh: Mesh;

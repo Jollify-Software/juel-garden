@@ -4,10 +4,18 @@ import { GardenMesh } from "../../GardenMesh";
 
 @customElement("garden-room")
 export class GardenRoom extends GardenMesh {
-    @property({ type: Number }) width: number = 4;
-    @property({ type: Number }) height: number = 2;
-    @property({ type: Number }) depth: number = 8;
-    @property({ type: Number }) thickness: number = 0.2;
+    @property({ type: Number }) width: number;
+    @property({ type: Number }) height: number;
+    @property({ type: Number }) depth: number;
+    @property({ type: Number }) thickness: number;
+
+    constructor() {
+        super();
+        this.width = 4;
+        this.height = 2;
+        this.depth = 8;
+        this.thickness = 0.2;
+    }
     
     updated() {
         let scene = this.getScene();

@@ -6,12 +6,19 @@ import { GardenScene } from "./Scene";
 
 @customElement("garden-camera")
 export class GardenCamera extends GardenElement {
-    @property() type: string = 'arc';
-    @property({ type: Number }) speed: number = 0.4;
+    @property() type: string;
+    @property({ type: Number }) speed: number;
     @property({ converter: Vector3Convert.fromString }) position: Vector3;
-    @property({ converter: Vector3Convert.fromString }) ellipsoid: Vector3 = new Vector3(1, 1, 1);
+    @property({ converter: Vector3Convert.fromString }) ellipsoid: Vector3;
 
     camera: Camera;
+
+    constructor() {
+        super();
+        this.type = 'arc';
+        this.speed = 0.4;
+        this.ellipsoid = new Vector3(1, 1, 1);
+    }
 
     getPosition() {
         return this.camera?.position;
@@ -23,10 +30,10 @@ export class GardenCamera extends GardenElement {
     updated() {
         let sceneEl = this.parentElement as GardenScene
         let scene = sceneEl.scene
-
+console.log(this.type)
         switch (this.type) {
             case 'arc':
-                this.camera = new ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new Vector3(0, 0, 0), scene);        
+                this.camera = new ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new Vector3(0, 0, 0), scene);      
                 break;
             case 'free':
                 let cam = new FreeCamera("camera", new Vector3(0, 5, -10), scene);
