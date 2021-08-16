@@ -50,7 +50,7 @@ export module Vector3Convert {
             let keyed = s.trim().split(':');
             return {
                 name: keyed[0],
-                value: fromString(keyed[1])
+                value: Vector3Convert.fromString(keyed[1])
             };
         });
         return ray;
@@ -60,7 +60,7 @@ export module Vector3Convert {
             let keyed = s.trim().split(':');
             return {
                 name: keyed[0],
-                value: rotationString(keyed[1])
+                value: Vector3Convert.rotationString(keyed[1])
             };
         });
         return ray;

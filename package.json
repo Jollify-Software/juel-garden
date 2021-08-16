@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "A-Frame inspired custom element library for BabylonJS",
   "scripts": {
-    "build": "parcel build juel-garden.ts",
+    "dev": "parcel build juel-garden.ts ",
+    "build": "parcel build juel-garden.ts --no-source-maps",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -22,7 +23,7 @@
   },
   "dependencies": {
     "@swc/helpers": "^0.2.13",
-    "babylonjs": "^4.2.0",
+    "babylonjs": "^5.0.0-alpha.37",
     "babylonjs-gui": "^4.2.0",
     "bind-decorator": "^1.0.11",
     "cssjson": "^2.1.3",
