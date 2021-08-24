@@ -56,6 +56,10 @@ export abstract class GardenMesh extends GardenElement {
         }
     }
 
+    update() {
+        this.modifyMesh();
+    }
+
     setMesh(mesh: Mesh) {
         if (this.mesh)
             this.mesh.dispose(); // TODO: We need replace, dispose will remove children

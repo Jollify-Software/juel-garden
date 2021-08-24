@@ -2,6 +2,17 @@
 
 <head>
     <script src="../../dist/juel-garden.js"></script>
+    <style id="garden-styles">
+        garden-box {
+            colour: #4CC3D9;
+        }
+        garden-sphere {
+            colour: #EF2D5E;
+        }
+        garden-cylinder {
+            colour: #FFC65D;
+        }
+    </style>
 </head>
 
 <body>
@@ -10,9 +21,9 @@
     <garden-light></garden-light>
     
     <garden-element parent position="0 -1 0">
-        <garden-box position="-1 0.5 -3" rotation="0 45 0" colour="#4CC3D9"></garden-box>
-        <garden-sphere position="0 1.25 -5" diameter="2.50" colour="#EF2D5E"></garden-sphere>
-        <garden-cylinder position="1 0.75 -3" diameter="1" height="1.5" colour="#FFC65D"></garden-cylinder>
+        <garden-box position="-1 0.5 -3" rotation="0 45 0"></garden-box>
+        <garden-sphere position="0 1.25 -5" diameter="2.50"></garden-sphere>
+        <garden-cylinder position="1 0.75 -3" diameter="1" height="1.5"></garden-cylinder>
         <garden-ground position="0 0 -4" width="4" height="4" colour="#7BC8A4"></garden-ground>
     </garden-element>
 </garden-scene>

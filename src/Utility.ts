@@ -8,7 +8,7 @@ export module Utility {
         return s.charAt(0).toUpperCase() + s.slice(1)
     }
     export var applyRules = (sceneEl: GardenScene) => {
-        let styles = document.getElementById("rules") as HTMLStyleElement;
+        let styles = document.getElementById("garden-styles") as HTMLStyleElement;
         if (styles) {
             let props = toJSON(styles.textContent);
             if ('children' in props) {
