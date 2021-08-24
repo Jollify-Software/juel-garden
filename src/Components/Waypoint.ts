@@ -17,7 +17,12 @@ export class GardenWaypoint extends GardenElement {
         setTimeout(() => {
             if (typeof this.waypoints === 'string') {
 
-                this.waypoints = (<any>this.waypoints).split(' ').map(x => document.getElementById(x) as GardenMesh);
+                let wpStr = <string>this.waypoints;
+                if (wpStr.indexOf(' ') > 0) {
+                    this.waypoints = (<any>this.waypoints).split(' ').map(x => document.querySelector(x) as GardenMesh);
+                } else {
+                    this.waypoints = Array.prototype.slice.call(document.querySelectorAll(wpStr));
+                }
                 let scene = this.getScene();
                 this.setPosition(this.waypoints[this.index].getPosition());
 
