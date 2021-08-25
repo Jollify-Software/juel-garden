@@ -1,6 +1,6 @@
 import { GardenScene } from "./Components/Scene";
-import { toJSON } from 'cssjson'; import { Mesh, TransformNode } from "babylonjs";
-;
+import { toJSON } from 'cssjson';
+import { Mesh, TransformNode } from "babylonjs";
 
 export module Utility {
     export var capitalize = (s) => {
