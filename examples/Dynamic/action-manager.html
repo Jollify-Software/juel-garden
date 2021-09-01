@@ -1,0 +1,92 @@
+<html>
+
+<head>
+    <script src="../../dist/juel-garden.js"></script>
+    <style id="garden-styles">
+        .light {
+            state: on;
+        }
+        garden-box, garden-sphere {
+            colour: 0.4 0.4 0.4;
+            spec-colour: 0.4 0.4 0.4;
+            action: rotate pointerOver pointerOut;
+        }
+    </style>
+</head>
+<!-- https://playground.babylonjs.com/#J19GYK#0 -->
+<body>
+    <garden-scene>
+        <garden-action type="beforeRender" variable="i" increment="0.01" parameter="#donut"
+            property="position" value="(100*Math.cos(i)) 5 (100*Math.sin(i))"></garden-action>
+
+        <garden-action id="rotate" type="increment" trigger="frame"
+            property="rotation.y" value="0.01"></garden-action>
+
+        <garden-action id="pointerOut" type="set" trigger="pointerOut" target="material"
+            property="emissiveColor" value="material.emissiveColor"></garden-action>
+        <garden-action id="pointerOver" type="set" trigger="pointerOver" target="material"
+            property="emissiveColor" value="white"></garden-action>
+            
+        <garden-action id="pointerOut2" type="interpolate" trigger="pointerOut"
+            property="scaling" value="1 1 1" duration="150"></garden-action>
+        <garden-action id="pointerOver2" type="interpolate" trigger="pointerOver"
+            property="scaling" value="1.1 1.1 1.1" duration="150"></garden-action>
+
+        <garden-action type="interpolate" trigger="pick" target=".light"
+            property="diffuse" value="black" duration="1000">
+            <garden-action type="combine" trigger="nothing">
+                <garden-action type="interpolate" trigger="pick"
+                    property="diffuse" value="diffuse" duration="1000" stop="true"></garden-action>
+                <garden-action type="set" target="nothing"
+                    target="mesh.material" property="wireframe" value="false"></garden-action>
+            </garden-action>
+        </garden-action>
+        <garden-action type="set" trigger="pick" selector=".mesh" target="mesh.material"
+            property="wireframe" value="true">
+            <garden-action type="nothing"></garden-action>
+        </garden-action>
+        <garden-action type="state" trigger="pick" target=".light" value="off">
+            <garden-action type="state" trigger="pick" value="on"></garden-action>
+        </garden-action>
+
+        <garden-camera position="20 200 400"
+            beta-lower="0.1" beta-upper="((Math.PI / 2) * 0.99)"
+            radius-lower="150">
+        </garden-camera>
+
+        <garden-light id="light1" class="light" type="point" position="0 50 0" diffuse="red" state="on"></garden-light>
+        <garden-light class="light" type="point" position="0 50 0" diffuse="green" state="on"></garden-light>
+        <garden-light class="light" type="point" position="0 50 0" diffuse="blue" state="on"></garden-light>
+
+        <garden-ground width="1000" height="1000" subdivisions="1" spec-colour="black"></garden-ground>
+
+        <garden-box size="20" position="-100 0 0"
+            emissive-colour="red"></garden-box>
+        <garden-box size="20" position="0 0 -100"
+            emissive-colour="green"></garden-box>
+        <garden-box size="20" position="100 0 0"
+            emissive-colour="blue"></garden-box>
+
+        <garden-sphere id="sphere" position="0 0 100" segments="16" diameter="20"
+            emissive-colour="purple">
+            <garden-condition type="state" target="#light1" value="off">
+                <garden-action type="interpolate" trigger="leftPick" target="#camera"
+                    property="alpha" value="0" duration="500"></garden-action>
+            </garden-condition>
+            <garden-condition type="state" target="#light1" value="on">
+                <garden-action type="interpolate" trigger="leftPick" target="#camera"
+                    property="alpha" value="(Math.PI)" duration="500"></garden-action>
+            </garden-condition>
+        </garden-sphere>
+
+        <garden-torus id="donut" diameter="20" thickness="8" tessellation="16">
+            <garden-action type="set" trigger="enter" parameter="#sphere"
+                property="scaling" value="1.2 1.2 1.2"></garden-action>
+            <garden-action type="set" trigger="exit" parameter="#sphere"
+                property="scaling" value="1 1 1"></garden-action>
+        </garden-torus>
+     
+    </garden-scene>
+</body>
+
+</html>

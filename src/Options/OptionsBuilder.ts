@@ -1,8 +1,10 @@
+import { Color3Convert } from "../Converters/Color3Convert";
 import { StaticConvert } from "../Converters/StaticConvert";
 import { BooleanSetter } from "./BooleanSetter";
 import { ConverterSetter } from "./OptionsConverterSetter";
 import { OptionFaceUVSetter } from "./OptionsFaceUVSetter";
 import { FloatSetter } from "./OptionsFloatSetter";
+import { StringSetter } from "./OptionsStringSetter";
 import { OptionsVector3ArraySetter } from "./OptionsVector3ArraySetter";
 
 export module OptionsBuilder {
@@ -11,9 +13,11 @@ export module OptionsBuilder {
         'height': FloatSetter('height'),
         'size': FloatSetter('size'),
         'depth': FloatSetter('depth'),
+        'state': StringSetter('state'),
         'diameter': FloatSetter('diameter'),
         'maxdistance': FloatSetter('maxdistance', 'maxDistance'),
         'segments': FloatSetter('segments'),
+        'thickness': FloatSetter('thickness'),
         'tessellation': FloatSetter('tessellation'),
         'wrap': BooleanSetter('wrap'),
         'loop': BooleanSetter('loop'),
@@ -24,7 +28,11 @@ export module OptionsBuilder {
         'subdivisions': FloatSetter('subdivisions'),
         'minheigh': FloatSetter('minheight', 'minHeight'),
         'maxheight': FloatSetter('maxheight', 'maxHeight'),
-        'sideorientation': ConverterSetter('sideorientation', 'sideOrientation', StaticConvert.sideOrientation)
+        'sideorientation': ConverterSetter('sideorientation', 'sideOrientation', StaticConvert.sideOrientation),
+        'diffuse': ConverterSetter('diffuse', 'diffuse', Color3Convert.fromString),
+        'beta-lower': FloatSetter('beta-lower', 'lowerBetaLimit'),
+        'beta-upper': FloatSetter('beta-upper', 'upperBetaLimit'),
+        'radius-lower': FloatSetter('radius-lower', 'lowerRadiusLimit')
     }
 
     export var build = function(el: HTMLElement): object {

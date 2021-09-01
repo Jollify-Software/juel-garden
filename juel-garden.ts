@@ -1,8 +1,10 @@
 import "./src/Components/Scene";
+import "./src/Components/Action";
 import "./src/Components/Camera";
 import "./src/Components/Waypoint";
 import "./src/Components/Light";
 import "./src/Components/Box";
+import "./src/Components/Torus";
 import "./src/Components/Sphere";
 import "./src/Components/Line";
 import "./src/Components/Cylinder";

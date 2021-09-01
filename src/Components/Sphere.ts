@@ -8,5 +8,6 @@ export class GardenSphere extends GardenMesh {
         this.setMesh(
             MeshBuilder.CreateSphere(this.id ?? "sphere", this.buildOptions(), this.getScene())
         );
+        super.updated();
     }
 }

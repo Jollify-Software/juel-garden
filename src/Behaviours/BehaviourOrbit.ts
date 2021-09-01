@@ -2,11 +2,10 @@ import { Axis, Camera, Mesh, Space, TransformNode, Vector3 } from "babylonjs";
 import { GardenLine } from "../Components/Line";
 import { GardenMesh } from "../GardenMesh";
 
-export function BehaviourOrbit(el: HTMLElement, attr: Attr[]) {
+export function BehaviourOrbit(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
   let nodes: TransformNode[] = [];
   let camera: Camera = null;
 
-    let mesh = (<GardenMesh>el).mesh;
     let pos = mesh.position;
     let scene = (<GardenMesh>el.parentElement).getScene();
     let cor = (<GardenMesh>el.parentElement).mesh.position;

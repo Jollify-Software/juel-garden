@@ -1,6 +1,7 @@
-import { Engine, Scene, Vector3 } from "babylonjs";
+import { Engine, IAction, Mesh, Scene, Vector3 } from "babylonjs";
 import { LitElement } from "lit";
 import { customElement, property } from "lit/decorators";
+import { ActionInfo } from "../ActionInfo";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
@@ -15,10 +16,16 @@ export class GardenScene extends LitElement {
     engine: Engine;
     scene: Scene;
 
+    actions: {[id: string]: ActionInfo} = {};
+
     selectedElement: GardenMesh;
 
     getScene() {
         return this.scene;
+    }
+
+    getSceneEl() {
+        return this;
     }
 
     createRenderRoot() {

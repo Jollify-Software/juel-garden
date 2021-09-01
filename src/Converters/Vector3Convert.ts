@@ -4,18 +4,18 @@ import { ShapeFunctions } from "../ShapeFunctions";
 
 export module Vector3Convert {
     var splityReg = /\s+(?=[^\])}]*([\[({]|$))/;
-    function getFloat(s: string, rotation = false) {
+    function getFloat(s: string, rotation = false, i: number = 0) {
         if (s.indexOf('(') >= 0) {
-            return (new Function('Math', `return ${s}`))(Math) as number;
+            return (new Function('Math', 'i', `return ${s}`))(Math, i) as number;
         } else {
             return rotation ? Tools.ToRadians(parseFloat(s)) : parseFloat(s);
         }
     }
-    export var fromString = (str: string) => {
+    export var fromString = (str: string, i: number = 0) => {
         if (!str) {
             return undefined;
         }
-        let ray = str.trim().split(' ').map(s => getFloat(s));
+        let ray = str.trim().split(' ').map(s => getFloat(s, false, i));
         return new Vector3(ray[0], ray[1], ray[2]);
     }
     export var rotationString = (str: string) => {

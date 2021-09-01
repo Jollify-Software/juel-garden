@@ -57,7 +57,17 @@ export abstract class GardenMesh extends GardenElement {
     }
 
     update() {
-        this.modifyMesh();
+        if (!this.node)
+            return;
+
+        if (this.position)
+            this.mesh.position = this.position;
+        if (this.rotation)
+            this.mesh.rotation = this.rotation;
+        if (this.scale)
+            this.mesh.scaling = this.scale;
+
+        this.modifyMesh([ "position", "rotation", "scale" ]);
     }
 
     setMesh(mesh: Mesh) {
@@ -118,14 +128,14 @@ export abstract class GardenMesh extends GardenElement {
         return toReturn;
     }
 
-    modifyMesh(): void {
+    modifyMesh(exclude: string[] = null): void {
         if (this.mesh != null) {
 
             if (this.parentElement.hasAttribute("parent")) {
                 this.mesh.parent = (<GardenElement>this.parentElement).getNode();
             }
 
-            Modifier.modifyMesh(this, this.mesh);
+            Modifier.modifyMesh(this, this.mesh, exclude);
             Behaviours.applyBehaviours(this, this.mesh);
 
 

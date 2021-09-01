@@ -54,7 +54,9 @@ console.log(this.type)
 
         if (this.position)
             this.camera.position = this.position;
-        
+
+            let opt = this.buildOptions();
+        this.camera = Object.assign(this.camera, opt);
 
 this.camera.attachControl(sceneEl.canvas, true);
 

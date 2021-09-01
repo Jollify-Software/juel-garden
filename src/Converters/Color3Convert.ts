@@ -2,8 +2,12 @@ import { Color3 } from "babylonjs";
 
 export module Color3Convert {
     export var fromString = (str: string) => {
+        if (str.indexOf(' ') > 0) {
         let ray = str.split(' ').map(s => parseFloat(s));
         return new Color3(ray[0], ray[1], ray[2]);
+        } else {
+            return Color3Convert.fromName(str);
+        }
     }
     export var fromName = (name: string) => {
         switch (name) {

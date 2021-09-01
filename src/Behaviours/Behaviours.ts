@@ -1,11 +1,13 @@
 import { Mesh } from "babylonjs";
+import { BehaviourAction } from "./BehaviourAction";
 import { BehaviourOrbit } from "./BehaviourOrbit";
 import { BehaviourTrack } from "./BehaviourTrack";
 
 export module Behaviours {
     var map = {
         'track': BehaviourTrack,
-        'orbit': BehaviourOrbit
+        'orbit': BehaviourOrbit,
+        'action': BehaviourAction
     }
 
     export var applyBehaviours = function(el: HTMLElement, mesh: Mesh) {
@@ -15,7 +17,7 @@ export module Behaviours {
         for (let key in map) {
             let attr = collection.find(x => x.name == key);
             if (attr) {
-                map[key](el, collection);
+                map[key](el, mesh, collection);
             }
         }
     }

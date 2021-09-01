@@ -1,12 +1,12 @@
 import { Axis, Vector3 } from "babylonjs";
+import { Mesh } from "babylonjs/Meshes/mesh";
 import { GardenLine } from "../Components/Line";
 import { GardenMesh } from "../GardenMesh";
 
-export function BehaviourTrack(el: HTMLElement, attr: Attr[]) {
+export function BehaviourTrack(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     if (el.parentElement.tagName == "GARDEN-LINE") {
         let line = el.parentElement as GardenLine;
         let scene = (<GardenMesh>el).getScene();
-        let mesh = (<GardenMesh>el).mesh;
 
         const track: TrackPosition[] = [];
         track.push(new TrackPosition(Math.PI / 2, 4));

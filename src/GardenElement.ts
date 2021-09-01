@@ -1,6 +1,7 @@
 import { Scene, TransformNode, Vector3 } from "babylonjs";
 import { LitElement } from "lit";
 import {customElement, property} from 'lit/decorators.js';
+import { GardenScene } from "./Components/Scene";
 import { Vector3Convert } from "./Converters/Vector3Convert";
 import { OptionsBuilder } from "./Options/OptionsBuilder";
 
@@ -44,6 +45,14 @@ export class GardenElement extends LitElement {
         }
     }
 
+    getSceneEl(): GardenScene {
+        if ('getSceneEl' in this.parentElement) {
+            return (<GardenElement>this.parentElement).getSceneEl();
+        } else {
+            return null;
+        }
+    }
+
     createRenderRoot() {
         return this;
     }
@@ -51,6 +60,18 @@ export class GardenElement extends LitElement {
     updated() {
         this.node = new TransformNode("node", this.getScene());
         (<any>this.node).element = this;
+        if (this.position)
+            this.node.position = this.position;
+        if (this.rotation)
+            this.node.rotation = this.rotation;
+        if (this.scale)
+            this.node.scaling = this.scale;
+    }
+
+    update() {
+        if (!this.node)
+            return;
+
         if (this.position)
             this.node.position = this.position;
         if (this.rotation)

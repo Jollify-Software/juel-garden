@@ -11,6 +11,8 @@ export module Modifier {
         'rotation': ModifyRotationSetter,
         'scale': ModifyVector3Setter('scale', 'scaling'),
         'colour': ModifyColourSetter(),
+        'spec-colour': ModifyColourSetter("spec"),
+        'emissive-colour': ModifyColourSetter("emissive"),
         'diffuse-colour': ModifyColourSetter(),
         'texture': ModifyTextureSetter(),
         'diffuse-texture': ModifyTextureSetter(),
@@ -24,11 +26,14 @@ export module Modifier {
         'reflection-texture-coordinates': ModifyFloatSetter('reflection-texture-coordinates', 'mat.reflectionTexture-coordinatesMode'),
     }
 
-    export var modifyMesh = function(el: HTMLElement, mesh: Mesh) {
+    export var modifyMesh = function(el: HTMLElement, mesh: Mesh, exclude: string[] = null) {
         let collection = Array.prototype.slice.call(el.attributes) as Attr[];
         let options = {};
 
         for (let key in map) {
+            if (exclude && exclude.indexOf(key) >= 0) {
+                continue;
+            }
             let attr = collection.find(x => x.name == key);
             if (attr) {
                 map[key](el, collection, options);
