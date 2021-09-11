@@ -5,8 +5,11 @@ import { GardenMesh } from "../GardenMesh";
 @customElement("garden-cylinder")
 export class GardenCylinder extends GardenMesh {
     updated() {
+        let scene = this.getScene();
+        let options = this.buildOptions();
         this.setMesh(
-            MeshBuilder.CreateCylinder("roof", this.buildOptions(), this.getScene())
+            MeshBuilder.CreateCylinder(this.id ?? "cylinder", options, scene)
         );
+        super.updated();
     }
 }

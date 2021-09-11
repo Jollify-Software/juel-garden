@@ -6,8 +6,11 @@ import { OptionsBuilder } from "../Options/OptionsBuilder";
 @customElement("garden-ground")
 export class GardenGround extends GardenMesh {
     updated() {
+        let scene = this.getScene();
+        let options = this.buildOptions();
         this.setMesh(
-            MeshBuilder.CreateGround("ground", OptionsBuilder.build(this))
+            MeshBuilder.CreateGround(this.id ?? "ground", options, scene)
         );
+        super.updated();
     }
 }

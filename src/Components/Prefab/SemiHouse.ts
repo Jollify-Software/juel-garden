@@ -14,7 +14,6 @@ export class GardenSemiHouse extends GardenMesh {
             );
 
         });
-
     }
     render() {
         return html`

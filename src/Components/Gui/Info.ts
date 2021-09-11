@@ -17,7 +17,7 @@ export class GardenInfo extends GardenElement {
 
     updated() {
         let scene = this.getScene();
-        this.advTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+        this.advTexture = AdvancedDynamicTexture.CreateFullscreenUI(this.id ?? "Info", true, scene);
 
         this.info = new Rectangle();
         this.info.width = "25%";

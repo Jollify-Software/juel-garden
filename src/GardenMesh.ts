@@ -132,6 +132,7 @@ export abstract class GardenMesh extends GardenElement {
         if (this.mesh != null) {
 
             if (this.parentElement.hasAttribute("parent")) {
+                console.log("parent")
                 this.mesh.parent = (<GardenElement>this.parentElement).getNode();
             }
 

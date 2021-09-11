@@ -58,7 +58,7 @@ export class GardenElement extends LitElement {
     }
 
     updated() {
-        this.node = new TransformNode("node", this.getScene());
+        this.node = new TransformNode(this.id ?? "node", this.getScene());
         (<any>this.node).element = this;
         if (this.position)
             this.node.position = this.position;

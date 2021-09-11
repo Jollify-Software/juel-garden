@@ -8,7 +8,7 @@ export class GardenTorus extends GardenMesh {
         let scene = this.getScene();
         let options = this.buildOptions();
         this.setMesh(
-            MeshBuilder.CreateTorus("torus", options, scene)
+            MeshBuilder.CreateTorus(this.id ?? "torus", options, scene)
         );
         super.updated();
     } 

@@ -12,7 +12,6 @@ export class GardenHouse extends GardenMesh {
             this.setMesh(
                 Mesh.MergeMeshes([house.mesh, roof.mesh], true, false, null, false, true)
             );
-
         });
     }
     render() {
