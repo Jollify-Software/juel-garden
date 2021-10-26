@@ -30,7 +30,7 @@ Here is the Garden equivalent of the [A-Frame basic scene](https://aframe.io/doc
 </garden-scene>
 ```
 
-My favourite example is the [temple example]():
+My favourite example is the [temple example](https://jollify.app/example/temple.html):
 
 ```html
 <garden-scene gravity="0 -0.2 0" collisions>
