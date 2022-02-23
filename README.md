@@ -30,7 +30,8 @@ Here is the Garden equivalent of the [A-Frame basic scene](https://aframe.io/doc
 </garden-scene>
 ```
 
-My favourite example is the [temple example](https://jollify.app/example/temple.html):
+The [Waypoints example](https://jollify.app/docs/waypoints.html) shows how this library could be used to create educational VR experiences.  
+My favourite example is the [temple example](https://jollify.app/docs/temple.html) wich demostrate how the library could be used to create experiences for museum exhibits:
 
 ```html
 <garden-scene gravity="0 -0.2 0" collisions>
