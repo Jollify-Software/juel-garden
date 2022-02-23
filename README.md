@@ -6,7 +6,7 @@ This library has been inspired by [A-Frame](https://aframe.io/), but instead of 
 ## What's in the name
 
 The name 'Garden' was chosen because of the [Hanging Gardens of Babylon](https://en.wikipedia.org/wiki/Hanging_Gardens_of_Babylon), we are using BabylonJS so this seems fitting.  
-I am also inspired by [The Village Green Preservation Society](https://youtu.be/lc7dmu4G8oc){target=_blank}, the main tutorial [builds a village](https://doc.babylonjs.com/start/chap2){target=_blank}.  
+I am also inspired by [The Village Green Preservation Society](https://youtu.be/lc7dmu4G8oc), the main tutorial [builds a village](https://doc.babylonjs.com/start/chap2).  
 God save the village green!
 
 Juel is the Jollify Unique Element Library which is another project I am working on.
