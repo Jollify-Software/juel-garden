@@ -1,4 +1,4 @@
-import { TextBlock } from "babylonjs-gui";
+import { TextBlock } from "@babylonjs/gui";
 import { customElement, property } from "lit/decorators";
 import { GardenInfo } from "./Info";
 import { GardenControl } from "./Control";

@@ -1,4 +1,4 @@
-import { Control } from "babylonjs-gui";
+import { Control } from "@babylonjs/gui";
 
 export module UnitConvert {
     export var padding = (str: string) => {

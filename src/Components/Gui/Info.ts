@@ -1,5 +1,5 @@
 import { DynamicTexture, MorphTargetsBlock, Observer } from "babylonjs";
-import { AdvancedDynamicTexture, Button, Control, Ellipse, Grid, Line, Rectangle, ScrollViewer, TextBlock, Vector2WithInfo } from "babylonjs-gui";
+import { AdvancedDynamicTexture, Button, Control, Ellipse, Grid, Line, Rectangle, ScrollViewer, TextBlock, Vector2WithInfo } from "@babylonjs/gui";
 import { customElement } from "lit/decorators";
 import { GardenElement } from "../../GardenElement";
 import { GardenMesh } from "../../GardenMesh";
