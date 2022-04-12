@@ -3,6 +3,7 @@ import { customElement, property } from "lit/decorators";
 import { Vector3Convert } from "../../Converters/Vector3Convert";
 import { GardenElement } from "../../GardenElement";
 import { GardenMesh } from "../../GardenMesh";
+import { GardenRoom } from "./Room";
 
 @customElement("garden-opening")
 export class GardenDoorway extends GardenMesh {
@@ -19,6 +20,9 @@ export class GardenDoorway extends GardenMesh {
         super();
         this.step = false;
         this.type = "square";
+        this.width = 2;
+        this.height = GardenRoom.WallHeight - 1;
+        this.depth = GardenRoom.WallThickness * 2;
     }
 
     updated() {
@@ -40,7 +44,7 @@ export class GardenDoorway extends GardenMesh {
         }
         if (this.position) {
             this.mesh.position = this.position.add(
-                this.step ? new Vector3(0, 0.2, 0) : new Vector3(0, 0.01, 0)
+                new Vector3(0, 0.5, 0)
             );
         }
 

@@ -4,6 +4,9 @@ import { GardenMesh } from "../../GardenMesh";
 
 @customElement("garden-room")
 export class GardenRoom extends GardenMesh {
+    static WallHeight = 6;
+    static WallThickness = 0.2;
+
     @property({ type: Number }) width: number;
     @property({ type: Number }) height: number;
     @property({ type: Number }) depth: number;
@@ -11,9 +14,9 @@ export class GardenRoom extends GardenMesh {
 
     constructor() {
         super();
-        this.width = 4;
-        this.height = 2;
-        this.depth = 8;
+        this.width = 8;
+        this.height = GardenRoom.WallHeight;
+        this.depth = 16;
         this.thickness = 0.2;
     }
     

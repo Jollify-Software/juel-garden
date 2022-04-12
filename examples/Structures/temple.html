@@ -11,18 +11,18 @@
         </garden-camera>
         <garden-light></garden-light>
 
-        <garden-room id="r1" collisions></garden-room>
-        <garden-opening between="r1 r2" position="0 1 -4" width="2" height="2" depth="0.4"></garden-opening>
+        <garden-room id="r1" position="0 0 8" collisions></garden-room>
+        <garden-opening between="r1 r2" position="0 1 0"></garden-opening>
         <garden-room id="r2" position="0 0 -8" collisions></garden-room>
-        <garden-opening between="r2 s1" position="0 1 -12" width="2" height="2" depth="0.4"></garden-opening>
+        <garden-opening between="r2 s1" position="0 1 -16"></garden-opening>
 
-        <garden-column position="-4 -5 -22" diameter="1" height="6" collisions>
+        <garden-column position="-4 -5 -26" diameter="1" height="6" collisions>
             <garden-particle effect="fire"></garden-particle>
         </garden-column>
-        <garden-column position="4 -5 -22" diameter="1" height="6" collisions>
+        <garden-column position="4 -5 -26" diameter="1" height="6" collisions>
             <garden-particle effect="fire"></garden-particle>
         </garden-column>
-        <garden-stairs id="s1" position="0 -5 -32" height="5" depth="20" collisions>
+        <garden-stairs id="s1" position="0 -5 -36" height="5" depth="20" collisions>
             <garden-sound loop="true" autoplay="true" maxdistance="20"
                 url="https://upload.wikimedia.org/wikipedia/commons/b/b6/%CE%9F_%CE%95%CF%80%CE%B9%CF%84%CE%AC%CF%86%CE%B9%CE%BF%CF%82_%CF%84%CE%BF%CF%85_%CE%A3%CE%B5%E1%BF%96%CE%BA%CE%B9%CE%BB%CE%BF%CF%85_-_Epitaph_of_Seikilos.ogg">
             </garden-sound>
