@@ -56,6 +56,11 @@ export class GardenCamera extends GardenElement {
                 if (this.speed)
                     cam.speed = this.speed;
     
+                cam.keysUp.push(87);    //W
+                cam.keysDown.push(83)   //D
+                cam.keysLeft.push(65);  //A
+                cam.keysRight.push(68); //S  
+
                 this.camera = cam;
                 
                 break;
