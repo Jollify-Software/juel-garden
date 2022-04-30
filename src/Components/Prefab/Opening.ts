@@ -20,7 +20,7 @@ export class GardenDoorway extends GardenMesh {
         super();
         this.step = false;
         this.type = "square";
-        this.width = 2;
+        this.width = 4;
         this.height = GardenRoom.WallHeight - 1;
         this.depth = GardenRoom.WallThickness * 2;
     }
