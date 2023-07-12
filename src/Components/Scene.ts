@@ -74,7 +74,7 @@ export class GardenScene extends LitElement {
                 });
                 this.engine.resize();    
             });
-        });
+        }, 100);
 
         this.scene.onPointerDown = (evt, pickResult) => {
             // We try to pick an object
