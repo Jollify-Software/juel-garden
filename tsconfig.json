@@ -6,7 +6,8 @@
         "preserveConstEnums": true,
         "sourceMap": true,
         "esModuleInterop": true,
-        "target": "es2019",
-        "experimentalDecorators": true
+        "target": "es2020",
+        "experimentalDecorators": true,
+        "useDefineForClassFields": false
     }
 }
