@@ -1,6 +1,10 @@
 import { Color3, Mesh, MeshBuilder, StandardMaterial, Vector3 } from "babylonjs";
 import { customElement, property } from "lit/decorators";
 import { GardenMesh } from "../../GardenMesh";
+import { listOutsideVertices } from "../../Utils/listOutsideVertices";
+import { createDomeCoveringVertices } from "../../Utils/Mesh/createDomeCoveringVertices";
+import { getTopmostVertices } from "../../Utils/getTopmostVertices";
+import { createThickDomeCoveringVertices } from "../../Utils/Mesh/createThickDomeCoveringVertices";
 
 @customElement("garden-room")
 export class GardenRoom extends GardenMesh {
@@ -78,5 +82,11 @@ export class GardenRoom extends GardenMesh {
         this.setMesh(
             Mesh.MergeMeshes([ floor, wallN, wallE, wallS, wallW ], true, true, undefined, false, true)
         )
+
+        // Create the roof if present
+        // TODO: Structure
+        let vertices = listOutsideVertices(this.mesh, scene);
+        vertices = getTopmostVertices(vertices);
+        let roof = createThickDomeCoveringVertices("roof", vertices, scene);
     }
 }
