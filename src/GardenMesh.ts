@@ -71,14 +71,21 @@ export abstract class GardenMesh extends GardenElement {
     }
 
     setMesh(mesh: Mesh) {
-        if (this.mesh)
-            this.mesh.dispose(); // TODO: We need replace, dispose will remove children
+        let orphans: TransformNode[] = [];
+        if (this.mesh) {
+            orphans = this.mesh.getChildTransformNodes(true).concat(this.mesh.getChildMeshes(true));
+            this.mesh.dispose(true); // doNotRecurse: children are re-parented below, not destroyed
+        }
 
         if (this.hasAttribute("split")) {
             mesh = this.splitMesh(mesh, this.split);
         }
         if (this.hasAttribute("hollow")) {
             mesh = this.hollowMesh(mesh, this.hollow ?? GardenMesh.defaultHollowScale);
+        }
+
+        for (let orphan of orphans) {
+            orphan.parent = mesh;
         }
 
         (<any>mesh).element = this;

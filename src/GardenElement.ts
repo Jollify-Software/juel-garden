@@ -13,6 +13,33 @@ export class GardenElement extends LitElement {
 
     node: TransformNode;
 
+    private _readyResolve: (() => void) | null = null;
+    private _ready: Promise<void> = Promise.resolve();
+
+    /** Resolves once this element's current build (mesh/node construction) has actually finished. */
+    get whenReady(): Promise<void> {
+        return this._ready;
+    }
+
+    /** Call at the start of an updated() that does async work before its mesh/node is usable. */
+    protected beginBuild(): void {
+        this._ready = new Promise(resolve => { this._readyResolve = resolve; });
+    }
+
+    /** Call once the build started by beginBuild() has truly finished. */
+    protected endBuild(): void {
+        this._readyResolve?.();
+        this._readyResolve = null;
+    }
+
+    /** Resolve an element by id and wait for it to be ready, instead of guessing with setTimeout. */
+    static async byId<T extends GardenElement = GardenElement>(id: string): Promise<T | null> {
+        const el = document.getElementById(id) as T | null;
+        if (!el) return null;
+        await el.whenReady;
+        return el;
+    }
+
     getNode(): TransformNode {
         return this.node;
     }

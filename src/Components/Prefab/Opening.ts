@@ -25,46 +25,49 @@ export class GardenDoorway extends GardenMesh {
         this.depth = GardenRoom.WallThickness * 2;
     }
 
-    updated() {
-        if (this.between) {
-            setTimeout(() => {
+    async updated() {
+        if (!this.between)
+            return;
+
+        this.beginBuild();
+        try {
             let scene = this.getScene();
-            
-        switch (this.type) {
-            case "square":
-                this.mesh = MeshBuilder.CreateBox("opening", {
-                    width: this.width,
-                    height: this.height,
-                    depth: this.depth
-                }, scene);
-                break;
-        
-            default:
-                break;
-        }
-        if (this.position) {
-            this.mesh.position = this.position.add(
-                new Vector3(0, 0.5, 0)
-            );
-        }
 
-        this.mesh.isVisible = false;
-        let thisCsg = CSG.FromMesh(this.mesh);
+            switch (this.type) {
+                case "square":
+                    this.mesh = MeshBuilder.CreateBox("opening", {
+                        width: this.width,
+                        height: this.height,
+                        depth: this.depth
+                    }, scene);
+                    break;
 
-        let splitty = this.between.split(' ');
-        for (let id of splitty) {
-            let el = document.getElementById(id) as GardenMesh;
-            if (el) {
-                let thatCsg = CSG.FromMesh(el.mesh);
-                let mat = el.getMaterial();
-                el.mesh.dispose();
-                el.setMesh(
-                    thatCsg.subtract(thisCsg).toMesh(el.id, mat, scene, true)
+                default:
+                    break;
+            }
+            if (this.position) {
+                this.mesh.position = this.position.add(
+                    new Vector3(0, 0.5, 0)
                 );
             }
+
+            this.mesh.isVisible = false;
+            let thisCsg = CSG.FromMesh(this.mesh);
+
+            let ids = this.between.split(' ');
+            let targets = await Promise.all(ids.map(id => GardenElement.byId<GardenMesh>(id)));
+
+            for (let el of targets) {
+                if (el) {
+                    let thatCsg = CSG.FromMesh(el.mesh);
+                    let mat = el.getMaterial();
+                    el.setMesh(
+                        thatCsg.subtract(thisCsg).toMesh(el.id, mat, scene, true)
+                    );
+                }
+            }
+        } finally {
+            this.endBuild();
         }
-    });
-        }
- 
     }
 }
