@@ -4,6 +4,7 @@ import {customElement, property} from 'lit/decorators.js';
 import { GardenScene } from "./Components/Scene";
 import { Vector3Convert } from "./Converters/Vector3Convert";
 import { OptionsBuilder } from "./Options/OptionsBuilder";
+import { resolveElements } from "./Utils/resolveElements";
 
 @customElement("garden-element")
 export class GardenElement extends LitElement {
@@ -32,12 +33,16 @@ export class GardenElement extends LitElement {
         this._readyResolve = null;
     }
 
-    /** Resolve an element by id and wait for it to be ready, instead of guessing with setTimeout. */
-    static async byId<T extends GardenElement = GardenElement>(id: string): Promise<T | null> {
-        const el = document.getElementById(id) as T | null;
-        if (!el) return null;
-        await el.whenReady;
-        return el;
+    /**
+     * Resolve an attribute value naming one or more elements (see resolveElements) and
+     * wait for each of them to be ready, instead of guessing with setTimeout. Elements
+     * not yet present in the DOM are simply absent from the result -- callers that need
+     * to resolve against a still-loading document should await that separately first.
+     */
+    static async resolveReady<T extends GardenElement = GardenElement>(selector: string, root: ParentNode = document): Promise<T[]> {
+        let elements = resolveElements<T>(selector, root);
+        await Promise.all(elements.map(el => el.whenReady));
+        return elements;
     }
 
     getNode(): TransformNode {
@@ -45,7 +50,7 @@ export class GardenElement extends LitElement {
     }
 
     getPosition() {
-        return this.node?.position;
+        return this.node?.getAbsolutePosition().clone();
     }
     getRotation() {
         return this.node?.rotation;

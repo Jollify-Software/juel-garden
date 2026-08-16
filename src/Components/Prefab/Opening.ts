@@ -54,17 +54,23 @@ export class GardenDoorway extends GardenMesh {
             this.mesh.isVisible = false;
             let thisCsg = CSG.FromMesh(this.mesh);
 
-            let ids = this.between.split(' ');
-            let targets = await Promise.all(ids.map(id => GardenElement.byId<GardenMesh>(id)));
+            // `between` may reference elements later in the document (e.g. a room cut
+            // against stairs that haven't been parsed yet), so wait for the document to
+            // finish before resolving it.
+            if (document.readyState === 'loading') {
+                await new Promise<void>(resolve =>
+                    document.addEventListener('DOMContentLoaded', () => resolve(), { once: true })
+                );
+            }
+
+            let targets = await GardenElement.resolveReady<GardenMesh>(this.between);
 
             for (let el of targets) {
-                if (el) {
-                    let thatCsg = CSG.FromMesh(el.mesh);
-                    let mat = el.getMaterial();
-                    el.setMesh(
-                        thatCsg.subtract(thisCsg).toMesh(el.id, mat, scene, true)
-                    );
-                }
+                let thatCsg = CSG.FromMesh(el.mesh);
+                let mat = el.getMaterial();
+                el.setMesh(
+                    thatCsg.subtract(thisCsg).toMesh(el.id, mat, scene, true)
+                );
             }
         } finally {
             this.endBuild();

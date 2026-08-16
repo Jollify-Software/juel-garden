@@ -13,47 +13,62 @@ export class GardenWaypoint extends GardenElement {
     index: number = 0;
     prevWaypoint: GardenMesh;
 
-    updated() {
-        setTimeout(() => {
-            if (typeof this.waypoints === 'string') {
+    async updated() {
+        if (typeof this.waypoints !== 'string')
+            return;
 
-                let wpStr = <string>this.waypoints;
-                if (wpStr.indexOf(' ') > 0) {
-                    this.waypoints = (<any>this.waypoints).split(' ').map(x => document.querySelector(x) as GardenMesh);
-                } else {
-                    this.waypoints = Array.prototype.slice.call(document.querySelectorAll(wpStr));
-                }
-                let scene = this.getScene();
-                this.setPosition(this.waypoints[this.index].getPosition());
+        this.beginBuild();
+        try {
+            // Waypoints are resolved by id from anywhere in the document, so we can't
+            // proceed until the whole document has actually been parsed.
+            if (document.readyState === 'loading') {
+                await new Promise<void>(resolve =>
+                    document.addEventListener('DOMContentLoaded', () => resolve(), { once: true })
+                );
+            }
 
-                scene.onPointerObservable.add((pointerInfo) => {
-                    switch (pointerInfo.type) {
-                        case PointerEventTypes.POINTERDOWN:
-                            if (pointerInfo.pickInfo.hit) {
-                                let wp = this.waypoints.find(x => x.mesh == pointerInfo.pickInfo.pickedMesh)
-                                if (wp) {
-                                    this.prevWaypoint = this.waypoints[this.index];
-                                    if ('leave' in this.prevWaypoint) {
-                                        (<any>this.prevWaypoint).leave(
-                                            (<Camera>(<any>this.parentElement).camera)
-                                        );
-                                    }
+            this.waypoints = await GardenElement.resolveReady<GardenMesh>(<string>this.waypoints);
+
+            let scene = this.getScene();
+            this.setPosition(this.waypoints[this.index].getPosition());
+
+            scene.onPointerObservable.add((pointerInfo) => {
+                switch (pointerInfo.type) {
+                    case PointerEventTypes.POINTERDOWN:
+                        if (pointerInfo.pickInfo.hit) {
+                            let wp = this.waypoints.find(x => x.mesh == pointerInfo.pickInfo.pickedMesh)
+                            if (wp) {
+                                this.prevWaypoint = this.waypoints[this.index];
+                                if ('leave' in this.prevWaypoint) {
+                                    (<any>this.prevWaypoint).leave(
+                                        (<Camera>(<any>this.parentElement).camera)
+                                    );
+                                }
+                                // Fly to the target's current (world-space) position first, and
+                                // only join its orbit once we've actually arrived -- entering the
+                                // orbit reparents the camera, so doing it before the fly-to
+                                // animation finishes would have the animation tween a value that's
+                                // suddenly local-to-the-pivot instead of world-space, causing a
+                                // jump and then a runaway drift.
+                                this.moveToPosition(wp.getPosition(), () => {
                                     if ('enter' in wp) {
                                         (<any>wp).enter((<Camera>(<any>this.parentElement).camera));
                                     }
-                                    this.moveToPosition(wp.getPosition());
-                                    this.index = this.waypoints.indexOf(wp);
-                                }
+                                });
+                                this.index = this.waypoints.indexOf(wp);
                             }
-                            break;
-                    }
-                });
-            }
-        });
+                        }
+                        break;
+                }
+            });
+        } finally {
+            this.endBuild();
+        }
     }
 
-    moveToPosition(position: Vector3) {
+    moveToPosition(position: Vector3, onComplete?: () => void) {
         let scene = this.getScene();
+        let camera = (<Camera>(<any>this.parentElement).camera);
         let anime = new Animation("anime", "position", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE, false);
         anime.setKeys([
             {
@@ -65,10 +80,9 @@ export class GardenWaypoint extends GardenElement {
                 value: position.add(this.offset)
             }
         ]);
-        (<Camera>(<any>this.parentElement).camera).animations = [];
-        (<Camera>(<any>this.parentElement).camera).animations.push(anime);
-        console.log((<any>this.parentElement).camera);
-        scene.beginAnimation((<any>this.parentElement).camera, 0, 100, false, 1.0);
+        camera.animations = [];
+        camera.animations.push(anime);
+        scene.beginAnimation(camera, 0, 100, false, 1.0, onComplete);
     }
 
     setPosition(pos: Vector3) {

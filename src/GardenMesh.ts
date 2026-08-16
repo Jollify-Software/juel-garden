@@ -22,7 +22,7 @@ export abstract class GardenMesh extends GardenElement {
     }
 
     getPosition() {
-        return this.mesh?.position;
+        return this.mesh?.getAbsolutePosition().clone();
     }
     getRotation() {
         return this.mesh?.rotation;
