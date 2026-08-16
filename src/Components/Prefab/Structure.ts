@@ -64,8 +64,12 @@ export class GardenStructure extends GardenElement {
                 );
             }
 
+            // <garden-roof> is excluded here: a roof spanning the whole structure touches
+            // every room it covers almost exactly at the roofline (its base sits right at
+            // wall-top height), which the touch-detection below would mistake for a join
+            // and carve a doorway-sized opening into -- not what a roof needs.
             let children = (<Element[]>Array.prototype.slice.call(this.children))
-                .filter((el): el is GardenMesh => el instanceof GardenMesh);
+                .filter((el): el is GardenMesh => el instanceof GardenMesh && !el.matches("garden-roof"));
 
             await Promise.all(children.map(el => el.whenReady));
 
