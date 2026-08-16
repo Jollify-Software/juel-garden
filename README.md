@@ -76,6 +76,7 @@ I should also say that this is the first Open Source project I have created, so 
   * The temple example is my favourite but it need some improvement.
     * The rooms really need to touch the ground not be floating in the air. Perhaps we could add a ground level variable?
     * I would like the temple to have more rooms and also a roof, like an Aztec or Greek temple.
+* `garden-structure` currently detects joins by bounding-box overlap, so it only works for axis-aligned, box-ish children (rooms, stairs). Rotated children or curved shapes (a `curvature` stairway, a dome roof) need a hand-placed `garden-opening` instead -- would be good to support those too.
 * WebXR  and input, I haven't added [WebXR](https://doc.babylonjs.com/divingDeeper/webXR/introToWebXR) to `garden-scene` yet.
   * The user should be able to navigate the temple example in VR. Mouse and keyboard will should be a fallback.
   * Is it better to create a component for WebXR or just add behaviours to `garden-scene`?

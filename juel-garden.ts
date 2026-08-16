@@ -37,3 +37,4 @@ import "./src/Components/Prefab/Room";
 import "./src/Components/Prefab/Roof";
 import "./src/Components/Prefab/Column";
 import "./src/Components/Prefab/Opening";
+import "./src/Components/Prefab/Structure";
