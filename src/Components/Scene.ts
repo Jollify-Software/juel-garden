@@ -1,4 +1,4 @@
-import { Engine, IAction, Mesh, Scene, Vector3 } from "babylonjs";
+import { Engine, IAction, Mesh, Scene, Tools, Vector3 } from "babylonjs";
 import { LitElement } from "lit";
 import { customElement, property } from "lit/decorators";
 import { ActionInfo } from "../ActionInfo";
@@ -7,6 +7,13 @@ import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { JuelGarden } from "../JuelGarden";
 import { Utility } from "../Utility";
+
+// Babylon requests images (textures, etc.) with crossOrigin="anonymous" by default,
+// which Chromium refuses outright for file:// URLs -- "file" isn't a scheme it allows
+// CORS-mode requests for, even loading a local file from the same folder. Examples are
+// commonly opened straight from disk (no dev server), so only ask for CORS mode when
+// the URL is actually remote; local/relative paths load fine without it.
+Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anonymous" : null);
 
 @customElement("garden-scene")
 export class GardenScene extends LitElement {

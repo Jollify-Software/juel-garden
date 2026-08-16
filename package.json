@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "parcel build juel-garden.ts --no-optimize",
     "build": "del .parcel-cache && parcel build juel-garden.ts --no-source-maps",
+    "examples": "http-server . -o /examples/ -c-1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -26,6 +27,7 @@
   },
   "homepage": "https://github.com/Jollify-Software/juel-garden#readme",
   "devDependencies": {
+    "http-server": "^14.1.1",
     "parcel": "^2.12.0",
     "typescript": "^5.6.3"
   },
