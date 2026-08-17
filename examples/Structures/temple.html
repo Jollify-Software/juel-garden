@@ -26,36 +26,114 @@
                 </garden-material>
             </garden-roof>
 
-            <garden-room id="r1" position="-8 0 8" width="16" collisions></garden-room>
-            <garden-room id="r2" position="-8 0 -8" width="16" collisions></garden-room>
-            <garden-room id="r3" position="8 0 8" width="16" collisions></garden-room>
-            <garden-room id="r4" position="8 0 -8" width="16" collisions></garden-room>
+            <!-- Sanctuary level. Floors stay the grey ashlar paving photo from before
+                 (https://assets.babylonjs.com/textures/floor.png). Walls now distinguish
+                 the temple's outer perimeter from the partition walls between chambers:
+                 perimeter walls are a plain white/marble colour (no texture -- a flat
+                 "white" reads more like painted plaster/marble than any photo would),
+                 partition walls get a brick photo (bricktile.jpg, tiled several times via
+                 <garden-texture>'s new u-scale/v-scale -- see GardenTexture -- since the
+                 source image is only a couple of bricks wide and looks like two giant
+                 blobs stretched once across a whole 16-unit wall). Which of a room's
+                 north/east/south/west walls is perimeter vs partition depends on where it
+                 sits in the 2x2 grid (r1 NW, r2 SW, r3 NE, r4 SE) -- e.g. r1's north and
+                 west walls face outward, its east wall borders r3 and its south wall
+                 borders r2. -->
+            <garden-room id="r1" position="-8 0 8" width="16" collisions>
+                <garden-material slot="floor" colour="#d9d3c3"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="north" colour="#f2efe6"></garden-material>
+                <garden-material slot="west" colour="#f2efe6"></garden-material>
+                <garden-material slot="east" colour="#dab68c"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+                <garden-material slot="south" colour="#dab68c"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+            </garden-room>
+            <garden-room id="r2" position="-8 0 -8" width="16" collisions>
+                <garden-material slot="floor" colour="#d9d3c3"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="south" colour="#f2efe6"></garden-material>
+                <garden-material slot="west" colour="#f2efe6"></garden-material>
+                <garden-material slot="north" colour="#dab68c"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+                <garden-material slot="east" colour="#dab68c"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+            </garden-room>
+            <garden-room id="r3" position="8 0 8" width="16" collisions>
+                <garden-material slot="floor" colour="#d9d3c3"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="north" colour="#f2efe6"></garden-material>
+                <garden-material slot="east" colour="#f2efe6"></garden-material>
+                <garden-material slot="south" colour="#dab68c"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+                <garden-material slot="west" colour="#dab68c"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+            </garden-room>
+            <garden-room id="r4" position="8 0 -8" width="16" collisions>
+                <garden-material slot="floor" colour="#d9d3c3"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="south" colour="#f2efe6"></garden-material>
+                <garden-material slot="east" colour="#f2efe6"></garden-material>
+                <garden-material slot="north" colour="#dab68c"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+                <garden-material slot="west" colour="#dab68c"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+            </garden-room>
 
             <!-- Lower level, directly beneath r1-r4 -- one room-height (6) down, so each
                  lower room's ceiling meets the matching upper room's floor exactly. Rooms
                  stacked like this do *not* auto-connect on their own (a shared floor isn't
-                 a doorway); only s2 below actually punches through, into r1/r5. -->
-            <garden-room id="r5" position="-8 -6 8" width="16" collisions></garden-room>
-            <garden-room id="r6" position="-8 -6 -8" width="16" collisions></garden-room>
-            <garden-room id="r7" position="8 -6 8" width="16" collisions></garden-room>
-            <garden-room id="r8" position="8 -6 -8" width="16" collisions></garden-room>
+                 a doorway); only s2 below actually punches through, into r1/r5. Same
+                 white-perimeter/brick-partition split as the sanctuary above (r5-r8 sit
+                 directly under r1-r4, so the same wall is perimeter/partition in both),
+                 both tinted dark to read as an unlit crypt -- the point light near the
+                 shared partition walls (see above) is what keeps it from going fully
+                 black. -->
+            <garden-room id="r5" position="-8 -6 8" width="16" collisions>
+                <garden-material slot="floor" colour="#3c3830"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="north" colour="#8f8c82"></garden-material>
+                <garden-material slot="west" colour="#8f8c82"></garden-material>
+                <garden-material slot="east" colour="#7a5c42"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+                <garden-material slot="south" colour="#7a5c42"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+            </garden-room>
+            <garden-room id="r6" position="-8 -6 -8" width="16" collisions>
+                <garden-material slot="floor" colour="#3c3830"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="south" colour="#8f8c82"></garden-material>
+                <garden-material slot="west" colour="#8f8c82"></garden-material>
+                <garden-material slot="north" colour="#7a5c42"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+                <garden-material slot="east" colour="#7a5c42"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+            </garden-room>
+            <garden-room id="r7" position="8 -6 8" width="16" collisions>
+                <garden-material slot="floor" colour="#3c3830"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="north" colour="#8f8c82"></garden-material>
+                <garden-material slot="east" colour="#8f8c82"></garden-material>
+                <garden-material slot="south" colour="#7a5c42"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+                <garden-material slot="west" colour="#7a5c42"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+            </garden-room>
+            <garden-room id="r8" position="8 -6 -8" width="16" collisions>
+                <garden-material slot="floor" colour="#3c3830"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="south" colour="#8f8c82"></garden-material>
+                <garden-material slot="east" colour="#8f8c82"></garden-material>
+                <garden-material slot="north" colour="#7a5c42"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+                <garden-material slot="west" colour="#7a5c42"><garden-texture src="https://assets.babylonjs.com/textures/bricktile.jpg" u-scale="6" v-scale="2"></garden-texture></garden-material>
+            </garden-room>
 
             <!-- Connects r1's floor to r5's floor -- <garden-structure> cuts an opening in
                  r1's floor sized to s2's own footprint (see GardenStructure.tryFloorOpening),
-                 since <garden-stairs> is on its floor-opening whitelist. -->
-            <garden-stairs id="s2" position="-8 -6 4" width="3" height="6" depth="8" collisions></garden-stairs>
+                 since <garden-stairs> is on its floor-opening whitelist. Stone steps, same
+                 paving photo as the floors, tinted to sit between the crypt it starts in
+                 and the sanctuary it climbs into -- <garden-stairs>/<garden-column> have no
+                 per-face slots of their own, so this single unslotted <garden-material>
+                 covers the whole mesh (GardenMesh's generic single-material pull). -->
+            <garden-stairs id="s2" position="-8 -6 4" width="3" height="6" depth="8" collisions>
+                <garden-material colour="#78725f"><garden-texture src="https://assets.babylonjs.com/textures/floor.png" u-scale="1" v-scale="3"></garden-texture></garden-material>
+            </garden-stairs>
 
             <garden-stairs id="s1" position="0 -5 -36" width="8" height="5" depth="20" collisions>
+                <garden-material colour="#e3ded0"><garden-texture src="https://assets.babylonjs.com/textures/floor.png" u-scale="2" v-scale="4"></garden-texture></garden-material>
                 <garden-sound loop="true" autoplay="true" maxdistance="20"
                     url="https://upload.wikimedia.org/wikipedia/commons/b/b6/%CE%9F_%CE%95%CF%80%CE%B9%CF%84%CE%AC%CF%86%CE%B9%CE%BF%CF%82_%CF%84%CE%BF%CF%85_%CE%A3%CE%B5%E1%BF%96%CE%BA%CE%B9%CE%BB%CE%BF%CF%85_-_Epitaph_of_Seikilos.ogg">
                 </garden-sound>
             </garden-stairs>
         </garden-structure>
 
+        <!-- Flanking the entrance stairs -- pale marble-toned stone, wrapping the same
+             paving photo once around the cylinder (the column's circumference already
+             gives it enough repetition without u-scale/v-scale). -->
         <garden-column position="-4 -5 -26" diameter="1" height="6" collisions>
+            <garden-material colour="#f0ede2"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
             <garden-particle effect="fire"></garden-particle>
         </garden-column>
         <garden-column position="4 -5 -26" diameter="1" height="6" collisions>
+            <garden-material colour="#f0ede2"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
             <garden-particle effect="fire"></garden-particle>
         </garden-column>
         

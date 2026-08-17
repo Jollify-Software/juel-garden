@@ -209,6 +209,10 @@ export class GardenStructure extends GardenElement {
         let mat = room.getMaterial();
         let mesh: Mesh = CSG.FromMesh(room.mesh).subtract(CSG.FromMesh(cutter)).toMesh(room.id, mat, scene, true);
         room.setMesh(mesh);
+        // CSG.subtract().toMesh() doesn't reliably preserve which submesh belonged to
+        // which original wall -- see GardenRoom.fixMaterialIndices for the empirical
+        // case this was written against.
+        room.fixMaterialIndices();
 
         cutter.dispose();
     }
@@ -245,6 +249,10 @@ export class GardenStructure extends GardenElement {
             let mat = el.getMaterial();
             let mesh: Mesh = CSG.FromMesh(el.mesh).subtract(cutterCsg).toMesh(el.id, mat, scene, true);
             el.setMesh(mesh);
+            // Same submesh/materialIndex scrambling as tryFloorOpening/cutFloor above --
+            // see GardenRoom.fixMaterialIndices.
+            if (el instanceof GardenRoom)
+                el.fixMaterialIndices();
         }
 
         cutter.dispose();

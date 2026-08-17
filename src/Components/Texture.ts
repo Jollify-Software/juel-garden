@@ -20,6 +20,11 @@ export class GardenTexture extends GardenElement {
     // Named `angle` (not `rotation`) -- GardenElement already declares `rotation: Vector3`
     // for positioning this element's own (unused, textures have no node) transform.
     @property({ attribute: "rotation", type: Number }) angle: number;
+    // How many times the image repeats across its mesh face, e.g. a small brick-tile
+    // photo meant to repeat several times over a wall rather than stretch once across
+    // it. Left at Babylon's own default (1, no repeat) when unset.
+    @property({ type: Number, attribute: "u-scale" }) uScale: number;
+    @property({ type: Number, attribute: "v-scale" }) vScale: number;
 
     texture: Texture;
 
@@ -34,6 +39,11 @@ export class GardenTexture extends GardenElement {
     }
 
     updated() {
-        this.texture = new Texture(this.src, this.getScene());
+        let texture = new Texture(this.src, this.getScene());
+        if (this.uScale)
+            texture.uScale = this.uScale;
+        if (this.vScale)
+            texture.vScale = this.vScale;
+        this.texture = texture;
     }
 }

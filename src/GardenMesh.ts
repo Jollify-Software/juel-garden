@@ -148,25 +148,32 @@ export abstract class GardenMesh extends GardenElement {
             Behaviours.applyBehaviours(this, this.mesh);
 
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 let scene = this.getScene();
                 let animations: GardenAnimation[] = [];
                 let particles: GardenParticle[] = [];
 
-                (<HTMLElement[]>Array.prototype.slice.call(this.children))
-                    .forEach(el => {
-                        if (el.matches('garden-animation')) {
-                            animations.push(el as GardenAnimation);
-                        } else if (el.matches('garden-particle')) {
-                            particles.push(el as GardenParticle);
-                        } else if (el.matches('garden-material') && !el.hasAttribute('slot')) {
-                            // Meshes with more than one material (e.g. GardenRoof's dome)
-                            // read their own slot-tagged <garden-material> children directly,
-                            // before the mesh is even built -- this generic path only covers
-                            // the common single-material case, applied after the fact.
-                            this.setMaterial((el as GardenMaterial).material);
-                        }
-                    });
+                for (let el of (<HTMLElement[]>Array.prototype.slice.call(this.children))) {
+                    if (el.matches('garden-animation')) {
+                        animations.push(el as GardenAnimation);
+                    } else if (el.matches('garden-particle')) {
+                        particles.push(el as GardenParticle);
+                    } else if (el.matches('garden-material') && !el.hasAttribute('slot')) {
+                        // Meshes with more than one material (e.g. GardenRoof's dome)
+                        // read their own slot-tagged <garden-material> children directly,
+                        // before the mesh is even built -- this generic path only covers
+                        // the common single-material case, applied after the fact. Must
+                        // await the element's own build (whenReady) before reading its
+                        // .material -- this setTimeout(0) callback can otherwise fire
+                        // before <garden-material>'s own async updated() (which itself
+                        // waits on document-ready plus any <garden-texture> children) has
+                        // produced anything, silently applying `undefined` and leaving the
+                        // mesh on Babylon's default grey material.
+                        let materialEl = el as GardenMaterial;
+                        await materialEl.whenReady;
+                        this.setMaterial(materialEl.material);
+                    }
+                }
 
                 for (var animation of animations) {
                     animation.play(this);
