@@ -7,6 +7,7 @@ import { GardenAnimation } from "./Components/Animation";
 import { GardenParticle } from "./Components/Particle";
 import { Vector3Convert } from "./Converters/Vector3Convert";
 import { GardenElement } from "./GardenElement";
+import { GardenMaterial } from "./Components/Material";
 import { Modifier } from "./Modifiers/Modifier";
 
 export abstract class GardenMesh extends GardenElement {
@@ -158,6 +159,12 @@ export abstract class GardenMesh extends GardenElement {
                             animations.push(el as GardenAnimation);
                         } else if (el.matches('garden-particle')) {
                             particles.push(el as GardenParticle);
+                        } else if (el.matches('garden-material') && !el.hasAttribute('slot')) {
+                            // Meshes with more than one material (e.g. GardenRoof's dome)
+                            // read their own slot-tagged <garden-material> children directly,
+                            // before the mesh is even built -- this generic path only covers
+                            // the common single-material case, applied after the fact.
+                            this.setMaterial((el as GardenMaterial).material);
                         }
                     });
 

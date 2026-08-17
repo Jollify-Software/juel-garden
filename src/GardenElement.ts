@@ -34,6 +34,27 @@ export class GardenElement extends LitElement {
     }
 
     /**
+     * Await before reading any child element's build output (a mesh, a material, a
+     * texture -- anything only available after that child's own `updated()` has run).
+     * Custom elements upgrade and get their first Lit `updated()` call as the parser
+     * reaches them, with no ordering guarantee between a parent and a child declared in
+     * the same initial markup -- a parent's `updated()` can run before its child's has
+     * even started. Waiting for DOMContentLoaded sidesteps that: every element present
+     * in the initial document has already been upgraded and had its first `updated()`
+     * pass complete by the time that event's listeners run (its dispatch is a task, and
+     * the microtasks Lit schedules for each element's first update -- queued while the
+     * parser was still running -- have already drained by then). A no-op once the
+     * document has already finished loading.
+     */
+    protected static async whenDocumentReady(): Promise<void> {
+        if (document.readyState === 'loading') {
+            await new Promise<void>(resolve =>
+                document.addEventListener('DOMContentLoaded', () => resolve(), { once: true })
+            );
+        }
+    }
+
+    /**
      * Resolve an attribute value naming one or more elements (see resolveElements) and
      * wait for each of them to be ready, instead of guessing with setTimeout. Elements
      * not yet present in the DOM are simply absent from the result -- callers that need

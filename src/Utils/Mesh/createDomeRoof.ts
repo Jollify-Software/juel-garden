@@ -1,4 +1,58 @@
-import { CSG, Material, Mesh, MeshBuilder, Scene, Vector3 } from "babylonjs";
+import { CSG, Material, Mesh, MeshBuilder, Scene, Vector3, VertexBuffer } from "babylonjs";
+
+/** Where a dome texture's own centre point sits, in the texture's own 0..1 UV space. */
+export interface DomeTextureTransform {
+    centerU: number;
+    centerV: number;
+    rotation: number; // radians
+}
+
+export const DEFAULT_DOME_TEXTURE_TRANSFORM: DomeTextureTransform = { centerU: 0.5, centerV: 0.5, rotation: 0 };
+
+/**
+ * Re-maps a dome shell's UVs from the sphere builder's default cylindrical/equirectangular
+ * layout (U = azimuth swept across the texture's full width, V = polar angle down its
+ * height) to a polar/fisheye layout instead: the texture's own centre point (by default
+ * its middle, (0.5, 0.5)) sits at the dome's apex, and the texture unwraps radially outward
+ * from there to the rim. This is the layout a real photograph of a domed ceiling naturally
+ * has (the medallion/focal point centred in frame, everything else radiating outward to the
+ * edge of the shot) -- the default cylindrical layout instead pinches the texture's *top
+ * row* into a single point at the apex (a visible bright/distorted streak) and leaves the
+ * texture's actual centre stranded partway down the slope, off to one side.
+ */
+function applyPolarDomeUVs(mesh: Mesh, radiusX: number, radiusZ: number, transform: DomeTextureTransform): void {
+    const positions = mesh.getVerticesData(VertexBuffer.PositionKind);
+    if (!positions) return;
+
+    const vertexCount = positions.length / 3;
+    const uvs = new Float32Array(vertexCount * 2);
+    const cos = Math.cos(transform.rotation);
+    const sin = Math.sin(transform.rotation);
+
+    for (let i = 0; i < vertexCount; i++) {
+        // Normalized so the rim (where the ellipse equation (x/radiusX)^2 + (z/radiusZ)^2
+        // is exactly 1) lands on the unit circle, regardless of the dome's own aspect ratio.
+        const dx = radiusX > 0 ? positions[i * 3] / radiusX : 0;
+        const dz = radiusZ > 0 ? positions[i * 3 + 2] / radiusZ : 0;
+        const rx = dx * cos - dz * sin;
+        const rz = dx * sin + dz * cos;
+
+        // V is negated but U isn't -- confirmed empirically via screenshot. Un-negated,
+        // a real photo rendered a clean 180-degree rotation (face and Latin text both
+        // upside-down, but not mirrored -- correct chirality, wrong orientation).
+        // Negating *both* U and V (a true 180-degree rotation, which would seem like the
+        // obvious undo) instead produced an upright but left-right *mirrored* result
+        // (backwards letterforms), proving the original mapping's "rotation" was actually
+        // two independent flips landing on top of each other by coincidence (likely
+        // Babylon's V-axis image-row convention combined with viewing the inside of the
+        // dome from below, which itself mirrors a "from above" mapping). Negating V alone
+        // cancels just the V-axis flip and leaves the correct, unmirrored result.
+        uvs[i * 2] = transform.centerU + rx * 0.5;
+        uvs[i * 2 + 1] = transform.centerV - rz * 0.5;
+    }
+
+    mesh.setVerticesData(VertexBuffer.UVKind, uvs);
+}
 
 /**
  * Build the flat ceiling patch that fills the rectangular footprint outside the dome's
@@ -61,7 +115,9 @@ export function createDomeRoof(
     scene: Scene,
     thickness: number = 0.5,
     outsideMaterial: Material = null,
-    insideMaterial: Material = null
+    insideMaterial: Material = null,
+    outsideTextureTransform: DomeTextureTransform = DEFAULT_DOME_TEXTURE_TRANSFORM,
+    insideTextureTransform: DomeTextureTransform = DEFAULT_DOME_TEXTURE_TRANSFORM
 ): Mesh {
     const radiusX = width / 2;
     const radiusZ = depth / 2;
@@ -82,6 +138,7 @@ export function createDomeRoof(
         segments: 32
     }, scene);
     outerDome.material = outsideMaterial;
+    applyPolarDomeUVs(outerDome, radiusX, radiusZ, outsideTextureTransform);
 
     // Both caps share the inner (smaller) ellipse as their hole size, even though the
     // outer dome's own rim is the larger one. Using the outer rim here would leave a
@@ -99,6 +156,7 @@ export function createDomeRoof(
         sideOrientation: Mesh.BACKSIDE
     }, scene);
     innerDome.material = insideMaterial;
+    applyPolarDomeUVs(innerDome, innerRadiusX, innerRadiusZ, insideTextureTransform);
 
     const innerBase = createBaseCap(`${name}_inner_base`, width, depth, innerRadiusX, innerRadiusZ, thickness, insideMaterial, scene);
 

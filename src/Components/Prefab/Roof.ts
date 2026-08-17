@@ -1,7 +1,9 @@
 import { Color3, HemisphericLight, Mesh, MeshBuilder, StandardMaterial, Texture, TransformNode, Vector3 } from "babylonjs";
 import { customElement, property } from "lit/decorators";
+import { GardenMaterial } from "../Material";
 import { GardenMesh } from "../../GardenMesh";
-import { createDomeRoof } from "../../Utils/Mesh/createDomeRoof";
+import { Vector3Convert } from "../../Converters/Vector3Convert";
+import { createDomeRoof, DEFAULT_DOME_TEXTURE_TRANSFORM, DomeTextureTransform } from "../../Utils/Mesh/createDomeRoof";
 import { ColorConverter, GardenRoom } from "./Room";
 import { GardenStructure } from "./Structure";
 
@@ -27,6 +29,15 @@ export class GardenRoof extends GardenMesh {
     @property({ attribute: "inside-colour", converter: ColorConverter }) insideColour: Color3;
     @property({ attribute: "inside-texture" }) insideTexture: string;
 
+    // Where the texture's own centre point (its "u v" coordinate, default the middle of
+    // the image) should sit on the dome -- always the apex -- and how far to rotate it
+    // around that point, in degrees. Lets a photo whose focal point isn't perfectly
+    // centred in the source image be recentred, or a fresco be turned to face the door.
+    @property({ attribute: "outside-texture-center", converter: Vector3Convert.fromString }) outsideTextureCenter: Vector3;
+    @property({ type: Number, attribute: "outside-texture-rotation" }) outsideTextureRotation: number;
+    @property({ attribute: "inside-texture-center", converter: Vector3Convert.fromString }) insideTextureCenter: Vector3;
+    @property({ type: Number, attribute: "inside-texture-rotation" }) insideTextureRotation: number;
+
     // Only used by type="dome" -- a supplemental light scoped to just the dome mesh (see
     // the "dome" case below), disposed and recreated whenever the roof rebuilds.
     private insideLight: HemisphericLight;
@@ -37,6 +48,11 @@ export class GardenRoof extends GardenMesh {
     }
 
     async updated() {
+        // Needed before reading any child <garden-material>'s built `.material` below (and,
+        // for the <garden-structure> parent case, before reading room siblings' declared
+        // size) -- children may not be upgraded/parsed yet if the document is still loading.
+        await GardenRoof.whenDocumentReady();
+
         let parent = this.parentElement;
         let container: RoofContainer;
 
@@ -74,27 +90,54 @@ export class GardenRoof extends GardenMesh {
 
             switch (this.type) {
                 case "dome": {
-                    let outsideMaterial = new StandardMaterial("roof-outside", scene);
-                    if (this.outsideColour)
-                        outsideMaterial.diffuseColor = this.outsideColour;
-                    if (this.outsideTexture)
-                        outsideMaterial.diffuseTexture = new Texture(this.outsideTexture, scene);
+                    // A <garden-material slot="outside"/"inside"> child, if present, takes
+                    // full precedence over the legacy outside-*/inside-* attributes below --
+                    // it's built (and its own <garden-texture> children's centre/rotation
+                    // read) as-is, with none of the flat-attribute defaults layered on top.
+                    let outsideMaterialEl = this.getMaterialSlot("outside");
+                    let insideMaterialEl = this.getMaterialSlot("inside");
 
-                    // Normally lit (not disableLighting -- StandardMaterial's disableLighting
-                    // skips the light loop entirely, which leaves diffuseColor/diffuseTexture
-                    // permanently zeroed out regardless of their value, not just "unshaded").
-                    let insideMaterial = new StandardMaterial("roof-inside", scene);
-                    insideMaterial.diffuseColor = this.insideColour ?? Color3.White();
-                    if (this.insideTexture) {
-                        // The sphere builder's V=0 lands at the apex (top of the source image)
-                        // and V=1 at the rim, but Babylon's texture-space V is flipped relative
-                        // to image row order, so an un-adjusted mapping renders upside down.
-                        let insideTexture = new Texture(this.insideTexture, scene);
-                        insideTexture.vScale = -1;
-                        insideMaterial.diffuseTexture = insideTexture;
+                    let outsideMaterial: StandardMaterial;
+                    let outsideTextureTransform: DomeTextureTransform;
+                    if (outsideMaterialEl) {
+                        await outsideMaterialEl.whenReady;
+                        outsideMaterial = outsideMaterialEl.material;
+                        outsideTextureTransform = GardenRoof.materialTextureTransform(outsideMaterialEl);
+                    } else {
+                        outsideMaterial = new StandardMaterial("roof-outside", scene);
+                        if (this.outsideColour)
+                            outsideMaterial.diffuseColor = this.outsideColour;
+                        if (this.outsideTexture)
+                            outsideMaterial.diffuseTexture = new Texture(this.outsideTexture, scene);
+                        outsideTextureTransform = this.textureTransform(this.outsideTextureCenter, this.outsideTextureRotation);
                     }
 
-                    mesh = createDomeRoof("roof", container.width, container.depth, scene, thickness, outsideMaterial, insideMaterial);
+                    let insideMaterial: StandardMaterial;
+                    let insideTextureTransform: DomeTextureTransform;
+                    if (insideMaterialEl) {
+                        await insideMaterialEl.whenReady;
+                        insideMaterial = insideMaterialEl.material;
+                        insideTextureTransform = GardenRoof.materialTextureTransform(insideMaterialEl);
+                    } else {
+                        // Normally lit (not disableLighting -- StandardMaterial's disableLighting
+                        // skips the light loop entirely, which leaves diffuseColor/diffuseTexture
+                        // permanently zeroed out regardless of their value, not just "unshaded").
+                        insideMaterial = new StandardMaterial("roof-inside", scene);
+                        insideMaterial.diffuseColor = this.insideColour ?? Color3.White();
+                        // A painted fresco is matte, not glossy -- StandardMaterial's default
+                        // specular reflectivity otherwise puts a bright specular highlight right
+                        // where the inward-facing normals happen to catch the scene lights best,
+                        // which is almost exactly the apex from most viewing angles. With the
+                        // texture now correctly centred on the apex (see createDomeRoof), that
+                        // highlight would sit squarely on the artwork's focal point.
+                        insideMaterial.specularColor = Color3.Black();
+                        if (this.insideTexture)
+                            insideMaterial.diffuseTexture = new Texture(this.insideTexture, scene);
+                        insideTextureTransform = this.textureTransform(this.insideTextureCenter, this.insideTextureRotation);
+                    }
+
+                    mesh = createDomeRoof("roof", container.width, container.depth, scene, thickness,
+                        outsideMaterial, insideMaterial, outsideTextureTransform, insideTextureTransform);
 
                     // The dome's inside faces mostly away from the scene's main overhead
                     // light (worst at the apex, where an inward normal points straight down),
@@ -142,14 +185,6 @@ export class GardenRoof extends GardenMesh {
      * the structure here would deadlock against that).
      */
     private async computeStructureContainer(structure: GardenStructure): Promise<RoofContainer | null> {
-        // Children may not be parsed into the light DOM yet -- same reasoning as
-        // <garden-structure>'s own updated().
-        if (document.readyState === 'loading') {
-            await new Promise<void>(resolve =>
-                document.addEventListener('DOMContentLoaded', () => resolve(), { once: true })
-            );
-        }
-
         let rooms = (<Element[]>Array.prototype.slice.call(structure.children))
             .filter((el): el is GardenRoom => el instanceof GardenRoom);
 
@@ -177,5 +212,29 @@ export class GardenRoof extends GardenMesh {
             centerX: (minX + maxX) / 2,
             centerZ: (minZ + maxZ) / 2
         };
+    }
+
+    private textureTransform(center: Vector3, rotationDegrees: number): DomeTextureTransform {
+        return {
+            centerU: center?.x ?? 0.5,
+            centerV: center?.y ?? 0.5,
+            rotation: (rotationDegrees ?? 0) * Math.PI / 180
+        };
+    }
+
+    /** Direct <garden-material slot="..."> child only -- not any nested inside a further child. */
+    private getMaterialSlot(slot: string): GardenMaterial | null {
+        return (<Element[]>Array.prototype.slice.call(this.children))
+            .find((el): el is GardenMaterial => el.matches(`garden-material[slot="${slot}"]`)) ?? null;
+    }
+
+    /** Reads a <garden-material>'s own diffuse <garden-texture> for the dome's polar-UV
+     *  centre/rotation, since that mapping needs raw numbers to bake into custom UVs --
+     *  it can't just apply the transform to the built Texture the way a plain mesh would. */
+    private static materialTextureTransform(materialEl: GardenMaterial): DomeTextureTransform {
+        let textureEl = materialEl.getTexture("diffuse");
+        return textureEl
+            ? { centerU: textureEl.centerU, centerV: textureEl.centerV, rotation: textureEl.rotationRadians }
+            : DEFAULT_DOME_TEXTURE_TRANSFORM;
     }
 }

@@ -10,16 +10,40 @@
         <garden-camera type="free" collisions position="0 0 -40">
         </garden-camera>
         <garden-light></garden-light>
+        <!-- The main hemispheric light above still reaches down here (lights aren't
+             occluded by walls by default), but a lower-level point light keeps the
+             underground rooms from reading as near-pitch-black. Offset off (0,*,0) on
+             purpose -- the four lower rooms' shared partition walls run along x=0 and
+             z=0, and a light sitting on/inside a wall blows out to solid white nearby
+             (inverse-square falloff approaching a zero distance). -->
+        <garden-light type="point" position="2 -3 2"></garden-light>
 
         <garden-structure>
-            <garden-roof type="dome" outside-colour="blue"
-                inside-texture="../assets/Christ_Pantokrator.jpg">
+            <garden-roof type="dome">
+                <garden-material slot="outside" colour="blue"></garden-material>
+                <garden-material slot="inside" spec-colour="black">
+                    <garden-texture src="../assets/Christ_Pantokrator.jpg"></garden-texture>
+                </garden-material>
             </garden-roof>
 
             <garden-room id="r1" position="-8 0 8" width="16" collisions></garden-room>
             <garden-room id="r2" position="-8 0 -8" width="16" collisions></garden-room>
             <garden-room id="r3" position="8 0 8" width="16" collisions></garden-room>
             <garden-room id="r4" position="8 0 -8" width="16" collisions></garden-room>
+
+            <!-- Lower level, directly beneath r1-r4 -- one room-height (6) down, so each
+                 lower room's ceiling meets the matching upper room's floor exactly. Rooms
+                 stacked like this do *not* auto-connect on their own (a shared floor isn't
+                 a doorway); only s2 below actually punches through, into r1/r5. -->
+            <garden-room id="r5" position="-8 -6 8" width="16" collisions></garden-room>
+            <garden-room id="r6" position="-8 -6 -8" width="16" collisions></garden-room>
+            <garden-room id="r7" position="8 -6 8" width="16" collisions></garden-room>
+            <garden-room id="r8" position="8 -6 -8" width="16" collisions></garden-room>
+
+            <!-- Connects r1's floor to r5's floor -- <garden-structure> cuts an opening in
+                 r1's floor sized to s2's own footprint (see GardenStructure.tryFloorOpening),
+                 since <garden-stairs> is on its floor-opening whitelist. -->
+            <garden-stairs id="s2" position="-8 -6 4" width="3" height="6" depth="8" collisions></garden-stairs>
 
             <garden-stairs id="s1" position="0 -5 -36" width="8" height="5" depth="20" collisions>
                 <garden-sound loop="true" autoplay="true" maxdistance="20"
