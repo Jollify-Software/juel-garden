@@ -1,118 +1,162 @@
-import { DynamicTexture, MorphTargetsBlock, Observer } from "babylonjs";
-import { AdvancedDynamicTexture, Button, Control, Ellipse, Grid, Line, Rectangle, ScrollViewer, TextBlock, Vector2WithInfo } from "@babylonjs/gui";
-import { customElement } from "lit/decorators";
+import { Matrix, Observer, Scene, Vector3 } from "babylonjs";
+import { customElement, property } from "lit/decorators";
 import { GardenElement } from "../../GardenElement";
 import { GardenMesh } from "../../GardenMesh";
 
+// Screen-space info card anchored to the parent mesh. Rebuilt on plain DOM/CSS
+// rather than @babylonjs/gui: pulling in @babylonjs/gui drags the whole modular
+// @babylonjs/core engine alongside the monolithic 'babylonjs' package already used
+// everywhere else, and bundling both together crashes Parcel outright (reproduces
+// with nothing but `import "@babylonjs/gui"` in isolation -- not a code bug).
 @customElement("garden-info")
 export class GardenInfo extends GardenElement {
-    advTexture: AdvancedDynamicTexture
+    @property() title: string;
 
-    info: Rectangle;
-    target: Ellipse;
-    line: Line;
-    closeObserver: Observer<Vector2WithInfo>;
+    panel: HTMLDivElement;
+    container: HTMLDivElement;
+    marker: HTMLDivElement;
 
-    container: Rectangle;
+    private closeBtn: HTMLButtonElement;
+    private renderObserver: Observer<Scene>;
+    private visible = false;
+    private outsideClickHandler = (evt: PointerEvent) => {
+        let target = evt.target as Node;
+        if (this.visible && !this.panel.contains(target) && !this.marker.contains(target))
+            this.hide();
+    };
 
     updated() {
         let scene = this.getScene();
-        this.advTexture = AdvancedDynamicTexture.CreateFullscreenUI(this.id ?? "Info", true, scene);
+        let parentMesh = this.parentElement as GardenMesh;
 
-        this.info = new Rectangle();
-        this.info.width = "25%";
-        //rect1.adaptWidthToChildren = true;
-        //rect1.adaptHeightToChildren = true;
-        this.info.height = "40%";
-        this.info.cornerRadius = 20;
-        this.info.color = "Orange";
-        this.info.thickness = 4;
-        this.info.background = "green";
-        this.advTexture.addControl(this.info);
-        this.info.linkWithMesh(
-            (<GardenMesh>this.parentElement).mesh
-        );
-        this.info.linkOffsetY = -150;
+        this.marker = document.createElement("div");
+        Object.assign(this.marker.style, {
+            position: "fixed",
+            width: "14px",
+            height: "14px",
+            marginLeft: "-7px",
+            marginTop: "-7px",
+            borderRadius: "50%",
+            border: "3px solid orange",
+            background: "green",
+            pointerEvents: "none",
+            zIndex: "999",
+        });
 
-        let mainGrid = new Grid();
-        mainGrid.width = "100%";
-        mainGrid.height = "100%";
-        mainGrid.addRowDefinition(0.10);
-        mainGrid.addRowDefinition(0.90);
-        this.info.addControl(mainGrid);
+        this.panel = document.createElement("div");
+        Object.assign(this.panel.style, {
+            position: "fixed",
+            minWidth: "220px",
+            maxWidth: "320px",
+            background: "rgba(20, 60, 20, 0.92)",
+            color: "white",
+            border: "3px solid orange",
+            borderRadius: "16px",
+            padding: "10px 12px",
+            font: "14px/1.4 sans-serif",
+            pointerEvents: "auto",
+            zIndex: "1000",
+            transform: "translate(-50%, calc(-100% - 24px))",
+        });
 
-        let header = new Grid();
-        header.addColumnDefinition(0.90);
-        header.addColumnDefinition(0.10);
-        mainGrid.addControl(header);
+        let header = document.createElement("div");
+        Object.assign(header.style, {
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "6px",
+            fontWeight: "bold",
+        });
 
-        let title = new TextBlock();
-        title.text = this.title;
-        header.addControl(title);
+        let titleEl = document.createElement("span");
+        titleEl.textContent = this.title ?? "";
 
-        let close = Button.CreateSimpleButton("closeBtn", "✖");
-        if (!this.closeObserver) {
-            this.closeObserver = close.onPointerClickObservable.add((evt) => {
-                this.hide();
-            });
-        }
-        header.addControl(close, 0, 1);
+        this.closeBtn = document.createElement("button");
+        this.closeBtn.textContent = "✖";
+        Object.assign(this.closeBtn.style, {
+            background: "transparent",
+            border: "none",
+            color: "white",
+            cursor: "pointer",
+            fontSize: "14px",
+            lineHeight: "1",
+        });
+        this.closeBtn.addEventListener("click", () => this.hide());
 
-        let sv = new ScrollViewer();
-        mainGrid.addControl(sv, 1, 0);
+        header.append(titleEl, this.closeBtn);
 
-        this.container = sv;
+        this.container = document.createElement("div");
+        Object.assign(this.container.style, {
+            overflowY: "auto",
+            maxHeight: "220px",
+        });
 
-        /*
-        var label = new TextBlock();
-        label.text = this.innerHTML;
-        //label.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
-        label.textWrapping = true;
-        label.resizeToFit = true;
-        rect1.addControl(label);
-        */
+        this.panel.append(header, this.container);
+        document.body.append(this.marker, this.panel);
 
-        this.target = new Ellipse();
-        this.target.width = "40px";
-        this.target.height = "40px";
-        this.target.color = "Orange";
-        this.target.thickness = 4;
-        this.target.background = "green";
-        this.target.zIndex = -1;
-        this.advTexture.addControl(this.target);
-        this.target.linkWithMesh(
-            (<GardenMesh>this.parentElement).mesh
-        );
+        this.renderObserver = scene.onBeforeRenderObservable.add(() => {
+            this.updatePosition(scene, parentMesh);
+        });
 
-        this.line = new Line();
-        this.line.lineWidth = 4;
-        this.line.color = "Orange";
-        this.line.y2 = 20;
-        this.line.linkOffsetY = -20;
-        this.line.zIndex = -1;
-        this.advTexture.addControl(this.line);
-        this.line.linkWithMesh(
-            (<GardenMesh>this.parentElement).mesh
-        );
-        this.line.connectedControl = this.info;
+        // Capture phase so this runs *before* Babylon's own pointerdown handler on the
+        // canvas (a bubble-phase listener) -- an outside click first hides an already-open
+        // panel here, then the click's own pick/activate() (if any) can still open one on
+        // the bubble pass back up, so clicking straight from one mesh to another still works.
+        if (this.getAttribute("close-on-outside-click") !== "false")
+            document.addEventListener("pointerdown", this.outsideClickHandler, { capture: true });
 
         this.hide();
 
-        (<GardenMesh>this.parentElement).activate = () => {
+        parentMesh.activate = () => {
             this.show();
-        }
+        };
+    }
+
+    private updatePosition(scene: Scene, parentMesh: GardenMesh) {
+        if (!this.visible || !parentMesh.mesh || !scene.activeCamera)
+            return;
+
+        let engine = scene.getEngine();
+        let canvas = engine.getRenderingCanvas();
+        let rect = canvas.getBoundingClientRect();
+        let viewport = scene.activeCamera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight());
+
+        let projected = Vector3.Project(
+            parentMesh.mesh.getBoundingInfo().boundingSphere.centerWorld,
+            Matrix.Identity(),
+            scene.getTransformMatrix(),
+            viewport
+        );
+
+        let behindCamera = projected.z < 0 || projected.z > 1;
+        this.marker.style.display = behindCamera ? "none" : "block";
+        this.panel.style.display = behindCamera ? "none" : "block";
+        if (behindCamera)
+            return;
+
+        let x = rect.left + projected.x;
+        let y = rect.top + projected.y;
+        this.marker.style.left = `${x}px`;
+        this.marker.style.top = `${y}px`;
+        this.panel.style.left = `${x}px`;
+        this.panel.style.top = `${y}px`;
     }
 
     show() {
-        this.info.isVisible = true;
-        this.line.isVisible = true;
-        this.target.isVisible = true;
+        this.visible = true;
     }
 
     hide() {
-        this.info.isVisible = false;
-        this.line.isVisible = false;
-        this.target.isVisible = false;
+        this.visible = false;
+        this.marker.style.display = "none";
+        this.panel.style.display = "none";
     }
 
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.renderObserver?.remove();
+        document.removeEventListener("pointerdown", this.outsideClickHandler, { capture: true });
+        this.marker?.remove();
+        this.panel?.remove();
+    }
 }

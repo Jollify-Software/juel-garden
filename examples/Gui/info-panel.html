@@ -1,0 +1,46 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+
+<body>
+    <garden-scene>
+        <garden-camera position="0 3 -7"></garden-camera>
+        <garden-light></garden-light>
+
+        <garden-ground position="0 -0.5 0" width="10" height="10" colour="#7BC8A4"></garden-ground>
+
+        <garden-sphere position="-1.75 0.75 0" diameter="1.5" colour="yellow">
+            <garden-info title="The Sun">
+                <garden-text text-wrapping="true">
+                    The Sun is the star at the center of the Solar System.
+                    It is a nearly perfect sphere of hot plasma and is by far
+                    the most important source of energy for life on Earth.
+                </garden-text>
+            </garden-info>
+        </garden-sphere>
+
+        <garden-box position="0 0 0" colour="#4CC3D9">
+            <garden-info title="A Box">
+                <garden-text text-wrapping="true">
+                    Click any object in the scene to open its info panel.
+                    Click the ✖ button, or click anywhere outside, to close it again.
+                </garden-text>
+            </garden-info>
+        </garden-box>
+
+        <garden-cylinder position="1.75 0.25 0" diameter="1" height="1" colour="#FFC65D">
+            <!-- close-on-outside-click="false": this one only closes via its ✖ button. -->
+            <garden-info title="A Cylinder" close-on-outside-click="false">
+                <garden-text text-wrapping="true">
+                    Panels track their mesh on screen, even while the camera moves.
+                    This one has close-on-outside-click="false", so only its ✖ button closes it.
+                </garden-text>
+            </garden-info>
+        </garden-cylinder>
+    </garden-scene>
+</body>
+
+</html>
