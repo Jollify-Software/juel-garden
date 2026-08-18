@@ -176,7 +176,11 @@ export abstract class GardenMesh extends GardenElement {
                 }
 
                 for (var animation of animations) {
-                    animation.play(this);
+                    // Mirrors the garden-particle event switch just below: an explicit
+                    // event="load" auto-plays, anything else (e.g. unset, for a
+                    // <garden-button target="..."> to trigger) waits to be played on demand.
+                    if (animation.event === "load")
+                        animation.play(this);
                 }
 
                 for (var p of particles) {

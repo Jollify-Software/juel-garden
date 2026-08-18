@@ -1,4 +1,4 @@
-import { Animation } from "babylonjs";
+import { Animatable, Animation } from "babylonjs";
 import { customElement, property } from "lit/decorators";
 import { ObjectConverter } from "../Converters/ObjectConverter";
 import { StaticConvert } from "../Converters/StaticConvert";
@@ -19,31 +19,43 @@ export class GardenAnimation extends GardenElement {
     @property() keyframes: string;
     @property({ type: Number }) speed: number;
 
-    play(el: GardenMesh) {
+    // Built once and reused -- play() can be called repeatedly (e.g. by a
+    // <garden-button> toggling it on/off), and re-pushing a fresh Animation onto
+    // mesh.animations on every call would leave older ones still running underneath.
+    private animation: Animation;
+
+    play(el: GardenMesh): Animatable {
         let targetEl = el;
         if (this.target) {
             targetEl = document.getElementById(this.target) as GardenMesh;
         }
-        console.log(targetEl)
         let target: any;
         let scene = this.getScene();
         switch (this.type) {
             case "skeleton":
                 target = (<GardenSkeletonMesh>targetEl).skeleton;
-                scene.beginAnimation(target, this.from, this.to, this.loop, this.speed);
-                break;
+                return scene.beginAnimation(target, this.from, this.to, this.loop, this.speed);
             default:
-                let anime = new Animation("animation", this.property, this.speed,
-                    this.type, this.loopmode);
-                anime.setKeys(ObjectConverter.keyframeRay(this.keyframes));
+                if (!this.animation) {
+                    this.animation = new Animation("animation", this.property, this.speed,
+                        this.type, this.loopmode);
+                    this.animation.setKeys(ObjectConverter.keyframeRay(this.keyframes));
+                }
                 if (!targetEl.mesh.animations)
                     targetEl.mesh.animations = []
-                targetEl.mesh.animations.push(anime);
+                if (targetEl.mesh.animations.indexOf(this.animation) < 0)
+                    targetEl.mesh.animations.push(this.animation);
                 target = targetEl.mesh;
-                scene.beginAnimation(target, this.from, this.to, this.loop);
-                break;
+                return scene.beginAnimation(target, this.from, this.to, this.loop);
         }
+    }
 
-        
+    stop(el: GardenMesh) {
+        let targetEl = el;
+        if (this.target) {
+            targetEl = document.getElementById(this.target) as GardenMesh;
+        }
+        let target = this.type === "skeleton" ? (<GardenSkeletonMesh>targetEl).skeleton : targetEl.mesh;
+        this.getScene().stopAnimation(target);
     }
 }

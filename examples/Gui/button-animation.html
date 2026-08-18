@@ -1,0 +1,35 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+
+<body>
+    <garden-scene>
+        <garden-camera position="0 2 -6"></garden-camera>
+        <garden-light></garden-light>
+
+        <garden-ground position="0 -0.5 0" width="8" height="8" colour="#7BC8A4"></garden-ground>
+
+        <garden-box position="0 0 0" colour="#4CC3D9">
+            <!-- No event="load" on either -- they sit idle until a <garden-button> plays them. -->
+            <garden-animation id="box-spin" property="rotation.y" type="float" speed="30"
+                loop="true" loopmode="cycle" keyframes="0 0, 30 (2*Math.PI)"></garden-animation>
+
+            <garden-animation id="box-bounce" property="position.y" type="float" speed="30"
+                loop="true" loopmode="cycle" keyframes="0 0, 15 1, 30 0"></garden-animation>
+
+            <garden-info title="Click a button">
+                <garden-text text-wrapping="true">
+                    Each button below plays a different animation on this box by id --
+                    neither animation plays on its own until a button targets it.
+                </garden-text>
+                <garden-button target="box-spin">Spin</garden-button>
+                <garden-button target="box-bounce">Bounce</garden-button>
+            </garden-info>
+        </garden-box>
+    </garden-scene>
+</body>
+
+</html>

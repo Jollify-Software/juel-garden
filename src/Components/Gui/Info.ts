@@ -18,6 +18,8 @@ export class GardenInfo extends GardenElement {
 
     private closeBtn: HTMLButtonElement;
     private renderObserver: Observer<Scene>;
+    private parentMesh: GardenMesh;
+    private anchor: Vector3;
     private visible = false;
     private outsideClickHandler = (evt: PointerEvent) => {
         let target = evt.target as Node;
@@ -27,7 +29,7 @@ export class GardenInfo extends GardenElement {
 
     updated() {
         let scene = this.getScene();
-        let parentMesh = this.parentElement as GardenMesh;
+        this.parentMesh = this.parentElement as GardenMesh;
 
         this.marker = document.createElement("div");
         Object.assign(this.marker.style, {
@@ -95,7 +97,7 @@ export class GardenInfo extends GardenElement {
         document.body.append(this.marker, this.panel);
 
         this.renderObserver = scene.onBeforeRenderObservable.add(() => {
-            this.updatePosition(scene, parentMesh);
+            this.updatePosition(scene);
         });
 
         // Capture phase so this runs *before* Babylon's own pointerdown handler on the
@@ -107,13 +109,13 @@ export class GardenInfo extends GardenElement {
 
         this.hide();
 
-        parentMesh.activate = () => {
+        this.parentMesh.activate = () => {
             this.show();
         };
     }
 
-    private updatePosition(scene: Scene, parentMesh: GardenMesh) {
-        if (!this.visible || !parentMesh.mesh || !scene.activeCamera)
+    private updatePosition(scene: Scene) {
+        if (!this.visible || !this.anchor || !scene.activeCamera)
             return;
 
         let engine = scene.getEngine();
@@ -122,7 +124,7 @@ export class GardenInfo extends GardenElement {
         let viewport = scene.activeCamera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight());
 
         let projected = Vector3.Project(
-            parentMesh.mesh.getBoundingInfo().boundingSphere.centerWorld,
+            this.anchor,
             Matrix.Identity(),
             scene.getTransformMatrix(),
             viewport
@@ -143,6 +145,13 @@ export class GardenInfo extends GardenElement {
     }
 
     show() {
+        // Snapshot the mesh's world position once, rather than re-reading it every frame:
+        // a running <garden-animation> (e.g. a bounce on position.y) would otherwise drag
+        // the panel and its buttons around the screen with it, fighting the click the user
+        // is trying to make. The panel still tracks the camera every frame below -- only
+        // the mesh's own (possibly-animated) motion is deliberately ignored while it's open.
+        if (this.parentMesh.mesh)
+            this.anchor = this.parentMesh.mesh.getBoundingInfo().boundingSphere.centerWorld.clone();
         this.visible = true;
     }
 
