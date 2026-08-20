@@ -1,5 +1,6 @@
-import { ArcRotateCamera, Camera, FreeCamera, Vector3, VirtualJoystick, VirtualJoysticksCamera } from "babylonjs";
+import { Camera, Vector3 } from "babylonjs";
 import { customElement, property } from "lit/decorators";
+import { CameraTypeStrategies } from "../CameraTypes/CameraTypeStrategies";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenScene } from "./Scene";
@@ -32,40 +33,11 @@ export class GardenCamera extends GardenElement {
     updated() {
         let sceneEl = this.parentElement as GardenScene
         let scene = sceneEl.scene
-        console.log(this.type)
-        switch (this.type) {
-            case 'arc':
-                this.camera = new ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new Vector3(0, 0, 0), scene);
-                break;
-            case 'free':
-                let cam: FreeCamera;
-                const userAgent = navigator.userAgent.toLowerCase();
-                const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/.test(userAgent);
-                if (this.touch == 'true' && isTablet && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
-                    cam = new VirtualJoysticksCamera("camera", new Vector3(0, 5, -10), scene);
-                } else {
-                    cam = new FreeCamera("camera", new Vector3(0, 5, -10), scene);
-                }
-                if (this.ellipsoid)
-                    cam.ellipsoid = this.ellipsoid;
 
-                if (this.hasAttribute("collisions")) {
-                    cam.checkCollisions = true;
-                    cam.applyGravity = true;
-                }
-                if (this.speed)
-                    cam.speed = this.speed;
-    
-                cam.keysUp.push(87);    //W
-                cam.keysDown.push(83)   //D
-                cam.keysLeft.push(65);  //A
-                cam.keysRight.push(68); //S  
-
-                this.camera = cam;
-                
-                break;
-            default:
-                break;
+        this.camera = CameraTypeStrategies.build(this, scene);
+        if (!this.camera) {
+            console.warn(`<garden-camera> has unrecognized type "${this.type}".`);
+            return;
         }
 
         if (this.position)

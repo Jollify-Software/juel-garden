@@ -77,7 +77,6 @@ I should also say that this is the first Open Source project I have created, so 
     * The rooms really need to touch the ground not be floating in the air. Perhaps we could add a ground level variable?
     * I would like the temple to have more rooms and also a roof, like an Aztec or Greek temple.
 * `garden-structure` currently detects joins by bounding-box overlap, so it only works for axis-aligned, box-ish children (rooms, stairs). Rotated children or curved shapes (a `curvature` stairway, a dome roof) need a hand-placed `garden-opening` instead -- would be good to support those too.
-* WebXR  and input, I haven't added [WebXR](https://doc.babylonjs.com/divingDeeper/webXR/introToWebXR) to `garden-scene` yet.
-  * The user should be able to navigate the temple example in VR. Mouse and keyboard will should be a fallback.
-  * Is it better to create a component for WebXR or just add behaviours to `garden-scene`?
+* [WebXR](https://doc.babylonjs.com/divingDeeper/webXR/introToWebXR) is now available via a `<garden-webxr>` component (a sibling of `<garden-camera>`, same pattern as `<garden-light>`) -- see the [temple example](examples/Structures/temple.html) or the dedicated [webxr example](examples/Camera/webxr.html). It shows an "enter VR/AR" button when the browser/device supports it and does nothing otherwise, so `<garden-camera>` stays a full mouse/keyboard fallback either way.
+  * Teleportation only works on meshes passed in as the `floor` attribute (defaults to every `<garden-ground>`) -- a room's floor is fused into the same collision mesh as its walls/ceiling, so interior rooms aren't teleport-targets yet. Worth revisiting once rooms expose their floor as a separate mesh.
 

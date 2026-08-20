@@ -1,6 +1,7 @@
 import "./src/Components/Scene";
 import "./src/Components/Action";
 import "./src/Components/Camera";
+import "./src/Components/WebXR";
 import "./src/Components/Waypoint";
 import "./src/Components/Light";
 import "./src/Components/Box";

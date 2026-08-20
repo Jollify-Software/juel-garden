@@ -1,0 +1,33 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+
+<body>
+    <!-- A "Enter VR" button appears bottom-right if your browser/device supports
+         WebXR (Chrome/Edge on a headset, or Chrome on Android with an ARCore
+         device for AR) -- open this over https:// or localhost, WebXR refuses to
+         start on a plain file:// page. With no headset, or on a browser without
+         WebXR at all, no button appears and the scene works exactly like any
+         other example: the free camera below is a full mouse/keyboard fallback,
+         not just a placeholder while waiting for a headset. -->
+    <garden-scene collisions>
+        <garden-camera type="free" collisions position="0 2 -8"></garden-camera>
+        <garden-light></garden-light>
+
+        <!-- No floor attribute -- garden-webxr defaults to every <garden-ground> in
+             the scene, which is exactly this one. Point a VR controller at the
+             ground and squeeze the trigger to teleport around. -->
+        <garden-webxr></garden-webxr>
+
+        <garden-ground width="20" height="20" colour="#7BC8A4"></garden-ground>
+
+        <garden-box position="-2 0.5 0" colour="#4CC3D9"></garden-box>
+        <garden-sphere position="0 1.25 2" diameter="2.5" colour="#EF2D5E"></garden-sphere>
+        <garden-cylinder position="2 0.75 0" diameter="1" height="1.5" colour="#FFC65D"></garden-cylinder>
+    </garden-scene>
+</body>
+
+</html>

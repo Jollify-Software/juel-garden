@@ -18,6 +18,15 @@
              (inverse-square falloff approaching a zero distance). -->
         <garden-light type="point" position="2 -3 2"></garden-light>
 
+        <!-- "Enter VR" button appears if your browser/device supports WebXR (needs
+             https:// or localhost, not file://). Defaults to teleporting on every
+             <garden-ground> -- just the outer courtyard here, since the rooms'
+             floors are fused into each room's single collision mesh along with its
+             walls/ceiling, not a separate teleport-safe surface. The free camera
+             above is a full mouse/keyboard fallback either way, inside the rooms
+             included. -->
+        <garden-webxr></garden-webxr>
+
         <garden-structure>
             <garden-roof type="dome">
                 <garden-material slot="outside" colour="blue"></garden-material>
