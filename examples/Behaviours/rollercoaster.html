@@ -1,0 +1,44 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <script src="../../dist/juel-garden.js"></script>
+    </head>
+    <body>
+        <garden-scene>
+            <garden-camera position="0 26 -46"></garden-camera>
+            <garden-light></garden-light>
+
+            <garden-ground width="60" height="60" colour="#7BC8A4" position="0 -1 0"></garden-ground>
+
+            <!--
+                The line's points are the coaster's raw control points -- drawn as-is so
+                you can see the "rails". The cart below is a `track` behaviour on a
+                <garden-box>: it re-reads these same points, runs them through a
+                Catmull-Rom spline (track-smooth) so the ride is smooth rather than
+                snapping corner to corner, and re-orients itself every frame to follow
+                the spline. track-bank makes it roll into turns using the path's own
+                normal instead of always staying flat.
+            -->
+            <garden-line points="
+                0 0.5 0,
+                -3 6 6,
+                -8 9 10,
+                -13 4 6,
+                -14 2 -2,
+                -9 5 -9,
+                -2 3 -12,
+                6 6 -10,
+                11 3 -4,
+                12 1 5,
+                6 4 11,
+                0 1 6,
+                0 0.5 0">
+
+                <garden-box parent width="1" height="0.6" depth="2.2" position="0 0.5 0" colour="#EF2D5E"
+                    track track-step="0.12" track-smooth="12" track-bank>
+                    <garden-box position="0 0.55 -0.3" width="0.6" height="0.3" depth="1" colour="#4CC3D9"></garden-box>
+                </garden-box>
+            </garden-line>
+        </garden-scene>
+    </body>
+</html>
