@@ -3,6 +3,7 @@ import { customElement, property } from "lit/decorators";
 import { CameraTypeStrategies } from "../CameraTypes/CameraTypeStrategies";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
+import { GardenMesh } from "../GardenMesh";
 import { GardenScene } from "./Scene";
 
 @customElement("garden-camera")
@@ -30,7 +31,7 @@ export class GardenCamera extends GardenElement {
     setPosition(position: Vector3) {
         this.camera.position = position;
     }
-    updated() {
+    async updated() {
         let sceneEl = this.parentElement as GardenScene
         let scene = sceneEl.scene
 
@@ -48,5 +49,21 @@ export class GardenCamera extends GardenElement {
 
         this.camera.attachControl(sceneEl.canvas, true);
 
+        let target = this.getAttribute("target");
+        if (target && "lockedTarget" in this.camera) {
+            this.beginBuild();
+            try {
+                // The target (e.g. a drivable car) can be declared after this camera in
+                // the markup, so its element may not even exist yet -- wait for the whole
+                // document before resolving by id, same as <garden-waypoint>.
+                await GardenElement.whenDocumentReady();
+                let [targetEl] = await GardenElement.resolveReady<GardenMesh>(target);
+                if (targetEl?.mesh) {
+                    (<any>this.camera).lockedTarget = targetEl.mesh;
+                }
+            } finally {
+                this.endBuild();
+            }
+        }
     }
 }

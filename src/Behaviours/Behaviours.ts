@@ -1,5 +1,6 @@
 import { Mesh } from "babylonjs";
 import { BehaviourAction } from "./BehaviourAction";
+import { BehaviourDrive } from "./BehaviourDrive";
 import { BehaviourOrbit } from "./BehaviourOrbit";
 import { BehaviourTrack } from "./BehaviourTrack";
 
@@ -7,7 +8,8 @@ export module Behaviours {
     var map = {
         'track': BehaviourTrack,
         'orbit': BehaviourOrbit,
-        'action': BehaviourAction
+        'action': BehaviourAction,
+        'drive': BehaviourDrive
     }
 
     export var applyBehaviours = function(el: HTMLElement, mesh: Mesh) {

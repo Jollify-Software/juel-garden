@@ -32,7 +32,12 @@ export module OptionsBuilder {
         'diffuse': ConverterSetter('diffuse', 'diffuse', Color3Convert.fromString),
         'beta-lower': FloatSetter('beta-lower', 'lowerBetaLimit'),
         'beta-upper': FloatSetter('beta-upper', 'upperBetaLimit'),
-        'radius-lower': FloatSetter('radius-lower', 'lowerRadiusLimit')
+        'radius-lower': FloatSetter('radius-lower', 'lowerRadiusLimit'),
+        'radius': FloatSetter('radius'),
+        'height-offset': FloatSetter('height-offset', 'heightOffset'),
+        'rotation-offset': FloatSetter('rotation-offset', 'rotationOffset'),
+        'camera-stiffness': FloatSetter('camera-stiffness', 'cameraStiffness'),
+        'camera-damping': FloatSetter('camera-damping', 'cameraDamping')
     }
 
     export var build = function(el: HTMLElement): object {

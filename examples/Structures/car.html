@@ -9,17 +9,19 @@
 		</style>
     </head>
     <body>
-        <!-- https://www.babylonjs-playground.com/textures/floor.png -->
         <garden-scene>
-            <garden-camera></garden-camera>
+            <garden-camera type="follow" target="#car" radius="1.8" height-offset="1.5" rotation-offset="180"></garden-camera>
             <garden-light></garden-light>
 
-            <garden-polygon parent extrude="true" depth="0.2" shape="-0.3 0 -0.1, 0.2 0 -0.1, (Shape.curve()), 0 0 0.1, -0.3 0 0.1"
+            <garden-ground width="30" height="30" position="0 -0.3 0"
+                texture="https://www.babylonjs-playground.com/textures/floor.png"></garden-ground>
+
+            <!-- WASD / arrow keys drive the car; the camera above chases it from behind. -->
+            <garden-polygon id="car" parent extrude="true" depth="0.2" shape="-0.3 0 -0.1, 0.2 0 -0.1, (Shape.curve()), 0 0 0.1, -0.3 0 0.1"
                 faceuv="0 0.5 0.38 1, 0 0 1 0.5, 0.38 1 0 0.5" wrap="true"
                 texture="https://assets.babylonjs.com/environments/car.png"
-                rotation="(-Math.PI/2) 0 0">
-                <garden-animation event="load" property="position.x" from="0" to="210" speed="30" type="float" loop="true" loopmode="cycle"
-                    keyframes="0 -4, 150 4, 210 4"></garden-animation>
+                rotation="(-Math.PI/2) 0 0"
+                drive drive-speed="0.08" drive-turn="0.04" drive-facing-offset="-90">
 
                 <garden-cylinder position="-0.2 0.035 -0.1" diameter="0.125" height="0.05"
                     faceuv="0 0 1 1, 0 0.5 0 0.5, 0 0 1 1" texture="https://assets.babylonjs.com/environments/wheel.png">

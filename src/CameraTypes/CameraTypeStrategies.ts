@@ -2,12 +2,14 @@ import { Camera, Scene } from "babylonjs";
 import type { GardenCamera } from "../Components/Camera";
 import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 import { ArcCameraStrategy } from "./ArcCameraStrategy";
+import { FollowCameraStrategy } from "./FollowCameraStrategy";
 import { FreeCameraStrategy } from "./FreeCameraStrategy";
 
 export module CameraTypeStrategies {
     var map: { [type: string]: ICameraTypeStrategy } = {
         'arc': ArcCameraStrategy,
-        'free': FreeCameraStrategy
+        'free': FreeCameraStrategy,
+        'follow': FollowCameraStrategy
     }
 
     export var build = function(el: GardenCamera, scene: Scene): Camera {
