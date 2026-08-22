@@ -1,6 +1,13 @@
 import { FreeCamera, Vector3, VirtualJoysticksCamera } from "babylonjs";
 import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 
+/**
+ * `type="free"`: WASD/arrow-key + mouse-look free-fly camera, or a
+ * touch-joystick camera on a tablet when `touch="true"` (the default). See
+ * {@link GardenCamera}.
+ *
+ * @category Camera Types
+ */
 export const FreeCameraStrategy: ICameraTypeStrategy = (el, scene) => {
     let cam: FreeCamera;
     const userAgent = navigator.userAgent.toLowerCase();

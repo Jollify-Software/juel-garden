@@ -7,6 +7,23 @@ import { Utility } from "../../Utility";
 import { StairsFunctions, StepType } from "../../ShapeFunctions/Stairs";
 import { customElement, property } from "lit/decorators";
 
+/**
+ * A flight of stairs, straight or curved, generated procedurally (see
+ * {@link StairsFunctions}). The whitelisted way to punch an automatic floor
+ * opening into a `<garden-room>` sibling under a shared `<garden-structure>`
+ * (see {@link GardenStructure}).
+ *
+ * Attributes: `width`, `height`, `depth`, `curvature` (degrees -- when set,
+ * builds a curved staircase instead of a straight one; `depth` is ignored in
+ * that case).
+ *
+ * @example
+ * ```html
+ * <garden-stairs id="s1" width="4" height="5" depth="20"></garden-stairs>
+ * ```
+ *
+ * @category Components - Prefabs
+ */
 @customElement("garden-stairs")
 export class GardenStairs extends GardenMesh {
     @property({ type: Number }) width: number = 4;

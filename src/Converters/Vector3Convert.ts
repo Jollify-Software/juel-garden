@@ -2,6 +2,19 @@ import { Tools, Vector3, Vector4 } from "babylonjs";
 import { NameValue } from "../NameValue";
 import { ShapeFunctions } from "../ShapeFunctions";
 
+/**
+ * The library's core `Vector3` attribute parser -- used for `position`,
+ * `scale`, `points`, `shape`, `emitter`, and many more. `fromString` parses
+ * `"x y z"` (each component a literal or a `(Math...)` expression);
+ * `rotationString` does the same but treats each component as degrees;
+ * `array` parses a comma-separated list of points, where any entry can
+ * instead be a `Shape.xxx(...)` call into {@link ShapeFunctions} that expands
+ * to several points inline; `keyedArray`/`keyedRotationArray` parse
+ * `"name: x y z, name: x y z"` into {@link NameValue} pairs (see
+ * {@link GardenReplicate}).
+ *
+ * @category Converters
+ */
 export module Vector3Convert {
     var splityReg = /\s+(?=[^\])}]*([\[({]|$))/;
     function getFloat(s: string, rotation = false, i: number = 0) {

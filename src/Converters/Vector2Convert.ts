@@ -1,5 +1,6 @@
 import { Tools, Vector2 } from "babylonjs";
 
+/** Parses `"x y"` (literal or `(Math...)` expressions) into a `Vector2`. @category Converters */
 export module Vector2Convert {
     var splityReg = /\s+(?=[^\])}]*([\[({]|$))/;
     function getFloat(s: string, rotation = false, i: number = 0) {

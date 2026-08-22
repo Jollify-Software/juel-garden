@@ -18,11 +18,13 @@ import { StraightStairs } from "./StraightStairsFunction";
  * limitations under the License.
  */
 
+/** Whether a stair generator's step count is fixed (`NUM_STEPS`) or derived from a fixed step height (`STEP_HEIGHT`). @category Shape Functions */
 export enum StepType{
     NUM_STEPS,
     STEP_HEIGHT
 }
 
+/** Entry point {@link GardenStairs} calls into -- `curved`/`straight` generators. @category Shape Functions */
 export module StairsFunctions {
     export var curved = CurvedStairs;
     export var straight = StraightStairs;

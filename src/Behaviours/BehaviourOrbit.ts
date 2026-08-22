@@ -7,6 +7,23 @@ function worldPositionOf(obj: TransformNode | Camera): Vector3 {
         : obj.globalPosition.clone();
 }
 
+/**
+ * Continuously orbits the mesh around its parent element's position. Also
+ * exposes `enter(obj)`/`leave(obj)` on the element (used by
+ * {@link GardenWaypoint} to join/leave a camera to the same orbit while
+ * preserving its world position).
+ *
+ * Attributes: `orbit-angle` (radians per frame, default `0.002`).
+ *
+ * @example
+ * ```html
+ * <garden-sphere position="0 0 0" diameter="3">
+ *   <garden-sphere id="moon" position="4 0 0" diameter="0.5" orbit orbit-angle="0.01"></garden-sphere>
+ * </garden-sphere>
+ * ```
+ *
+ * @category Behaviours
+ */
 export function BehaviourOrbit(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     let nodes: TransformNode[] = [];
 

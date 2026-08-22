@@ -8,6 +8,26 @@ import { GardenMesh } from "../../GardenMesh";
 // @babylonjs/core engine alongside the monolithic 'babylonjs' package already used
 // everywhere else, and bundling both together crashes Parcel outright (reproduces
 // with nothing but `import "@babylonjs/gui"` in isolation -- not a code bug).
+/**
+ * A clickable info panel anchored above its parent mesh -- click the mesh
+ * (via {@link GardenScene}'s pointer-pick, wired to `activate()`) to open a
+ * screen-space card that tracks the mesh's position as the camera moves.
+ * Hosts `<garden-text>`/`<garden-button>` rows as content.
+ *
+ * Attributes: `title`, `close-on-outside-click` (`"false"` to disable,
+ * default enabled).
+ *
+ * @example
+ * ```html
+ * <garden-column>
+ *   <garden-info title="The North Column">
+ *     <garden-text>Built in 1923.</garden-text>
+ *   </garden-info>
+ * </garden-column>
+ * ```
+ *
+ * @category Components - GUI
+ */
 @customElement("garden-info")
 export class GardenInfo extends GardenElement {
     @property() title: string;

@@ -10,6 +10,25 @@ import { GardenElement } from "./GardenElement";
 import { GardenMaterial } from "./Components/Material";
 import { Modifier } from "./Modifiers/Modifier";
 
+/**
+ * Base class for every custom element that owns a real Babylon `Mesh`
+ * ({@link GardenElement} subclasses without a mesh -- lights, sounds,
+ * cameras -- extend `GardenElement` directly instead). Handles the attributes
+ * shared by (almost) every shape: `position`/`rotation`/`scale` (inherited
+ * from `GardenElement`), `colour`/`spec-colour`/`emissive-colour`,
+ * `texture`/`diffuse-texture`/`bump-texture`/`reflection-texture` (and their
+ * `-uscale`/`-vscale`/`-level`/`-coordinates` companions), `collisions`,
+ * `hollow` (CSG-subtracts a scaled clone of itself, for a shell/box effect),
+ * and `split` (CSG-halves the mesh). Also wires up any `track`/`orbit`/
+ * `action`/`drive`/`suspension` behaviour attribute via {@link Behaviours}.
+ *
+ * A subclass's `updated()` builds the actual Babylon geometry (typically via
+ * `MeshBuilder`) and hands it to {@link GardenMesh.setMesh}, which applies all
+ * of the above plus picks up a single child `<garden-material>` and any
+ * `<garden-animation>`/`<garden-particle>` children.
+ *
+ * @category Core
+ */
 export abstract class GardenMesh extends GardenElement {
     static defaultHollowScale = new Vector3(.75, .75, .75);
 

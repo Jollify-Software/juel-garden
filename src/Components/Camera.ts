@@ -6,6 +6,30 @@ import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { GardenScene } from "./Scene";
 
+/**
+ * The scene's camera -- exactly one belongs inside `<garden-scene>`, as a
+ * sibling of `<garden-light>`. Which Babylon camera actually gets built is
+ * chosen by `type`, delegated to {@link CameraTypeStrategies}:
+ *
+ * - `"arc"` (default) -- an orbiting `ArcRotateCamera` ({@link ArcCameraStrategy}).
+ * - `"free"` -- WASD/touch-joystick free-fly, with optional `collisions`
+ *   ({@link FreeCameraStrategy}).
+ * - `"follow"` -- a spring-damped third-person chase camera locked to
+ *   `target` ({@link FollowCameraStrategy}).
+ *
+ * Attributes: `type`, `position`, `speed`, `target` (an element selector, for
+ * `type="follow"` or any type exposing `lockedTarget`), `radius`,
+ * `height-offset`, `rotation-offset`, `camera-stiffness`, `camera-damping`
+ * (the last four are `type="follow"`-specific), `ellipsoid`/`touch`
+ * (`type="free"`-specific).
+ *
+ * @example
+ * ```html
+ * <garden-camera type="follow" target="#car" radius="8" height-offset="3"></garden-camera>
+ * ```
+ *
+ * @category Components
+ */
 @customElement("garden-camera")
 export class GardenCamera extends GardenElement {
     @property() type: string;

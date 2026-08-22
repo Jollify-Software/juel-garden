@@ -19,6 +19,13 @@ import { StepType } from "./Stairs";
  * limitations under the License.
  */
 
+/**
+ * Generates a curved (spiral-segment) staircase mesh. Used by
+ * {@link GardenStairs} when its `curvature` attribute is set. Ported from
+ * the kitfox.com stairs generator.
+ *
+ * @category Shape Functions
+ */
 export function CurvedStairs(scene: Scene, height: number = 2, stepWidth: number = 1, stepType: StepType = StepType.NUM_STEPS, numSteps: number = 6, userStepHeight: number = .2, curvature: number = 60, innerRadius: number = 3, ccw: boolean = false, sides: boolean = true): Mesh {
     const toRadians = Math.PI / 180;
 

@@ -3,6 +3,20 @@ import { customElement, property } from 'lit/decorators';
 import { Vector2Convert } from '../Converters/Vector2Convert';
 import { GardenMesh } from "../GardenMesh";
 
+/**
+ * Draws onto a `DynamicTexture` and applies it as the mesh's diffuse texture
+ * -- either its own plane (built here) or, when nested inside another mesh
+ * element, that parent's surface. Use this (not `<garden-text>`, which is a
+ * screen-space HUD row inside `<garden-info>`) for text or SVG drawn directly
+ * onto a mesh's own surface in-world.
+ *
+ * Attributes: `content` (`"text"|"svg"`), `font`, `background`, `foreground`
+ * (space-separated per-line colours for multi-line text), `point` (a
+ * `Vector2` draw origin), `canvas` (a `Vector2` texture size, default
+ * `512 256`). Text content is the element's own text/SVG markup.
+ *
+ * @category Components
+ */
 @customElement("garden-canvas")
 export class GardenCanvas extends GardenMesh {
     @property() content: string;

@@ -4,6 +4,14 @@ import { GardenMesh } from "./GardenMesh";
 import rasterizeHTML from "rasterizehtml";
 import { borderBottomLeftRadius } from "html2canvas/dist/types/css/property-descriptors/border-radius";
 
+/**
+ * Rasterises a mesh's own light-DOM content (its first child element) into a
+ * `DynamicTexture` via `html2canvas`, for `texture="html"` (see
+ * {@link ModifyTextureSetter}) -- lets an element's inner HTML/CSS become the
+ * mesh's surface texture instead of an image file.
+ *
+ * @category Core
+ */
 export class HtmlTexture {
     texture: DynamicTexture;
 

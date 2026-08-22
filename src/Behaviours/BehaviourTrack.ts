@@ -8,6 +8,25 @@ import { GardenMesh } from "../GardenMesh";
 // -- essential for anything meant to look like a rollercoaster rather than rails.
 // `track-bank` orients "up" to the path's Frenet normal instead of world Y, so
 // the mesh rolls into turns; omit it for a cart that always stays level.
+/**
+ * Follows the polyline of a parent `<garden-line>`'s `points` attribute --
+ * built for rollercoaster-style rides, but works for any path-following mesh.
+ *
+ * Attributes: `track-smooth` (Catmull-Rom points per segment, for a smooth
+ * curve instead of snapping at corners; omit for straight rail segments),
+ * `track-bank` (present to roll "up" into the path's curve instead of
+ * staying world-Y-up), `track-step` (distance moved per frame, default
+ * `0.05`).
+ *
+ * @example
+ * ```html
+ * <garden-line points="0 0 0, 10 0 0, 10 0 10, 0 0 10, 0 0 0">
+ *   <garden-box track track-smooth="20" track-bank></garden-box>
+ * </garden-line>
+ * ```
+ *
+ * @category Behaviours
+ */
 export function BehaviourTrack(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     let line = el.parentElement;
     let pointsAttr = line?.getAttribute("points");

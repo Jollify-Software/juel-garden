@@ -28,6 +28,25 @@ export const ColorConverter = {
     }
 };
 
+/**
+ * A box room: a floor plus four walls, merged into one mesh with a
+ * `MultiMaterial` so each surface can carry its own colour or texture.
+ * Combine several under a `<garden-structure>` to have shared walls
+ * auto-cut into doorways (see {@link GardenStructure}), or add a
+ * `<garden-roof>` child.
+ *
+ * Attributes: `width`, `height`, `depth`, `thickness`, `floor-color`/
+ * `north-color`/`east-color`/`south-color`/`west-color` (each may instead be
+ * overridden by a `<garden-material slot="floor"|"north"|"east"|"south"|"west">`
+ * child, which takes full precedence).
+ *
+ * @example
+ * ```html
+ * <garden-room id="r1" width="8" height="6" depth="16" collisions></garden-room>
+ * ```
+ *
+ * @category Components - Prefabs
+ */
 @customElement("garden-room")
 export class GardenRoom extends GardenMesh {
     static WallHeight = 6;

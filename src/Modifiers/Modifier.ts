@@ -5,6 +5,14 @@ import { ModifyRotationSetter } from "./ModifyRotationSetter";
 import { ModifyTextureSetter } from "./ModifyTextureSetter";
 import { ModifyVector3Setter } from "./ModifyVector3Setter";
 
+/**
+ * Applies the visual/material attributes every {@link GardenMesh} shares
+ * (`position`, `rotation`, `scale`, `colour` and friends, `texture` and
+ * friends) onto a built Babylon mesh, dispatching each attribute to its
+ * {@link ISetter}. Called by {@link GardenMesh.modifyMesh}.
+ *
+ * @category Modifiers
+ */
 export module Modifier {
     var map = {
         'position': ModifyVector3Setter('position'),

@@ -2,6 +2,17 @@ import { Sprite, SpriteManager } from "babylonjs";
 import { customElement, property } from "lit/decorators";
 import { GardenElement } from "../GardenElement";
 
+/**
+ * A batch of billboard sprites (e.g. a stand of trees) from a single sprite
+ * sheet, via Babylon's `SpriteManager`.
+ *
+ * Attributes: `url` (sprite sheet), `capacity`, `count` (sprites per group),
+ * `width`/`height` (cell size), `positions` -- comma-separated groups of
+ * `"x y z"` triples (each may use `(Math...)` expressions), one group's worth
+ * of `count` sprites placed per group.
+ *
+ * @category Components
+ */
 @customElement("garden-sprite")
 export class GardenSprite extends GardenElement {
     @property({ type: Number }) capacity: number;

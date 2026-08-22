@@ -40,6 +40,21 @@ interface AxisOverlap {
  * unlike a shared wall, a shared floor doesn't imply anything should walk through it.
  * An opening is only cut where a whitelisted vertical connector (currently just
  * <garden-stairs>) actually reaches into a room's floor.
+ *
+ * Attributes: `opening-width`, `opening-height`, `opening-depth` (the fixed
+ * cut dimensions used at every detected join), `tolerance` (how close two
+ * bounding boxes must be to count as touching).
+ *
+ * @example
+ * ```html
+ * <garden-structure>
+ *   <garden-room id="r1"></garden-room>
+ *   <garden-room id="r2" position="0 0 -16"></garden-room>
+ *   <garden-roof type="dome"></garden-roof>
+ * </garden-structure>
+ * ```
+ *
+ * @category Components - Prefabs
  */
 @customElement("garden-structure")
 export class GardenStructure extends GardenElement {

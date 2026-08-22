@@ -1,6 +1,7 @@
 import { CSG, Material, Mesh, MeshBuilder, Scene, Vector3, VertexBuffer } from "babylonjs";
 
 /** Where a dome texture's own centre point sits, in the texture's own 0..1 UV space. */
+/** @category Utilities */
 export interface DomeTextureTransform {
     centerU: number;
     centerV: number;
@@ -107,6 +108,8 @@ function createBaseCap(
  * single CSG-subtracted solid, so each can carry its own material. They're merged
  * into one mesh via a MultiMaterial (Mesh.MergeMeshes' multiMultiMaterials flag),
  * the same technique GardenRoom uses to give each wall its own colour.
+ *
+ * @category Utilities
  */
 export function createDomeRoof(
     name: string,

@@ -1,5 +1,12 @@
 import { GardenMesh } from "../GardenMesh";
 
+/**
+ * {@link ISetter} factory for a single numeric attribute, optionally written
+ * onto a dotted property path (e.g. `"mat.bumpTexture-uScale"`) instead of
+ * the plain mesh-builder `options` object.
+ *
+ * @category Modifiers
+ */
 export function ModifyFloatSetter(name: string, property: string = null) {
     return function(el: HTMLElement, attr: Attr[], options: object) {
         let val = parseFloat(attr.find(x => x.name == name).value);

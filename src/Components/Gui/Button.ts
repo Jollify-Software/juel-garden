@@ -4,10 +4,26 @@ import { GardenMesh } from "../../GardenMesh";
 import { GardenControl } from "./Control";
 import { GardenInfo } from "./Info";
 
-// A toggle button inside a <garden-info> panel: plays a <garden-animation> by id on
-// the first click, stops it on the next. The target animation should be left without
-// event="load" (or given some other event value) so GardenMesh.modifyMesh() doesn't
-// also auto-play it at build time.
+/**
+ * A toggle button inside a `<garden-info>` panel: plays a `<garden-animation>`
+ * by id on the first click, stops it on the next. The target animation
+ * should be left without `event="load"` (or given some other event value) so
+ * {@link GardenMesh.modifyMesh} doesn't also auto-play it at build time.
+ *
+ * Attributes: `target` (id of the `<garden-animation>` to control),
+ * `stop-label` (button text while playing, default `"Stop"`; the initial
+ * label is the element's own text content). Also accepts {@link GardenControl}'s
+ * styling attributes (`padding`, `width`, `color`, ...).
+ *
+ * @example
+ * ```html
+ * <garden-info title="Fountain">
+ *   <garden-button target="#fountain-anim">Play</garden-button>
+ * </garden-info>
+ * ```
+ *
+ * @category Components - GUI
+ */
 @customElement("garden-button")
 export class GardenButton extends GardenControl {
     @property() target: string;

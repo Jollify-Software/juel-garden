@@ -7,6 +7,14 @@ import { FloatSetter } from "./OptionsFloatSetter";
 import { StringSetter } from "./OptionsStringSetter";
 import { OptionsVector3ArraySetter } from "./OptionsVector3ArraySetter";
 
+/**
+ * Builds the plain options object handed to a Babylon `MeshBuilder.Create*`
+ * call (and a few other shared numeric/converter attributes, like camera
+ * tuning) from an element's attributes, dispatching each to its
+ * {@link ISetter}. Called by {@link GardenElement.buildOptions}.
+ *
+ * @category Options
+ */
 export module OptionsBuilder {
     var map = {
         'width': FloatSetter('width'),

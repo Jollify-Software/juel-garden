@@ -6,6 +6,21 @@ import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenScene } from "./Scene";
 
+/**
+ * A scene light -- a Babylon `HemisphericLight` (`type="hemi"`, the default,
+ * ambient sky/ground light) or `PointLight` (`type="point"`).
+ *
+ * Attributes: `type` (`"hemi"|"point"`, default `"hemi"`), `position`
+ * (defaults to `0 1 0`), `diffuse` (colour, see {@link Color3Convert}).
+ *
+ * @example
+ * ```html
+ * <garden-light></garden-light>
+ * <garden-light type="point" position="0 4 0" diffuse="1 0.9 0.8"></garden-light>
+ * ```
+ *
+ * @category Components
+ */
 @customElement("garden-light")
 export class GardenLight extends GardenElement {
     @property() type: string;

@@ -7,6 +7,7 @@ import { listVertices } from "./listVertices";
  * @param mesh - The Babylon.js mesh
  * @param outsideVertices - List of outside vertices for comparison
  * @returns An array of inside vertices
+ * @category Utilities
  */
 export function listInsideVertices(mesh: Mesh, outsideVertices: Vector3[]): Vector3[] {
     const allVertices = listVertices(mesh);

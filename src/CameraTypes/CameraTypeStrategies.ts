@@ -5,6 +5,13 @@ import { ArcCameraStrategy } from "./ArcCameraStrategy";
 import { FollowCameraStrategy } from "./FollowCameraStrategy";
 import { FreeCameraStrategy } from "./FreeCameraStrategy";
 
+/**
+ * Maps `<garden-camera type="...">` to the {@link ICameraTypeStrategy} that
+ * builds it: `"arc"` ({@link ArcCameraStrategy}), `"free"`
+ * ({@link FreeCameraStrategy}), `"follow"` ({@link FollowCameraStrategy}).
+ *
+ * @category Camera Types
+ */
 export module CameraTypeStrategies {
     var map: { [type: string]: ICameraTypeStrategy } = {
         'arc': ArcCameraStrategy,

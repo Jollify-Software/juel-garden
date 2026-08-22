@@ -1,5 +1,12 @@
 import { Animation, Mesh } from "babylonjs";
 
+/**
+ * Maps a handful of string attribute values onto Babylon's own numeric enum
+ * constants: animation loop mode/type (for `<garden-animation>`) and mesh
+ * side-orientation (`"default"|"front"|"back"|"double"`).
+ *
+ * @category Converters
+ */
 export module StaticConvert {
     export var animationLoopMode = (str: string) => {
         switch (str) {

@@ -3,25 +3,43 @@ import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
-// Terrain-following "suspension" for a `drive`-driven mesh, without a physics
-// engine -- this library has none, and a real one (Cannon/Ammo/Havok) is a
-// heavy dependency to bundle alongside monolithic 'babylonjs' (@babylonjs/gui
-// crashed the Parcel build doing exactly that; see the gui_babylonjs_gui_build_crash
-// memory). Instead each wheel position samples the terrain's own height at its
-// current world (x,z) via GroundMesh.getHeightAtCoordinates. Visually, a per-wheel
-// damped spring chases that height -- the same hand-rolled spring-damper approach
-// as the follow camera -- and the chassis's ride height and pitch/roll are derived
-// from the 4 spring-smoothed corner heights, like fitting a plane through 4
-// suspension travel points, so hitting a bump under one wheel visibly rocks the
-// chassis rather than just bouncing it uniformly. But whether a position is
-// drivable *at all* is decided from the raw, un-smoothed heights sampled this same
-// frame, deliberately never the spring -- see the long comment below for why that
-// split turned out to matter.
-//
-// Must run *after* `drive` has moved the chassis for this frame (Behaviours.map's
-// key order registers `drive`'s render callback first, and Babylon fires
-// registered callbacks in registration order) -- otherwise wheel world
-// positions would be sampled a frame stale.
+/**
+ * Terrain-following "suspension" for a `drive`-driven mesh, without a physics
+ * engine -- this library has none, and a real one (Cannon/Ammo/Havok) is a
+ * heavy dependency to bundle alongside monolithic 'babylonjs'. Each wheel
+ * position samples the terrain's own height at its current world (x,z) via
+ * `GroundMesh.getHeightAtCoordinates`. Visually, a per-wheel damped spring
+ * chases that height, and the chassis's ride height and pitch/roll are
+ * derived from the 4 spring-smoothed corner heights (a plane fit), so a bump
+ * under one wheel visibly rocks the chassis rather than just bouncing it
+ * uniformly. Whether a position is drivable *at all* is decided from the raw,
+ * un-smoothed heights sampled that same frame (never the lagging spring, and
+ * never below the raw ground -- a wheel's suspension travel can't compress
+ * past the ground actually being there), which refuses forward progress once
+ * the ground is steeper than `suspension-max-tilt`, retreating smoothly
+ * rather than freezing solid.
+ *
+ * Must be paired with `drive` (see {@link BehaviourDrive}) and run after it
+ * -- the library takes care of this ordering automatically (see
+ * {@link Behaviours}).
+ *
+ * Attributes: `suspension-terrain` (selector of the `<garden-height-map>` to
+ * follow), `suspension-wheels` (4 local x,z offsets: front-left, front-right,
+ * rear-left, rear-right), `suspension-stiffness` (default `90`),
+ * `suspension-damping` (default `18`), `suspension-height` (ride height/
+ * ground clearance), `suspension-max-tilt` (degrees, default `25` -- the
+ * steepest terrain the vehicle can climb before being blocked),
+ * `suspension-retreat-rate` (units/second backed away from an unclimbable
+ * slope, default `20` -- raise alongside a much faster `drive-speed`).
+ *
+ * @example
+ * ```html
+ * <garden-box id="buggy" drive drive-speed="0.12"
+ *     suspension suspension-terrain="#terrain" suspension-max-tilt="45"></garden-box>
+ * ```
+ *
+ * @category Behaviours
+ */
 export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     let scene = (<GardenMesh>el).getScene();
     let engine = scene.getEngine();

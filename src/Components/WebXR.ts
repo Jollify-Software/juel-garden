@@ -14,6 +14,17 @@ import { GardenScene } from "./Scene";
  * -- no session ever takes over unless the user explicitly enters one.
  *
  * A sibling of <garden-camera> inside <garden-scene>, same as <garden-light>.
+ *
+ * Attributes: `mode` (`"vr"|"ar"`, default `"vr"`), `floor` (selector of
+ * teleport-target meshes, defaults to every `<garden-ground>`), `teleportation`
+ * (boolean, default `true`).
+ *
+ * @example
+ * ```html
+ * <garden-webxr></garden-webxr>
+ * ```
+ *
+ * @category Components
  */
 @customElement("garden-webxr")
 export class GardenWebXR extends GardenElement {

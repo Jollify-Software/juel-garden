@@ -6,6 +6,28 @@ import { Vector3Convert } from "./Converters/Vector3Convert";
 import { OptionsBuilder } from "./Options/OptionsBuilder";
 import { resolveElements } from "./Utils/resolveElements";
 
+/**
+ * Base class every Juel Garden custom element extends, directly or via
+ * {@link GardenMesh}. Wraps a plain Babylon `TransformNode` and reads the three
+ * attributes common to (almost) everything in the library: `position`,
+ * `rotation` (degrees, e.g. `"0 90 0"`) and `scale`.
+ *
+ * Registered as `<garden-element>` in its own right too -- a plain,
+ * mesh-less positioning container, most often used with the `parent`
+ * attribute so its children become real Babylon scene-graph children (see
+ * {@link GardenMesh.modifyMesh}) instead of each carrying a world-space
+ * position by hand.
+ *
+ * @example
+ * ```html
+ * <garden-element parent position="0 -1 0">
+ *   <garden-box position="-1 0.5 -3" colour="#4CC3D9"></garden-box>
+ *   <garden-sphere position="0 1.25 -5" diameter="2.5" colour="#EF2D5E"></garden-sphere>
+ * </garden-element>
+ * ```
+ *
+ * @category Core
+ */
 @customElement("garden-element")
 export class GardenElement extends LitElement {
     @property({ converter: Vector3Convert.fromString }) position: Vector3;

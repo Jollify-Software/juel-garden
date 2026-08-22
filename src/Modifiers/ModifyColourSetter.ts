@@ -2,6 +2,14 @@ import { Color3, Material, Scene, StandardMaterial, Vector3 } from "babylonjs";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { ISetter } from "../ISetter";
 
+/**
+ * {@link ISetter} factory for a mesh's material colour (`colour`,
+ * `spec-colour`, `emissive-colour`) -- parses `#hex`, `"r g b"`, or a named
+ * colour (see {@link Color3Convert}), creating a `StandardMaterial` on the
+ * mesh first if it doesn't have one yet.
+ *
+ * @category Modifiers
+ */
 export var ModifyColourSetter = (prefix: string = "diffuse"): ISetter => {
     return function (el: HTMLElement, attr: Attr[], options: object) {
         let at = prefix == "diffuse" ? "colour" : `${prefix}-colour`;

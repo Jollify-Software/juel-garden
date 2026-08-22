@@ -1,0 +1,38 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPoints": ["src"],
+    "entryPointStrategy": "expand",
+    "out": "doc",
+    "name": "Juel Garden",
+    "readme": "README.md",
+    "tsconfig": "tsconfig.json",
+    "skipErrorChecking": true,
+    "categorizeByGroup": true,
+    "defaultCategory": "Other",
+    "categoryOrder": [
+        "Core",
+        "Components",
+        "Components - GUI",
+        "Components - Prefabs",
+        "Behaviours",
+        "Camera Types",
+        "Modifiers",
+        "Options",
+        "Converters",
+        "Shape Functions",
+        "Utilities",
+        "Other"
+    ],
+    "navigation": {
+        "includeCategories": true,
+        "includeGroups": false
+    },
+    "excludePrivate": true,
+    "excludeInternal": true,
+    "excludeExternals": true,
+    "sort": ["source-order"],
+    "titleLink": "https://github.com/Jollify-Software/juel-garden",
+    "navigationLinks": {
+        "GitHub": "https://github.com/Jollify-Software/juel-garden"
+    }
+}

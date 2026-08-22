@@ -9,6 +9,7 @@
  *   individually and returned in the order written -- the same convention as
  *   HTML's own space-separated idref attributes (aria-labelledby, aria-owns, ...).
  */
+/** @category Utilities */
 export function resolveElements<T extends Element = Element>(selector: string, root: ParentNode = document): T[] {
     let trimmed = selector.trim();
     if (!trimmed)

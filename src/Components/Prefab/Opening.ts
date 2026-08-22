@@ -5,6 +5,24 @@ import { GardenElement } from "../../GardenElement";
 import { GardenMesh } from "../../GardenMesh";
 import { GardenRoom } from "./Room";
 
+/**
+ * Cuts a doorway-shaped hole into one or more other meshes via CSG, wherever
+ * a hand-placed opening is needed (e.g. a rotated or curved join that
+ * `<garden-structure>`'s automatic bounding-box detection can't handle --
+ * see {@link GardenStructure}).
+ *
+ * Attributes: `between` (selector of the mesh(es) to cut into, see
+ * {@link resolveElements}), `type` (`"square"`, the only type today),
+ * `width`, `height` (default room wall height minus 1), `depth` (default
+ * double wall thickness), `position`.
+ *
+ * @example
+ * ```html
+ * <garden-opening between="#r1 #r2" position="0 1 -4" width="2" height="2" depth="0.4"></garden-opening>
+ * ```
+ *
+ * @category Components - Prefabs
+ */
 @customElement("garden-opening")
 export class GardenDoorway extends GardenMesh {
     @property() type: string;

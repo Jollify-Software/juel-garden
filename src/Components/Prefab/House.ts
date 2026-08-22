@@ -3,6 +3,20 @@ import { html } from "lit";
 import { customElement } from "lit/decorators";
 import { GardenMesh } from "../../GardenMesh";
 
+/**
+ * A ready-made textured box house with a prism roof, merged into a single
+ * mesh -- a direct port of the classic Babylon.js "village" tutorial house.
+ * Has no configurable attributes; use `position`/`rotation`/`scale` to place
+ * it, or copy its `render()` template as a starting point for a custom
+ * variant.
+ *
+ * @example
+ * ```html
+ * <garden-house position="-6 0 -3"></garden-house>
+ * ```
+ *
+ * @category Components - Prefabs
+ */
 @customElement("garden-house")
 export class GardenHouse extends GardenMesh {
     updated() {

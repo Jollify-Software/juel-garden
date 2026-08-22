@@ -18,6 +18,12 @@ import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 // BehaviourDrive's dt is) so it stays stable regardless of frame rate. A
 // target that itself moves smoothly (see BehaviourDrive's own dt scaling)
 // keeps this camera smooth too, however loose the spring is tuned.
+/**
+ * `type="follow"`: a spring-damped third-person chase camera locked to
+ * `target`. See {@link GardenCamera}.
+ *
+ * @category Camera Types
+ */
 export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
     let cam = new UniversalCamera("camera", new Vector3(0, 5, -10), scene);
     let state = cam as unknown as {

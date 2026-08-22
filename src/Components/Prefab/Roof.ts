@@ -17,6 +17,29 @@ interface RoofContainer {
     centerZ: number;
 }
 
+/**
+ * A roof over a `<garden-room>` or, spanning every `<garden-room>` sibling at
+ * once, a `<garden-structure>`. Two types: `"flat"` (a simple box slab, the
+ * default) or `"dome"` (an ellipsoid vault with separate outside/inside
+ * shells and materials, and a supplemental uplight so a painted ceiling
+ * doesn't read as black -- see {@link createDomeRoof}).
+ *
+ * Attributes: `type` (`"flat"|"dome"`), `thickness`, and for `type="dome"`:
+ * `outside-colour`/`outside-texture`/`inside-colour`/`inside-texture` (or a
+ * `<garden-material slot="outside"|"inside">` child, which takes full
+ * precedence), `outside-texture-center`/`outside-texture-rotation`/
+ * `inside-texture-center`/`inside-texture-rotation` (recentre/rotate a dome
+ * texture around its apex).
+ *
+ * @example
+ * ```html
+ * <garden-room id="r1">
+ *   <garden-roof type="dome" outside-colour="#c9a" inside-colour="white"></garden-roof>
+ * </garden-room>
+ * ```
+ *
+ * @category Components - Prefabs
+ */
 @customElement("garden-roof")
 export class GardenRoof extends GardenMesh {
     @property() type: string;

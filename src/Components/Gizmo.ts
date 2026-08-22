@@ -6,6 +6,18 @@ import { customElement, property } from "lit/decorators";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
+/**
+ * Editor-style drag gizmos (position/rotation/scale/bounding-box handles) for
+ * one or more meshes/nodes, via Babylon's `GizmoManager`. Dispatches
+ * `position-dragend`/`rotation-dragend`/`scale-dragend`/`dragend` DOM events
+ * with the affected elements' resulting values, so a host page can persist
+ * edits made in-scene.
+ *
+ * Attributes: `elements` (space-separated selectors of the meshes/nodes to
+ * attach), `thickness`, `gizmos`.
+ *
+ * @category Components
+ */
 @customElement("garden-gizmo")
 export class GardenGizmo extends GardenElement {
     @property({ converter: (str) => str?.split(' ') }) elements: string[];

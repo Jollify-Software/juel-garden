@@ -23,6 +23,21 @@ const colourConverter = {
  * already pulls in <garden-particle>/<garden-animation> children. A mesh with more than
  * one material (like GardenRoof's dome, with separate outside/inside shells) instead
  * reads specific `slot`-tagged children itself, before building -- see GardenRoof.
+ *
+ * Attributes: `slot` (which named material slot this fills, on elements like
+ * `<garden-roof>`/`<garden-room>` that have more than one), `colour`,
+ * `spec-colour`, `emissive-colour`.
+ *
+ * @example
+ * ```html
+ * <garden-room>
+ *   <garden-material slot="north" colour="red">
+ *     <garden-texture src="wall.jpg"></garden-texture>
+ *   </garden-material>
+ * </garden-room>
+ * ```
+ *
+ * @category Components
  */
 @customElement("garden-material")
 export class GardenMaterial extends GardenElement {

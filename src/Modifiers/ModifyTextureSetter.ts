@@ -2,6 +2,13 @@ import { Scene, StandardMaterial, Texture } from "babylonjs";
 import { HtmlTexture } from "../HtmlTexture";
 import { ISetter } from "../ISetter";
 
+/**
+ * {@link ISetter} factory for a mesh's material texture (`texture`,
+ * `bump-texture`, `reflection-texture`, ...) -- `texture="html"` renders the
+ * element's own light-DOM content instead, via {@link HtmlTexture}.
+ *
+ * @category Modifiers
+ */
 export var ModifyTextureSetter = (prefix: string = "diffuse"): ISetter => {
     return function (el: HTMLElement, attr: Attr[]) {
         let at = prefix == "diffuse" ? "texture" : `${prefix}-texture`;

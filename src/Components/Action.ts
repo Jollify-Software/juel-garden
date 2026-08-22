@@ -9,6 +9,19 @@ import { GardenMesh } from "../GardenMesh";
 import { Utility } from "../Utility";
 import { GardenScene } from "./Scene";
 
+/**
+ * Declares a reusable Babylon `ActionManager` action (`"set"`, `"increment"`,
+ * or a raw `"beforeRender"` loop), registered by `id` on the scene so a
+ * mesh's `action="id"` attribute (via {@link BehaviourAction}) can attach it,
+ * or `<garden-button>` can trigger it. Loosely mirrors A-Frame's animation/
+ * event-action pattern.
+ *
+ * Attributes: `type` (`"beforeRender"|"set"|"increment"|"interpolate"`),
+ * `trigger` (`"enter"|"exit"|"frame"|"pointerOut"|"pointerOver"`), `target`,
+ * `increment`, `parameter`, `property`, `value`.
+ *
+ * @category Components
+ */
 @customElement("garden-action")
 export class GardenAction extends GardenElement {
     @property() type: string;

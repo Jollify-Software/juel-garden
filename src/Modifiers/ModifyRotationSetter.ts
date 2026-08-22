@@ -2,6 +2,14 @@ import { Vector3 } from "babylonjs";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { ISetter } from "../ISetter";
 
+/**
+ * {@link ISetter} for the `rotation` attribute (degrees, e.g. `"0 90 0"`).
+ * Adds the parent element's own rotation on top *unless* the parent has real
+ * Babylon scene-graph composition already (the `parent` attribute), which
+ * would otherwise double-count it.
+ *
+ * @category Modifiers
+ */
 export var ModifyRotationSetter : ISetter = function(el: HTMLElement, attr: Attr[], options: object) {
     let v = Vector3Convert.rotationString(attr.find(x => x.name == 'rotation').value);
 

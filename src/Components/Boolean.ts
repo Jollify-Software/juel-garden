@@ -2,6 +2,18 @@ import { CSG } from "babylonjs";
 import { customElement, property } from "lit/decorators";
 import { GardenMesh } from "../GardenMesh";
 
+/**
+ * A CSG (constructive solid geometry) operation between this element's parent
+ * mesh and another mesh by id -- `subtract`/`subtractTo`/`intersect`, via
+ * Babylon's `CSG`.
+ *
+ * Attributes: `subtract` (id of a mesh to subtract from the parent, result
+ * replaces this element's own mesh), `subtractto` (id of a mesh to subtract
+ * *this* element's parent from, mutating that other element instead),
+ * `intersect` (id of a mesh to intersect with the parent).
+ *
+ * @category Components
+ */
 @customElement("garden-boolean")
 export class GardenBoolean extends GardenMesh {
     @property() subtract: string;

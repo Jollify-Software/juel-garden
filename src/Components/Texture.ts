@@ -11,6 +11,12 @@ import { GardenElement } from "../GardenElement";
  * element is built. `center`/`rotation` are exposed as raw values (not applied to the
  * Texture automatically) for a parent mesh that needs to bake them into custom UVs
  * itself -- see GardenRoof's dome, which can't rely on Babylon's default per-mesh UVs.
+ *
+ * Attributes: `type` (which slot on the parent `<garden-material>` this fills,
+ * default `"diffuse"`), `src`, `center` (a `Vector2`-ish offset), `rotation`
+ * (degrees), `u-scale`/`v-scale` (repeat count across the mesh face).
+ *
+ * @category Components
  */
 @customElement("garden-texture")
 export class GardenTexture extends GardenElement {

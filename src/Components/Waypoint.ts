@@ -5,6 +5,18 @@ import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
+/**
+ * Flies the parent camera between a set of target elements when the user
+ * clicks one, animating position along the way -- the mechanism behind the
+ * library's "educational VR tour" examples (see the README's Waypoints
+ * example). Must be a child of `<garden-camera>`.
+ *
+ * Attributes: `waypoints` (a selector resolving the tour stops, see
+ * {@link resolveElements}), `offset` (a `Vector3` added to every stop's
+ * position, e.g. eye height), `speed`.
+ *
+ * @category Components
+ */
 @customElement("garden-waypoint")
 export class GardenWaypoint extends GardenElement {
     @property() waypoints: GardenMesh[];

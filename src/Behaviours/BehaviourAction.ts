@@ -40,6 +40,21 @@ function applyAction(action: ActionInfo, mesh: Mesh, scene: Scene) {
     }
 }
 
+/**
+ * Attaches one or more previously-declared `<garden-action>` (see
+ * {@link GardenAction}) to this mesh, by id -- `action="myAction"` or
+ * `action="a b c"` for several at once.
+ *
+ * @example
+ * ```html
+ * <garden-scene>
+ *   <garden-action id="turnRed" type="set" property="colour" value="red"></garden-action>
+ *   <garden-box action="turnRed"></garden-box>
+ * </garden-scene>
+ * ```
+ *
+ * @category Behaviours
+ */
 export function BehaviourAction(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     setTimeout(() => {
         let sceneEl = (<GardenElement>el).getSceneEl();

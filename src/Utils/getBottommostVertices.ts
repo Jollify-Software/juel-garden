@@ -4,6 +4,7 @@
  * Bottommost vertices are those with the lowest Y-coordinate.
  * @param vertices - List of vertices (BABYLON.Vector3)
  * @returns An array of bottommost vertices
+ * @category Utilities
  */
 export function getBottommostVertices(vertices: BABYLON.Vector3[]): BABYLON.Vector3[] {
     if (vertices.length === 0) {

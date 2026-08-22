@@ -10,6 +10,24 @@ import { GardenMesh } from "../GardenMesh";
 // *current* full orientation, so "forward" and "turn" stop meaning what they
 // look like they mean the moment any other rotation is already baked in.
 // Assumes the ordinary Y-up, XZ-ground convention the rest of the library uses.
+/**
+ * Keyboard-driven (WASD/arrow keys) forward/back movement and left/right
+ * steering, e.g. for a drivable car. Pair with `suspension` (see
+ * {@link BehaviourSuspension}) to also follow terrain, and a
+ * `<garden-camera type="follow" target="#id">` to chase it.
+ *
+ * Attributes: `drive-speed` (max units/second, default `0.15`), `drive-turn`
+ * (turn rate, default `0.04`), `drive-facing-offset` (degrees -- corrects a
+ * mesh whose modelled "front" isn't at local +Z, without affecting movement
+ * direction).
+ *
+ * @example
+ * ```html
+ * <garden-box id="car" drive drive-speed="0.15" drive-turn="0.05"></garden-box>
+ * ```
+ *
+ * @category Behaviours
+ */
 export function BehaviourDrive(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     let scene = (<GardenMesh>el).getScene();
     let engine = scene.getEngine();

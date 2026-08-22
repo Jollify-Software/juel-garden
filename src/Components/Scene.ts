@@ -15,6 +15,27 @@ import { Utility } from "../Utility";
 // the URL is actually remote; local/relative paths load fine without it.
 Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anonymous" : null);
 
+/**
+ * The root element of a Juel Garden scene -- creates the Babylon `Engine`,
+ * `Scene` and render `<canvas>`, and starts the render loop once its
+ * `<garden-camera>` child has finished building. Everything else (shapes,
+ * lights, the camera, prefabs) is declared as a descendant of this element.
+ *
+ * Attributes: `gravity` (a `Vector3`, e.g. `"0 -0.2 0"`), `collisions`
+ * (enables `scene.collisionsEnabled`).
+ *
+ * @example
+ * ```html
+ * <garden-scene>
+ *   <garden-camera></garden-camera>
+ *   <garden-light></garden-light>
+ *   <garden-box position="0 0.5 0" colour="#4CC3D9"></garden-box>
+ *   <garden-ground width="4" height="4" colour="#7BC8A4"></garden-ground>
+ * </garden-scene>
+ * ```
+ *
+ * @category Components
+ */
 @customElement("garden-scene")
 export class GardenScene extends LitElement {
     @property({ converter: Vector3Convert.fromString }) gravity: Vector3;

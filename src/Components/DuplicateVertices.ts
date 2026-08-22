@@ -3,6 +3,14 @@ import { customElement } from "lit/decorators";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
+/**
+ * Experimental: continuously perturbs the parent mesh's vertex positions
+ * every frame with a fixed sine/cosine wobble, for a jelly/liquid-like
+ * animated surface effect. No configurable attributes yet -- the wobble
+ * amplitude/speed are hardcoded.
+ *
+ * @category Components
+ */
 @customElement("garden-duplicate-vertices")
 export class GardenDuplicateVertices extends GardenElement {
     updated() {

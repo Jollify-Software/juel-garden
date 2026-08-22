@@ -1,6 +1,20 @@
 import { customElement } from "lit/decorators";
 import { GardenMesh } from "../GardenMesh";
 
+/**
+ * A cheap duplicate of the parent element's mesh (via Babylon `Mesh.clone`),
+ * including any `<garden-animation>` children -- useful for repeating a
+ * hand-tuned shape without rebuilding its geometry from scratch.
+ *
+ * @example
+ * ```html
+ * <garden-box id="original" width="1" height="1" depth="1">
+ *   <garden-clone position="2 0 0"></garden-clone>
+ * </garden-box>
+ * ```
+ *
+ * @category Components
+ */
 @customElement("garden-clone")
 export class GardenClone extends GardenMesh {
     updated() {

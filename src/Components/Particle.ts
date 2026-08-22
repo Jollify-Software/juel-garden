@@ -6,6 +6,30 @@ import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { Utility } from "../Utility";
 
+/**
+ * A particle system, either one of Babylon's built-in preset effects
+ * (`effect`, via `ParticleHelper`) or a fully custom one (the `url`/`colour1`/
+ * etc. attributes below). Emits from the parent mesh's position when nested
+ * inside one.
+ *
+ * Attributes: `effect` (a Babylon `ParticleHelper` preset name, e.g. `"fire"`
+ * -- when set, the custom attributes below are ignored), `event`
+ * (`"load"` auto-plays; `"pointerdown"` toggles on click via
+ * {@link GardenMesh.modifyMesh}; anything else waits to be played on demand),
+ * and for a custom system: `url`, `capacity`, `emitter`, `minemitbox`/
+ * `maxemitbox`, `colour1`/`colour2`/`colourdead`, `minsize`/`maxsize`,
+ * `minlifetime`/`maxlifetime`, `emitrate`, `direction1`/`direction2`,
+ * `minemitpower`/`maxemitpower`, `updatespeed`, `gravity`.
+ *
+ * @example
+ * ```html
+ * <garden-column position="-4 -5 -22" diameter="1" height="6">
+ *   <garden-particle effect="fire"></garden-particle>
+ * </garden-column>
+ * ```
+ *
+ * @category Components
+ */
 @customElement("garden-particle")
 export class GardenParticle extends GardenElement {
     @property() effect: string;

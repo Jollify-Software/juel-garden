@@ -6,6 +6,30 @@ import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 
+/**
+ * A keyframe animation (mesh property or skeleton) that can be triggered by
+ * `event="load"` (auto-plays once its owning mesh is built -- see
+ * {@link GardenMesh.modifyMesh}), by a `<garden-button target="#id">`, or
+ * called directly via `play()`/`stop()`.
+ *
+ * Attributes: `target` (id of the element to animate, defaults to the parent
+ * mesh), `property` (the mesh property path to animate, e.g. `"position"`),
+ * `event` (`"load"` for auto-play), `type` (`"float"|"vector3"|"color3"|...|"skeleton"`),
+ * `from`/`to` (frame numbers, or animation range for `type="skeleton"`),
+ * `loop`, `loopmode` (`"constant"|"cycle"|"relative"`), `keyframes`
+ * (`"frame value, frame value, ..."`), `speed`.
+ *
+ * @example
+ * ```html
+ * <garden-box id="lid">
+ *   <garden-animation event="load" property="position.y" type="float"
+ *       from="0" to="30" loop="true" speed="30"
+ *       keyframes="0 0, 15 (0.3), 30 0"></garden-animation>
+ * </garden-box>
+ * ```
+ *
+ * @category Components
+ */
 @customElement("garden-animation")
 export class GardenAnimation extends GardenElement {
     @property() target: string;

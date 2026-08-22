@@ -3,6 +3,15 @@ import { toJSON } from 'cssjson';
 import { Mesh, Tools, TransformNode } from "babylonjs";
 import { GardenElement } from "./GardenElement";
 
+/**
+ * Small stateless helpers shared across converters, setters and components:
+ * parsing a numeric attribute that may be a literal (`"1.5"`) or a JS
+ * expression (`"(Math.PI/2)"`), reading a dotted property path off an
+ * arbitrary object, applying a `<style id="garden-styles">` selector/attribute
+ * block to matching elements, and a Python-style `range()`.
+ *
+ * @category Core
+ */
 export module Utility {
     export var getFloat = (s: string, rotation = false) => {
         if (s.indexOf('(') >= 0) {

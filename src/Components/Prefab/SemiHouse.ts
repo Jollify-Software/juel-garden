@@ -3,6 +3,18 @@ import { html } from "lit";
 import { customElement } from "lit/decorators";
 import { GardenMesh } from "../../GardenMesh";
 
+/**
+ * A half-width variant of {@link GardenHouse}, for a semi-detached pair --
+ * from the same classic Babylon.js "village" tutorial. Has no configurable
+ * attributes.
+ *
+ * @example
+ * ```html
+ * <garden-semi-house position="-3 0 -3"></garden-semi-house>
+ * ```
+ *
+ * @category Components - Prefabs
+ */
 @customElement("garden-semi-house")
 export class GardenSemiHouse extends GardenMesh {
     updated() {

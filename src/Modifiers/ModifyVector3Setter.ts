@@ -2,6 +2,15 @@ import { Vector3 } from "babylonjs";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { Utility } from "../Utility";
 
+/**
+ * {@link ISetter} factory for a `Vector3`-valued attribute (`position`,
+ * `scale`). Adds the parent element's own value on top *unless* an
+ * `absolute` attribute is present or the parent has real Babylon scene-graph
+ * composition already (the `parent` attribute), either of which would
+ * otherwise double-count it.
+ *
+ * @category Modifiers
+ */
 export function ModifyVector3Setter(name: string, property: string = null) {
     return function(el: HTMLElement, attr: Attr[], options: object) {
         let v = Vector3Convert.fromString(attr.find(x => x.name == name).value);

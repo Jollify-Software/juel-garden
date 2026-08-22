@@ -17,6 +17,12 @@ import { Scene, Mesh, Vector3, VertexData } from "babylonjs";
  * limitations under the License.
  */
 
+/**
+ * Assembles a flat-shaded Babylon `Mesh` from a raw vert/face/uv list --
+ * shared by {@link CurvedStairs} and {@link StraightStairs}.
+ *
+ * @category Shape Functions
+ */
 export function buildMesh(scene: Scene, verts: number[][], faces: number[][], uvsIn: number[][]): Mesh {
 
     var customMesh = new Mesh("custom", scene);

@@ -4,6 +4,7 @@ import { Mesh, Vector3, VertexBuffer } from "babylonjs";
 * List the vertices of a given mesh in Babylon.js
 * @param mesh - The Babylon.js mesh
 * @returns An array of vectors representing the vertices of the mesh
+* @category Utilities
 */
 export function listVertices(mesh: Mesh): Vector3[] {
    const vertices: Vector3[] = [];

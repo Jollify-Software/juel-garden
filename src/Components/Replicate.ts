@@ -4,6 +4,19 @@ import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
+/**
+ * Creates cheap Babylon mesh *instances* (not clones -- shared geometry, GPU
+ * instancing) of one or more existing elements' meshes at a set of
+ * positions/rotations, for repeating a shape many times efficiently (e.g. a
+ * field of identical rocks).
+ *
+ * Attributes: `instances` (ids of the source elements, indexed by position in
+ * `positions`' `name:` prefix), `positions` (keyed `Vector3` list, e.g.
+ * `"0: 1 0 1, 0: 3 0 1"` -- each entry's name is the index into `instances`),
+ * `rotations` (keyed rotation list, same convention).
+ *
+ * @category Components
+ */
 @customElement("garden-replicate")
 export class GardenReplicate extends GardenElement {
 

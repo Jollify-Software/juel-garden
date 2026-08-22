@@ -6,6 +6,17 @@ import { GardenInfo } from "./Info";
 // surface (in-world, not a screen-space HUD label) use <garden-canvas content="text">
 // instead -- it already owns that job via DynamicTexture, so garden-text doesn't
 // duplicate it.
+/**
+ * A text row inside a `<garden-info>` panel. For text written onto a mesh's
+ * own surface (in-world, not a screen-space HUD label) use
+ * `<garden-canvas content="text">` instead.
+ *
+ * Attributes: `font`. Also accepts {@link GardenControl}'s styling
+ * attributes (`padding`, `width`, `color`, ...). Text content is the
+ * element's own text.
+ *
+ * @category Components - GUI
+ */
 @customElement("garden-text")
 export class GardenText extends GardenControl {
     @property() font: string;

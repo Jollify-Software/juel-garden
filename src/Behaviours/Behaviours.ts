@@ -5,6 +5,14 @@ import { BehaviourOrbit } from "./BehaviourOrbit";
 import { BehaviourSuspension } from "./BehaviourSuspension";
 import { BehaviourTrack } from "./BehaviourTrack";
 
+/**
+ * Wires up any behaviour attribute (`track`, `orbit`, `action`, `drive`,
+ * `suspension`) present on a {@link GardenMesh} element's tag, applied by
+ * {@link GardenMesh.modifyMesh} to every mesh after its geometry is built.
+ * See each behaviour's own doc comment for its specific attributes.
+ *
+ * @category Behaviours
+ */
 export module Behaviours {
     var map = {
         'track': BehaviourTrack,

@@ -19,6 +19,12 @@ import { StepType } from "./Stairs";
  * limitations under the License.
  */
 
+/**
+ * Generates a straight staircase mesh. Used by {@link GardenStairs} when no
+ * `curvature` attribute is set. Ported from the kitfox.com stairs generator.
+ *
+ * @category Shape Functions
+ */
 export function StraightStairs(scene: Scene, width: number = 1, height: number = 2, depth: number = 2, stepType: StepType = StepType.NUM_STEPS, numSteps: number = 6, userStepHeight: number = .2, sides: boolean = true): Mesh {
     var verts = [];
     var faces = [];

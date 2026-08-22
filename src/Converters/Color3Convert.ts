@@ -1,5 +1,13 @@
 import { Color3 } from "babylonjs";
 
+/**
+ * Parses a colour attribute value as `"r g b"` (0..1 each) or a small set of
+ * named colours (`red`, `green`, `blue`, `black`, `white`, `purple`,
+ * `magenta`, `yellow`, `gray`, `teal`). Hex (`#rrggbb`) is handled separately
+ * by callers (e.g. {@link ModifyColourSetter}), not here.
+ *
+ * @category Converters
+ */
 export module Color3Convert {
     export var fromString = (str: string) => {
         if (str.indexOf(' ') > 0) {
