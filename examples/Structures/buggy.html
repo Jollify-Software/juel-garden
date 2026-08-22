@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <script src="../../dist/juel-garden.js"></script>
+    </head>
+    <body>
+        <garden-scene>
+            <garden-camera type="follow" target="#buggy" radius="2.2" height-offset="1.4" rotation-offset="180"></garden-camera>
+            <garden-light></garden-light>
+
+            <garden-sky root="https://playground.babylonjs.com/textures/skybox" size="150"></garden-sky>
+
+            <!--
+                A wide, gently-rolling patch (subdivisions give ~1.7-unit grid cells --
+                comfortably larger than the buggy's own ~0.7-0.8 wheelbase/track, so
+                neighbouring wheels see gradually-changing ground rather than straddling
+                a near-cliff between adjacent heightmap texels) with plenty of room to
+                drive around in before reaching the edge.
+            -->
+            <garden-height-map id="terrain" url="https://assets.babylonjs.com/environments/villageheightmap.png"
+                width="100" height="100" subdivisions="60" minheight="0" maxheight="1.4"
+                texture="https://assets.babylonjs.com/environments/valleygrass.png"></garden-height-map>
+
+            <!--
+                WASD / arrow keys drive the buggy. `suspension` reads the terrain's
+                own height under each wheel (GroundMesh.getHeightAtCoordinates) every
+                frame and runs a small damped spring per wheel toward it -- no physics
+                engine, same hand-rolled spring-damper approach as the follow camera --
+                then derives the chassis's ride height + pitch/roll from the 4 spring-
+                smoothed corner heights, so uneven ground under one wheel visibly rocks
+                the body rather than just bouncing it as a rigid block. It starts a
+                couple of units above the terrain and settles onto it as the page loads.
+            -->
+            <garden-box id="buggy" parent width="0.6" height="0.25" depth="1" position="0 1.5 0" colour="#FF7A1A"
+                drive drive-speed="0.12" drive-turn="0.05"
+                suspension suspension-terrain="#terrain"
+                suspension-wheels="-0.35 0 0.4, 0.35 0 0.4, -0.35 0 -0.4, 0.35 0 -0.4"
+                suspension-height="0.2" suspension-max-tilt="45">
+
+                <garden-box position="0 0.2 -0.1" width="0.4" height="0.2" depth="0.5" colour="#2B2B2B"></garden-box>
+
+                <garden-cylinder position="-0.35 -0.05 0.4" diameter="0.3" height="0.15" rotation="0 0 90" colour="#1A1A1A"></garden-cylinder>
+                <garden-cylinder position="0.35 -0.05 0.4" diameter="0.3" height="0.15" rotation="0 0 90" colour="#1A1A1A"></garden-cylinder>
+                <garden-cylinder position="-0.35 -0.05 -0.4" diameter="0.3" height="0.15" rotation="0 0 90" colour="#1A1A1A"></garden-cylinder>
+                <garden-cylinder position="0.35 -0.05 -0.4" diameter="0.3" height="0.15" rotation="0 0 90" colour="#1A1A1A"></garden-cylinder>
+            </garden-box>
+        </garden-scene>
+    </body>
+</html>

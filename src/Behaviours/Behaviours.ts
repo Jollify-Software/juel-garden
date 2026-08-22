@@ -2,6 +2,7 @@ import { Mesh } from "babylonjs";
 import { BehaviourAction } from "./BehaviourAction";
 import { BehaviourDrive } from "./BehaviourDrive";
 import { BehaviourOrbit } from "./BehaviourOrbit";
+import { BehaviourSuspension } from "./BehaviourSuspension";
 import { BehaviourTrack } from "./BehaviourTrack";
 
 export module Behaviours {
@@ -9,7 +10,11 @@ export module Behaviours {
         'track': BehaviourTrack,
         'orbit': BehaviourOrbit,
         'action': BehaviourAction,
-        'drive': BehaviourDrive
+        // 'drive' must come before 'suspension': Babylon fires onBeforeRenderObservable
+        // callbacks in registration order, and suspension needs this frame's
+        // drive-updated position/heading, not last frame's.
+        'drive': BehaviourDrive,
+        'suspension': BehaviourSuspension
     }
 
     export var applyBehaviours = function(el: HTMLElement, mesh: Mesh) {

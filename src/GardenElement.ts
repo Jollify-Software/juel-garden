@@ -44,9 +44,11 @@ export class GardenElement extends LitElement {
      * pass complete by the time that event's listeners run (its dispatch is a task, and
      * the microtasks Lit schedules for each element's first update -- queued while the
      * parser was still running -- have already drained by then). A no-op once the
-     * document has already finished loading.
+     * document has already finished loading. Public: Behaviours are plain functions,
+     * not GardenElement subclasses, but need this exact same guarantee before
+     * resolving a cross-element reference (e.g. BehaviourSuspension's `suspension-terrain`).
      */
-    protected static async whenDocumentReady(): Promise<void> {
+    static async whenDocumentReady(): Promise<void> {
         if (document.readyState === 'loading') {
             await new Promise<void>(resolve =>
                 document.addEventListener('DOMContentLoaded', () => resolve(), { once: true })

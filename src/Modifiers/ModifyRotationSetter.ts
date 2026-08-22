@@ -5,14 +5,20 @@ import { ISetter } from "../ISetter";
 export var ModifyRotationSetter : ISetter = function(el: HTMLElement, attr: Attr[], options: object) {
     let v = Vector3Convert.rotationString(attr.find(x => x.name == 'rotation').value);
 
-    // TODO: Don't do this, we add mesh as parent
-    let getMethod = 'getRotation';
+    // A `parent`-tagged container also sets `mesh.parent` on its children (see
+    // GardenMesh.modifyMesh), so Babylon already composes the parent's rotation
+    // automatically every frame -- this attribute is already local to it. Adding the
+    // parent's rotation on top here too would double it (and freeze a stale snapshot
+    // of it, for a parent whose own rotation keeps changing after this one-time read).
+    if (!el.parentElement.hasAttribute("parent")) {
+        let getMethod = 'getRotation';
         if (getMethod in el.parentElement) {
             let v2 = el.parentElement[getMethod]() as Vector3
             if (v2) {
                 v = v.add(v2);
             }
         }
+    }
 
     options['rotation'] = v;
 }
