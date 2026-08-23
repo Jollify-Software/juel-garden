@@ -19,6 +19,7 @@ import "./src/Components/HeightMap";
 import "./src/Components/Sky";
 import "./src/Components/Sprite";
 import "./src/Components/Canvas";
+import "./src/Components/Plane";
 
 import "./src/Components/Replicate";
 import "./src/Components/DuplicateVertices";

@@ -20,7 +20,6 @@ export class GardenPlane extends GardenMesh {
     updated() {
         let scene = this.getScene();
         let options = this.buildOptions();
-        console.log(options)
         this.setMesh(
             MeshBuilder.CreatePlane(this.id ?? "plane", options, scene)
         );

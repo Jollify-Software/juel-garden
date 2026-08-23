@@ -1,6 +1,7 @@
-import { Axis, Curve3, Mesh, Path3D, Vector3 } from "babylonjs";
+import { Axis, Curve3, Path3D, Vector3 } from "babylonjs";
 import { Vector3Convert } from "../Converters/Vector3Convert";
-import { GardenMesh } from "../GardenMesh";
+import { GardenElement } from "../GardenElement";
+import { IBehaviourTarget } from "../IBehaviourTarget";
 
 // Follows the polyline given by the parent <garden-line>'s `points` attribute.
 // `track-smooth="n"` runs the raw points through a Catmull-Rom spline (n points
@@ -10,7 +11,9 @@ import { GardenMesh } from "../GardenMesh";
 // the mesh rolls into turns; omit it for a cart that always stays level.
 /**
  * Follows the polyline of a parent `<garden-line>`'s `points` attribute --
- * built for rollercoaster-style rides, but works for any path-following mesh.
+ * built for rollercoaster-style rides, but works for any path-following
+ * {@link IBehaviourTarget} (a `GardenMesh`'s `Mesh`, or one instance of a
+ * `<garden-sprite>` group via {@link SpriteBehaviourTarget}).
  *
  * Attributes: `track-smooth` (Catmull-Rom points per segment, for a smooth
  * curve instead of snapping at corners; omit for straight rail segments),
@@ -27,14 +30,14 @@ import { GardenMesh } from "../GardenMesh";
  *
  * @category Behaviours
  */
-export function BehaviourTrack(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
+export function BehaviourTrack(el: GardenElement, target: IBehaviourTarget, attr: Attr[]) {
     let line = el.parentElement;
     let pointsAttr = line?.getAttribute("points");
     if (!pointsAttr) {
         return;
     }
 
-    let scene = (<GardenMesh>el).getScene();
+    let scene = el.getScene();
     let rawPoints = Vector3Convert.array(pointsAttr);
     if (rawPoints.length < 2) {
         return;
@@ -74,7 +77,7 @@ export function BehaviourTrack(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
         right.normalize();
         let trueUp = Vector3.Cross(forward, right).normalize();
 
-        mesh.position = path.getPointAt(t);
-        mesh.rotation = Vector3.RotationFromAxis(right, trueUp, forward);
+        target.position = path.getPointAt(t);
+        target.rotation = Vector3.RotationFromAxis(right, trueUp, forward);
     });
 }

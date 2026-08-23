@@ -1,7 +1,8 @@
-import { Matrix, Mesh, Tools, Vector3 } from "babylonjs";
+import { Matrix, Tools, Vector3 } from "babylonjs";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
+import { IBehaviourTarget } from "../IBehaviourTarget";
 
 /**
  * Terrain-following "suspension" for a `drive`-driven mesh, without a physics
@@ -24,6 +25,8 @@ import { GardenMesh } from "../GardenMesh";
  * rotated (previously reproducible as "passes through the terrain when
  * rotated onto its side").
  *
+ * Works against any {@link IBehaviourTarget} (a `GardenMesh`'s `Mesh`, or one
+ * instance of a `<garden-sprite>` group via {@link SpriteBehaviourTarget}).
  * Must be paired with `drive` (see {@link BehaviourDrive}) and run after it
  * -- the library takes care of this ordering automatically (see
  * {@link Behaviours}).
@@ -45,8 +48,8 @@ import { GardenMesh } from "../GardenMesh";
  *
  * @category Behaviours
  */
-export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
-    let scene = (<GardenMesh>el).getScene();
+export function BehaviourSuspension(el: GardenElement, target: IBehaviourTarget, attr: Attr[]) {
+    let scene = el.getScene();
     let engine = scene.getEngine();
 
     let wheelOffsets = Vector3Convert.array(
@@ -70,14 +73,14 @@ export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     let wheelbase = Math.abs(wheelOffsets[0].z - wheelOffsets[2].z) || 1;
     let track = Math.abs(wheelOffsets[1].x - wheelOffsets[0].x) || 1;
 
-    let cornerHeight = wheelOffsets.map(() => mesh.position.y);
+    let cornerHeight = wheelOffsets.map(() => target.position.y);
     let cornerVelocity = wheelOffsets.map(() => 0);
     // Last position confirmed drivable -- `drive` moves the chassis purely
     // kinematically with no idea what's underneath it, so this is the only thing
     // standing between the buggy and driving straight up (or through) a slope
     // steeper than its suspension could ever represent.
-    let safeX = mesh.position.x;
-    let safeZ = mesh.position.z;
+    let safeX = target.position.x;
+    let safeZ = target.position.z;
 
     let terrain: { getHeightAtCoordinates(x: number, z: number): number } = null;
     let terrainAttr = el.getAttribute("suspension-terrain");
@@ -95,7 +98,7 @@ export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
         }
 
         let dt = Math.min(engine.getDeltaTime(), 50) / 1000;
-        let heading = (<any>mesh).drivingHeading ?? mesh.rotation.y;
+        let heading = (<any>target).drivingHeading ?? target.rotation.y;
 
         // Wheel offsets are transformed by the chassis's full current orientation
         // (yaw, pitch, roll from last frame) -- not yaw alone. Rotating by yaw only
@@ -111,7 +114,7 @@ export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
         // once drive-facing-offset is nonzero) matches what rotation.x/z actually are:
         // the chassis's real rendered orientation, which is what the wheels are
         // rigidly attached to.
-        let rotationMatrix = Matrix.RotationYawPitchRoll(mesh.rotation.y, mesh.rotation.x, mesh.rotation.z);
+        let rotationMatrix = Matrix.RotationYawPitchRoll(target.rotation.y, target.rotation.x, target.rotation.z);
 
         // Raw, un-smoothed ground truth for *this* frame's wheel positions --
         // the drivability check below is decided from this, never from the
@@ -134,8 +137,8 @@ export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
         for (let i = 0; i < wheelOffsets.length; i++) {
             let offset = wheelOffsets[i];
             let worldOffset = Vector3.TransformCoordinates(new Vector3(offset.x, 0, offset.z), rotationMatrix);
-            let worldX = mesh.position.x + worldOffset.x;
-            let worldZ = mesh.position.z + worldOffset.z;
+            let worldX = target.position.x + worldOffset.x;
+            let worldZ = target.position.z + worldOffset.z;
             let groundY = terrain.getHeightAtCoordinates(worldX, worldZ);
             if (!Number.isFinite(groundY)) {
                 // Off the edge of a finite terrain mesh, or queried before its
@@ -168,13 +171,13 @@ export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
             // still valid, instead of flashing toward the too-steep reading first.
             safeX -= Math.sin(heading) * retreatRate * dt;
             safeZ -= Math.cos(heading) * retreatRate * dt;
-            mesh.position.x = safeX;
-            mesh.position.z = safeZ;
+            target.position.x = safeX;
+            target.position.z = safeZ;
             return;
         }
 
-        safeX = mesh.position.x;
-        safeZ = mesh.position.z;
+        safeX = target.position.x;
+        safeZ = target.position.z;
 
         // Only now, on an accepted position, does the visual spring get to move --
         // chasing the same raw heights just used for the drivability check above.
@@ -215,8 +218,8 @@ export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
         // heights can still transiently overshoot past what the raw reading
         // itself allowed -- clamp so a visual overshoot can't out-lean the
         // mechanical limit the collision check is meant to represent.
-        mesh.position.y = (frontAvg + rearAvg) / 2 + rideHeight;
-        mesh.rotation.x = Math.max(-maxTilt, Math.min(maxTilt, Math.atan2(rearAvg - frontAvg, wheelbase)));
-        mesh.rotation.z = Math.max(-maxTilt, Math.min(maxTilt, Math.atan2(leftAvg - rightAvg, track)));
+        target.position.y = (frontAvg + rearAvg) / 2 + rideHeight;
+        target.rotation.x = Math.max(-maxTilt, Math.min(maxTilt, Math.atan2(rearAvg - frontAvg, wheelbase)));
+        target.rotation.z = Math.max(-maxTilt, Math.min(maxTilt, Math.atan2(leftAvg - rightAvg, track)));
     });
 }

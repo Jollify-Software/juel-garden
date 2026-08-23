@@ -1,7 +1,8 @@
-import { Mesh, Scene, Sprite, SpriteManager, Vector3 } from "babylonjs";
+import { Sprite, SpriteManager, Vector3 } from "babylonjs";
 import { customElement, property } from "lit/decorators";
+import { Behaviours } from "../Behaviours/Behaviours";
+import { SpriteBehaviourTarget } from "../Behaviours/SpriteBehaviourTarget";
 import { GardenElement } from "../GardenElement";
-import { GardenMesh } from "../GardenMesh";
 
 /**
  * A batch of billboard sprites (e.g. a stand of trees, or a flock of animals)
@@ -18,12 +19,16 @@ import { GardenMesh } from "../GardenMesh";
  * group, all at that exact point), `scatter-radius` (when `positions` is
  * omitted, scatters `count` sprites uniformly within this radius of
  * `position`), `sprite-width`/`sprite-height` (each sprite's on-screen size in
- * world units, default `1`), `flee-target` (selector of an element to scatter
- * away from once it comes within `flee-radius`), `flee-radius` (default `4`),
- * `flee-speed` (max flee speed, units/second, default `3`), `terrain`
- * (selector of a `<garden-height-map>` to rest on, resolved the same
- * asynchronous way as `suspension-terrain` -- see {@link BehaviourSuspension}),
- * `terrain-offset` (vertical clearance above the sampled ground, default `0`).
+ * world units, default `1`).
+ *
+ * Per-frame movement is delegated entirely to the generic `Behaviours` --
+ * see {@link BehaviourFlee} (`flee-target`/`flee-radius`/`flee-speed`),
+ * {@link BehaviourTerrain} (`terrain`/`terrain-offset`), and
+ * {@link BehaviourWander} (`wander`/`wander-radius`/`wander-speed`/
+ * `points-of-interest`/`look-radius`/`look-chance`/`look-duration`) for
+ * their exact attributes -- applied once per placed sprite via
+ * {@link SpriteBehaviourTarget}, the same way `GardenMesh` applies them to
+ * its own single `Mesh` (see {@link Behaviours}).
  *
  * @example
  * ```html
@@ -32,6 +37,12 @@ import { GardenMesh } from "../GardenMesh";
  *     position="0 0 10" scatter-radius="6"
  *     flee-target="#buggy" flee-radius="5" flee-speed="4"
  *     terrain="#terrain" terrain-offset="0.3"></garden-sprite>
+ *
+ * <garden-sprite url="npc.png" width="64" height="64" sprite-width="1"
+ *     sprite-height="1.8" capacity="6" count="6" position="0 0 0"
+ *     scatter-radius="4" wander wander-radius="5" wander-speed="1.2"
+ *     points-of-interest=".painting" look-radius="1.5"
+ *     look-duration="3 7"></garden-sprite>
  * ```
  *
  * @category Components
@@ -59,7 +70,6 @@ export class GardenSprite extends GardenElement {
         };
 
         let sprites: Sprite[] = [];
-        let homes: Vector3[] = [];
 
         if (this.positions) {
             let posGroups = this.positions.split(',').map(x => x.trim());
@@ -74,7 +84,6 @@ export class GardenSprite extends GardenElement {
                 let pos = new Vector3(ray[0], ray[1], ray[2]);
                 for (let i = 0; i < this.count; i++) {
                     sprites.push(place(pos));
-                    homes.push(pos.clone());
                 }
             }
         } else if (this.count) {
@@ -87,95 +96,19 @@ export class GardenSprite extends GardenElement {
                 let r = Math.sqrt(Math.random()) * radius;
                 let pos = new Vector3(center.x + Math.cos(angle) * r, center.y, center.z + Math.sin(angle) * r);
                 sprites.push(place(pos));
-                homes.push(pos.clone());
             }
         }
 
-        this.animateFlock(scene, sprites, homes);
-    }
-
-    /**
-     * Optional per-frame movement: flee from `flee-target` once it comes
-     * within `flee-radius`, gently amble back toward each sprite's own spawn
-     * point otherwise (keeping a scattered flock loosely together instead of
-     * drifting off indefinitely), and -- with `terrain` set -- stay resting
-     * on the terrain's own height throughout. A no-op when neither
-     * `flee-target` nor `terrain` is set, since a plain static placement
-     * (e.g. a stand of trees) needs no per-frame work at all.
-     */
-    private animateFlock(scene: Scene, sprites: Sprite[], homes: Vector3[]) {
-        let fleeTargetSelector = this.getAttribute("flee-target");
-        let terrainSelector = this.getAttribute("terrain");
-        if (!fleeTargetSelector && !terrainSelector)
-            return;
-
-        let fleeRadius = Number(this.getAttribute("flee-radius") ?? 4);
-        let fleeSpeed = Number(this.getAttribute("flee-speed") ?? 3);
-        let terrainOffset = Number(this.getAttribute("terrain-offset") ?? 0);
-
-        let target: Mesh = null;
-        let terrain: { getHeightAtCoordinates(x: number, z: number): number } = null;
-
-        (async () => {
-            await GardenSprite.whenDocumentReady();
-            if (fleeTargetSelector) {
-                let [targetEl] = await GardenElement.resolveReady<GardenMesh>(fleeTargetSelector);
-                target = targetEl?.mesh ?? null;
-            }
-            if (terrainSelector) {
-                let [terrainEl] = await GardenElement.resolveReady<GardenMesh>(terrainSelector);
-                terrain = <any>terrainEl?.mesh;
-            }
-        })().catch(err => console.error("[garden-sprite] failed to resolve flee-target/terrain", fleeTargetSelector, terrainSelector, err));
-
-        let velocities = sprites.map(() => Vector3.Zero());
-        let engine = scene.getEngine();
-
-        scene.onBeforeRenderObservable.add(() => {
-            let dt = Math.min(engine.getDeltaTime(), 50) / 1000;
-
-            for (let i = 0; i < sprites.length; i++) {
-                let pos = sprites[i].position;
-                let velocity = velocities[i];
-                let force = Vector3.Zero();
-
-                if (target) {
-                    let targetPosition = target.getAbsolutePosition();
-                    let away = new Vector3(pos.x - targetPosition.x, 0, pos.z - targetPosition.z);
-                    let distance = away.length();
-                    // Tapers to nothing at fleeRadius (rather than a hard on/off snap
-                    // right at the boundary) and gets stronger the closer the threat is.
-                    if (distance > 0.0001 && distance < fleeRadius) {
-                        force.addInPlace(away.normalize().scale((1 - distance / fleeRadius) * fleeSpeed * 8));
-                    }
-                }
-
-                // A gentle pull back toward each sprite's own spawn point -- the same
-                // spring-toward-a-point idea used elsewhere in this library (e.g. the
-                // follow camera), just heavily damped, so a scattered flock ambles back
-                // together afterwards instead of drifting off forever.
-                let home = homes[i];
-                force.addInPlace(new Vector3(home.x - pos.x, 0, home.z - pos.z).scale(0.5));
-
-                velocity.addInPlace(force.scale(dt));
-                // Frame-rate-independent damping (a fixed fraction of velocity lost per
-                // *second*, not per frame), same idea as BehaviourDrive's friction.
-                velocity.scaleInPlace(Math.pow(0.05, dt));
-                let speed = velocity.length();
-                if (speed > fleeSpeed) {
-                    velocity.scaleInPlace(fleeSpeed / speed);
-                }
-
-                pos.x += velocity.x * dt;
-                pos.z += velocity.z * dt;
-
-                if (terrain) {
-                    let groundY = terrain.getHeightAtCoordinates(pos.x, pos.z);
-                    if (Number.isFinite(groundY)) {
-                        pos.y = groundY + terrainOffset;
-                    }
-                }
-            }
-        });
+        // Same generic Behaviours pipeline GardenMesh.modifyMesh applies to its
+        // own single Mesh (see Behaviours.applyBehaviours) -- once per placed
+        // sprite here instead, each through its own SpriteBehaviourTarget so
+        // per-instance state (a wander target, a flee velocity, ...) stays
+        // independent between sprites in the same group.
+        let collection = Array.prototype.slice.call(this.attributes) as Attr[];
+        for (let sprite of sprites) {
+            let target = new SpriteBehaviourTarget(sprite);
+            Behaviours.applyToTarget(this, target, collection);
+            target.attachRotationSync(scene);
+        }
     }
 }

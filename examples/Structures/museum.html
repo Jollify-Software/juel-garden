@@ -1,0 +1,127 @@
+<html>
+
+<head>
+    <meta charset="utf-8"/>
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+<body>
+    <garden-scene collisions>
+        <!-- Starts already inside the centre gallery (there's no exterior door --
+             only the doorways <garden-structure> auto-cuts between neighbouring
+             rooms' shared walls -- see the room comment below), facing the
+             centre painting. WASD to walk, mouse to look; walk east or west
+             through the cut doorways to reach the other two galleries. -->
+        <garden-camera type="free" collisions position="0 2 4"></garden-camera>
+        <garden-light></garden-light>
+
+        <!-- Teleports on the exterior lawn (<garden-ground> below) if your
+             browser/device supports WebXR -- see garden-webxr in the buggy/
+             temple examples for the same caveat (needs https:// or localhost). -->
+        <garden-webxr></garden-webxr>
+
+        <!--
+            Three plain box galleries in a row along X, each 16x16 with open tops
+            (a <garden-room> has no ceiling of its own -- see GardenRoom -- so the
+            single hemispheric light above reaches every room without extra point
+            lights). <garden-structure> auto-cuts a doorway wherever two rooms'
+            walls touch exactly (see GardenStructure), so west/center and center/
+            east are walkable straight through, no hand-placed <garden-opening>
+            needed. Paintings only go on each room's north/south (outer) walls,
+            never the shared east/west walls the doorways are cut into.
+        -->
+        <garden-structure>
+            <garden-room id="room-west" position="-16 0 0" width="16" depth="16" height="6" collisions>
+                <garden-material slot="floor" colour="#c9c2b3"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="north" colour="#f2efe6"></garden-material>
+                <garden-material slot="south" colour="#f2efe6"></garden-material>
+                <garden-material slot="east" colour="#f2efe6"></garden-material>
+                <garden-material slot="west" colour="#f2efe6"></garden-material>
+            </garden-room>
+            <garden-room id="room-center" position="0 0 0" width="16" depth="16" height="6" collisions>
+                <garden-material slot="floor" colour="#c9c2b3"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="north" colour="#f2efe6"></garden-material>
+                <garden-material slot="south" colour="#f2efe6"></garden-material>
+                <garden-material slot="east" colour="#f2efe6"></garden-material>
+                <garden-material slot="west" colour="#f2efe6"></garden-material>
+            </garden-room>
+            <garden-room id="room-east" position="16 0 0" width="16" depth="16" height="6" collisions>
+                <garden-material slot="floor" colour="#c9c2b3"><garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture></garden-material>
+                <garden-material slot="north" colour="#f2efe6"></garden-material>
+                <garden-material slot="south" colour="#f2efe6"></garden-material>
+                <garden-material slot="east" colour="#f2efe6"></garden-material>
+                <garden-material slot="west" colour="#f2efe6"></garden-material>
+            </garden-room>
+        </garden-structure>
+
+        <!--
+            Paintings: plain <garden-plane>s mounted flush against each room's
+            north/south wall (a default plane already spans X/Y with its normal
+            along Z, which is exactly a north/south wall's own orientation -- no
+            rotation needed, see Plane.ts). `sideorientation="double"` so they
+            read correctly regardless of which way the wall happens to face.
+            Positioned 0.05 in front of each wall's interior face (depth/2 -
+            thickness - 0.05 = 7.75 for a 16-deep, 0.2-thick room) so they don't
+            z-fight with the wall behind them. Each carries a `class` used below
+            as the `points-of-interest` selector for that room's NPCs only, so
+            wandering visitors never try to walk into a neighbouring room to
+            reach a painting.
+        -->
+        <garden-plane class="painting west" position="-16 3 7.75" width="2.2" height="3" sideorientation="double">
+            <garden-material><garden-texture src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Mona_Lisa.jpg/960px-Mona_Lisa.jpg"></garden-texture></garden-material>
+        </garden-plane>
+        <garden-plane class="painting west" position="-16 3 -7.75" width="3.2" height="2.2" sideorientation="double">
+            <garden-material><garden-texture src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/960px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg"></garden-texture></garden-material>
+        </garden-plane>
+
+        <garden-plane class="painting center" position="0 3 7.75" width="2.4" height="3" sideorientation="double">
+            <garden-material><garden-texture src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/The_Scream.jpg/960px-The_Scream.jpg"></garden-texture></garden-material>
+        </garden-plane>
+
+        <garden-plane class="painting east" position="16 3 7.75" width="2.2" height="3" sideorientation="double">
+            <garden-material><garden-texture src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/960px-1665_Girl_with_a_Pearl_Earring.jpg"></garden-texture></garden-material>
+        </garden-plane>
+        <garden-plane class="painting east" position="16 3 -7.75" width="3.2" height="2.2" sideorientation="double">
+            <garden-material><garden-texture src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Great_Wave_off_Kanagawa2.jpg/960px-Great_Wave_off_Kanagawa2.jpg"></garden-texture></garden-material>
+        </garden-plane>
+
+        <!--
+            Wandering visitor NPCs: one <garden-sprite> group per room (a fresh
+            SpriteManager per element -- see GardenSprite -- so each room's
+            visitors are independent), using the new `wander`/`points-of-interest`
+            movement mode (see GardenSprite.animateWander). Each visitor ambles
+            randomly within `wander-radius` of its own spawn point and, roughly
+            `look-chance` of the time it picks a new direction, instead walks all
+            the way to one of its room's own paintings (`points-of-interest`
+            scoped per room via the west/center/east classes above), stops within
+            `look-radius` of it, and pauses there for `look-duration` seconds
+            before wandering off again. The sprite sheet is a tiny inline data
+            URI (a hand-drawn standing-figure silhouette), same "no external
+            image dependency" approach as the sheep flock in buggy.html.
+        -->
+        <garden-sprite id="visitors-west" url="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAACACAYAAAC7gW9qAAABDElEQVR4nO3XwQ3CMBBFQddFCVRBN7RENbSSCKFI3EgsO2tn50m++eA/N5ciSYrr/Xou0W84rc/YvSf6rc07Mv5SCDXDLwPRYvy0CC3HT4mQGqDH+GkQeo6fAgEAAAB5Ac4YD2Hk8QUAAADpAUr2v8BW6vEFwLfU47dSj/8tzfDb/bH0PNH7/gYAwEUBeg8bHip6EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB0BRgFKmzY3gAAAAAAAAAAANIClAMItfeHDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAoPb+8AHIDqCJWgGwJpH6pLHuPAAAAABJRU5ErkJggg=="
+            width="64" height="128" sprite-width="0.8" sprite-height="1.6" capacity="3" count="3"
+            position="-16 0.8 0" scatter-radius="3"
+            wander wander-radius="6" wander-speed="1.1"
+            points-of-interest=".painting.west" look-radius="1.4" look-chance="0.5" look-duration="3 6"></garden-sprite>
+
+        <garden-sprite id="visitors-center" url="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAACACAYAAAC7gW9qAAABDElEQVR4nO3XwQ3CMBBFQddFCVRBN7RENbSSCKFI3EgsO2tn50m++eA/N5ciSYrr/Xou0W84rc/YvSf6rc07Mv5SCDXDLwPRYvy0CC3HT4mQGqDH+GkQeo6fAgEAAAB5Ac4YD2Hk8QUAAADpAUr2v8BW6vEFwLfU47dSj/8tzfDb/bH0PNH7/gYAwEUBeg8bHip6EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB0BRgFKmzY3gAAAAAAAAAAANIClAMItfeHDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAoPb+8AHIDqCJWgGwJpH6pLHuPAAAAABJRU5ErkJggg=="
+            width="64" height="128" sprite-width="0.8" sprite-height="1.6" capacity="2" count="2"
+            position="0 0.8 0" scatter-radius="3"
+            wander wander-radius="6" wander-speed="1.1"
+            points-of-interest=".painting.center" look-radius="1.4" look-chance="0.5" look-duration="3 6"></garden-sprite>
+
+        <garden-sprite id="visitors-east" url="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAACACAYAAAC7gW9qAAABDElEQVR4nO3XwQ3CMBBFQddFCVRBN7RENbSSCKFI3EgsO2tn50m++eA/N5ciSYrr/Xou0W84rc/YvSf6rc07Mv5SCDXDLwPRYvy0CC3HT4mQGqDH+GkQeo6fAgEAAAB5Ac4YD2Hk8QUAAADpAUr2v8BW6vEFwLfU47dSj/8tzfDb/bH0PNH7/gYAwEUBeg8bHip6EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB0BRgFKmzY3gAAAAAAAAAAANIClAMItfeHDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAoPb+8AHIDqCJWgGwJpH6pLHuPAAAAABJRU5ErkJggg=="
+            width="64" height="128" sprite-width="0.8" sprite-height="1.6" capacity="3" count="3"
+            position="16 0.8 0" scatter-radius="3"
+            wander wander-radius="6" wander-speed="1.1"
+            points-of-interest=".painting.east" look-radius="1.4" look-chance="0.5" look-duration="3 6"></garden-sprite>
+
+        <!-- Exterior lawn, sitting just below the rooms' own floor top surface
+             (0.1) so it doesn't z-fight with it -- same offset idea as temple.html's
+             separate outdoor ground. Also the WebXR teleport surface. -->
+        <garden-ground width="140" height="80" colour="#7ea36b" position="0 -0.15 0" collisions></garden-ground>
+
+    </garden-scene>
+</body>
+
+</html>

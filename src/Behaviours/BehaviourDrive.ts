@@ -1,5 +1,6 @@
-import { Mesh, Tools } from "babylonjs";
-import { GardenMesh } from "../GardenMesh";
+import { Tools } from "babylonjs";
+import { GardenElement } from "../GardenElement";
+import { IBehaviourTarget } from "../IBehaviourTarget";
 
 // Keyboard-driven movement (WASD / arrow keys) -- accelerate/brake forward-back,
 // steer left-right. Drives in world space (position.x/z + rotation.y) rather
@@ -12,9 +13,11 @@ import { GardenMesh } from "../GardenMesh";
 // Assumes the ordinary Y-up, XZ-ground convention the rest of the library uses.
 /**
  * Keyboard-driven (WASD/arrow keys) forward/back movement and left/right
- * steering, e.g. for a drivable car. Pair with `suspension` (see
- * {@link BehaviourSuspension}) to also follow terrain, and a
- * `<garden-camera type="follow" target="#id">` to chase it.
+ * steering, e.g. for a drivable car -- works against any
+ * {@link IBehaviourTarget} (a `GardenMesh`'s `Mesh`, or one instance of a
+ * `<garden-sprite>` group via {@link SpriteBehaviourTarget}). Pair with
+ * `suspension` (see {@link BehaviourSuspension}) to also follow terrain, and
+ * a `<garden-camera type="follow" target="#id">` to chase it.
  *
  * Attributes: `drive-speed` (max units/second, default `0.15`), `drive-turn`
  * (turn rate, default `0.04`), `drive-facing-offset` (degrees -- corrects a
@@ -28,8 +31,8 @@ import { GardenMesh } from "../GardenMesh";
  *
  * @category Behaviours
  */
-export function BehaviourDrive(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
-    let scene = (<GardenMesh>el).getScene();
+export function BehaviourDrive(el: GardenElement, target: IBehaviourTarget, attr: Attr[]) {
+    let scene = el.getScene();
     let engine = scene.getEngine();
 
     let maxSpeed = Number(el.getAttribute("drive-speed") ?? 0.15);
@@ -52,7 +55,7 @@ export function BehaviourDrive(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     window.addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
 
     let speed = 0;
-    let heading = mesh.rotation.y;
+    let heading = target.rotation.y;
 
     scene.onBeforeRenderObservable.add(() => {
         // accel/turnRate/friction below are tuned per frame at a 60fps baseline --
@@ -88,14 +91,14 @@ export function BehaviourDrive(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
             }
         }
 
-        mesh.rotation.y = heading + facingOffset;
+        target.rotation.y = heading + facingOffset;
 
-        mesh.position.x += Math.sin(heading) * speed * dt;
-        mesh.position.z += Math.cos(heading) * speed * dt;
+        target.position.x += Math.sin(heading) * speed * dt;
+        target.position.z += Math.cos(heading) * speed * dt;
 
         // Exposed so a `type="follow"` camera targeting this mesh can chase the
-        // true direction of travel rather than mesh.rotation.y -- which, once
+        // true direction of travel rather than target.rotation.y -- which, once
         // drive-facing-offset is nonzero, no longer means the same thing.
-        (<any>mesh).drivingHeading = heading;
+        (<any>target).drivingHeading = heading;
     });
 }
