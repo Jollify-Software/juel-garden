@@ -5,7 +5,7 @@
     </head>
     <body>
         <garden-scene>
-            <garden-camera type="follow" target="#buggy" radius="2.2" height-offset="1.4" rotation-offset="180"></garden-camera>
+            <garden-camera type="follow" target="#buggy" radius="2.2" height-offset="1.4" rotation-offset="180" look-offset="1"></garden-camera>
             <garden-light></garden-light>
 
             <garden-sky root="https://playground.babylonjs.com/textures/skybox" size="150"></garden-sky>
@@ -20,6 +20,22 @@
             <garden-height-map id="terrain" url="https://assets.babylonjs.com/environments/villageheightmap.png"
                 width="100" height="100" subdivisions="60" minheight="0" maxheight="1.4"
                 texture="https://assets.babylonjs.com/environments/valleygrass.png"></garden-height-map>
+
+            <!--
+                A flock of sheep sprites grazing on the flat plaza the buggy drives
+                straight through -- scattered randomly (scatter-radius) around the
+                flock's own position rather than hand-placed one by one. Each sheep
+                flees (flee-target/-radius/-speed) once the buggy gets close, ambling
+                back together afterwards, and stays resting on the terrain's own
+                height throughout (terrain/terrain-offset). The sprite sheet is a
+                tiny inline data URI (a hand-drawn side-profile sheep silhouette) so
+                the example has no external image dependency at all.
+            -->
+            <garden-sprite id="sheep" url="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAC0UlEQVR4nO2bO04EMRAFfQYCQhJi7n8KDkFMTEICAon/Lmt73H797CrJKWp31QwSGkoBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAH9zd3rzUHvWsMJAW8YRwkMeH+zRLOyKeEH7xJnb0iZx3pPztIoiQPTOKkdJvrq/+nBEzpkMpfWQMo5/65QNQSx4ZQsRr/1QA9r8O1EIjYoiQ/18AlhGo5UWGQAAXUAuLjCBKfs3RWq1gtpTnp8fpIRDAGSLkjjoryE8bQUbhUUGo5acLwEn6iBjU8lMF4C6+JwS1/DQBrCS+JQS1/BQBrCz/UgRq+fIAVhd/KQS1fGkAu8k/FYFavlUAanEREajlywLYWf73CNTyJQEg/+uo5acPQC1o9QiQn+AQwOYBqCKYLr8lALUQAhDK3zGA2RFMl98SgFrE6hFI5BNA3Yn+24BMPgHUBxAVgVQ+AbQFMDoCtft3CKAtgBEhqJ1/gvxjEbSGoPZ9EiLol//7qF12QQAEQAAEQAAEQAAEQAT98m0DKLwF9n36P+AtsPHTXwiAAAoR7C2/8FVwt/xlAihEsLf8D3aOYHv5hf8NJICyYQTIP0HPUtxC6L2j2s00Vo4A+ZX0LiprCEfuo3Yh48jSsoRw9A5qB1JqvnfLGEOvbNvv+6IYGUBkEEefcgI4Q2QAtZFE/nwCuIA6gJmn9r5qJ1NpDSBbMLXztNxXa2QyOwTQel+dDQERCyQAIwiAAAiAAMYvMEL2zPm3Qb3Ac2Jd5rfHfYHu88txX6D7/HLcF+g+vxz3BbrPL8d9ge7zy3FfoPv8ctwX6D6/HPcFus8vx32B7vPLcV+g+/xy3BfoPr8c9wW6zy/HfYHu88txX6D7/HLcF+g+vxz3BbrPL8d9ge7zy3FfoPv8dmRbYLZ5lifbwrPNszzZFp5tnuXJtvBs8wAAAAAAAAAc4BUKRXoyjlcdOwAAAABJRU5ErkJggg=="
+                width="128" height="128" sprite-width="0.6" sprite-height="0.6"
+                capacity="10" count="10" position="4 0 10" scatter-radius="5"
+                flee-target="#buggy" flee-radius="7" flee-speed="5"
+                terrain="#terrain" terrain-offset="0.3"></garden-sprite>
 
             <!--
                 WASD / arrow keys drive the buggy. `suspension` reads the terrain's

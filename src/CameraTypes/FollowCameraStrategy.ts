@@ -3,9 +3,20 @@ import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 
 // Third-person chase camera. `target="#id"` (resolved asynchronously in
 // GardenCamera.updated(), since the target element may not exist/be built
-// yet) sets `lockedTarget`, read fresh every frame below; radius/height-offset/
+// yet) sets `chaseTarget`, read fresh every frame below; radius/height-offset/
 // rotation-offset are tunable via the generic OptionsBuilder float setters.
 // rotationOffset=180 is the standard "behind the target" chase angle.
+//
+// Deliberately named `chaseTarget`, not Babylon's own `lockedTarget` --
+// `TargetCamera` (UniversalCamera's base class) already has a *native*
+// `lockedTarget` property that auto-recomputes the camera's look direction
+// from that target's raw position every frame, on its own, independently of
+// anything this strategy does. Using that name here would silently fight our
+// own manual `cam.setTarget()` call below (Babylon's native recompute runs
+// after and wins) -- harmless as long as both ever wanted the same "look
+// straight at the target" answer, but it made `look-offset` below a no-op:
+// confirmed via a live probe (before this rename) that `cam.rotation.x` came
+// back bit-for-bit identical for `look-offset` values of 0, 1, 2, even ±20.
 //
 // This deliberately isn't Babylon's own `FollowCamera` -- that chases its
 // target via a damped spring too (cameraAcceleration/maxCameraSpeed), but
@@ -20,7 +31,10 @@ import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 // keeps this camera smooth too, however loose the spring is tuned.
 /**
  * `type="follow"`: a spring-damped third-person chase camera locked to
- * `target`. See {@link GardenCamera}.
+ * `target`. See {@link GardenCamera}. `look-offset` raises the point the
+ * camera aims at (not the camera itself) above the target, tilting the view
+ * up toward the horizon -- useful at a small `radius`, where aiming exactly
+ * at the target otherwise reads as looking almost straight down over it.
  *
  * @category Camera Types
  */
@@ -30,20 +44,29 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
         radius: number;
         heightOffset: number;
         rotationOffset: number;
+        lookOffset: number;
         cameraStiffness: number;
         cameraDamping: number;
-        lockedTarget: AbstractMesh;
+        chaseTarget: AbstractMesh;
     };
     state.radius = 4;
     state.heightOffset = 2;
     state.rotationOffset = 180;
+    // How far above the target's own position the camera actually *looks*,
+    // independent of heightOffset (which only moves the camera itself).
+    // Left at 0, the camera aims exactly at the target -- fine at a distance,
+    // but up close (a small radius) that reads as looking almost straight
+    // down over the target rather than out at what's around it. Raising the
+    // look point tilts the view up toward the horizon without moving the
+    // camera's own position at all.
+    state.lookOffset = 0;
     // Damping just under 2*sqrt(stiffness) (critical damping, ~12.6 here) is
     // deliberately underdamped -- the camera overshoots the ideal spot a little
     // and settles back, the "springy" chase-cam feel, rather than a dead-flat
     // catch-up. Loosen the chase by lowering stiffness and/or damping.
     state.cameraStiffness = 40;
     state.cameraDamping = 8;
-    state.lockedTarget = null;
+    state.chaseTarget = null;
 
     // UniversalCamera ships with its own keyboard/mouse-look inputs, which
     // GardenCamera's generic attachControl() call would otherwise wire up --
@@ -56,7 +79,7 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
     let velocity = Vector3.Zero();
 
     scene.onBeforeRenderObservable.add(() => {
-        let target = state.lockedTarget;
+        let target = state.chaseTarget;
         if (!target) {
             return;
         }
@@ -86,7 +109,7 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
         velocity.addInPlace(accel.scale(dt));
         cam.position.addInPlace(velocity.scale(dt));
 
-        cam.setTarget(targetPosition);
+        cam.setTarget(targetPosition.add(new Vector3(0, state.lookOffset, 0)));
     });
 
     return cam;

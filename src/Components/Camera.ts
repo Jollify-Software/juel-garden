@@ -18,9 +18,9 @@ import { GardenScene } from "./Scene";
  *   `target` ({@link FollowCameraStrategy}).
  *
  * Attributes: `type`, `position`, `speed`, `target` (an element selector, for
- * `type="follow"` or any type exposing `lockedTarget`), `radius`,
- * `height-offset`, `rotation-offset`, `camera-stiffness`, `camera-damping`
- * (the last four are `type="follow"`-specific), `ellipsoid`/`touch`
+ * `type="follow"` or any type exposing `chaseTarget`), `radius`,
+ * `height-offset`, `rotation-offset`, `look-offset`, `camera-stiffness`,
+ * `camera-damping` (the last five are `type="follow"`-specific), `ellipsoid`/`touch`
  * (`type="free"`-specific).
  *
  * @example
@@ -74,7 +74,7 @@ export class GardenCamera extends GardenElement {
         this.camera.attachControl(sceneEl.canvas, true);
 
         let target = this.getAttribute("target");
-        if (target && "lockedTarget" in this.camera) {
+        if (target && "chaseTarget" in this.camera) {
             this.beginBuild();
             try {
                 // The target (e.g. a drivable car) can be declared after this camera in
@@ -83,7 +83,7 @@ export class GardenCamera extends GardenElement {
                 await GardenElement.whenDocumentReady();
                 let [targetEl] = await GardenElement.resolveReady<GardenMesh>(target);
                 if (targetEl?.mesh) {
-                    (<any>this.camera).lockedTarget = targetEl.mesh;
+                    (<any>this.camera).chaseTarget = targetEl.mesh;
                 }
             } finally {
                 this.endBuild();

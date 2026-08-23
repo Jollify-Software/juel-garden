@@ -1,4 +1,4 @@
-import { Mesh, Tools, Vector3 } from "babylonjs";
+import { Matrix, Mesh, Tools, Vector3 } from "babylonjs";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
@@ -17,7 +17,12 @@ import { GardenMesh } from "../GardenMesh";
  * never below the raw ground -- a wheel's suspension travel can't compress
  * past the ground actually being there), which refuses forward progress once
  * the ground is steeper than `suspension-max-tilt`, retreating smoothly
- * rather than freezing solid.
+ * rather than freezing solid. Each wheel offset is transformed by the
+ * chassis's full current orientation (yaw, pitch *and* roll), not yaw alone
+ * -- otherwise the sampled wheel positions drift from the real ones as tilt
+ * grows, letting the chassis dip into the terrain right when it's most
+ * rotated (previously reproducible as "passes through the terrain when
+ * rotated onto its side").
  *
  * Must be paired with `drive` (see {@link BehaviourDrive}) and run after it
  * -- the library takes care of this ordering automatically (see
@@ -91,8 +96,22 @@ export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
 
         let dt = Math.min(engine.getDeltaTime(), 50) / 1000;
         let heading = (<any>mesh).drivingHeading ?? mesh.rotation.y;
-        let sin = Math.sin(heading);
-        let cos = Math.cos(heading);
+
+        // Wheel offsets are transformed by the chassis's full current orientation
+        // (yaw, pitch, roll from last frame) -- not yaw alone. Rotating by yaw only
+        // silently assumed the chassis was always level: fine near rotation.x/z = 0,
+        // but the wheels' true world (x,z) footprint shifts under pitch/roll too, not
+        // just their height, and that mismatch grows right alongside tilt. Confirmed
+        // empirically (an automated drive trace comparing chassis Y against raw
+        // terrain height at its own position): the chassis sank visibly below the
+        // terrain surface specifically when tilt approached suspension-max-tilt
+        // (depth scaling from 0 at ~35 degrees up to 0.15 units at the 45-degree cap),
+        // never while roughly level -- i.e. "passes through the terrain when rotated
+        // onto its side". Using rotation.y here (not drivingHeading, which can differ
+        // once drive-facing-offset is nonzero) matches what rotation.x/z actually are:
+        // the chassis's real rendered orientation, which is what the wheels are
+        // rigidly attached to.
+        let rotationMatrix = Matrix.RotationYawPitchRoll(mesh.rotation.y, mesh.rotation.x, mesh.rotation.z);
 
         // Raw, un-smoothed ground truth for *this* frame's wheel positions --
         // the drivability check below is decided from this, never from the
@@ -114,8 +133,9 @@ export function BehaviourSuspension(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
         let offTerrain = false;
         for (let i = 0; i < wheelOffsets.length; i++) {
             let offset = wheelOffsets[i];
-            let worldX = mesh.position.x + offset.x * cos + offset.z * sin;
-            let worldZ = mesh.position.z - offset.x * sin + offset.z * cos;
+            let worldOffset = Vector3.TransformCoordinates(new Vector3(offset.x, 0, offset.z), rotationMatrix);
+            let worldX = mesh.position.x + worldOffset.x;
+            let worldZ = mesh.position.z + worldOffset.z;
             let groundY = terrain.getHeightAtCoordinates(worldX, worldZ);
             if (!Number.isFinite(groundY)) {
                 // Off the edge of a finite terrain mesh, or queried before its

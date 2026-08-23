@@ -44,6 +44,7 @@ export module OptionsBuilder {
         'radius': FloatSetter('radius'),
         'height-offset': FloatSetter('height-offset', 'heightOffset'),
         'rotation-offset': FloatSetter('rotation-offset', 'rotationOffset'),
+        'look-offset': FloatSetter('look-offset', 'lookOffset'),
         'camera-stiffness': FloatSetter('camera-stiffness', 'cameraStiffness'),
         'camera-damping': FloatSetter('camera-damping', 'cameraDamping')
     }
