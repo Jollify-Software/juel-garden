@@ -5,10 +5,15 @@ import { GardenControl } from "./Control";
 import { GardenInfo } from "./Info";
 
 /**
- * A toggle button inside a `<garden-info>` panel: plays a `<garden-animation>`
- * by id on the first click, stops it on the next. The target animation
- * should be left without `event="load"` (or given some other event value) so
- * {@link GardenMesh.modifyMesh} doesn't also auto-play it at build time.
+ * A button inside a `<garden-info>` panel. With `target` set to a
+ * `<garden-animation>` id, it's a toggle: plays the animation on the first
+ * click, stops it on the next (the target animation should be left without
+ * `event="load"`, or given some other event value, so
+ * {@link GardenMesh.modifyMesh} doesn't also auto-play it at build time).
+ * Without `target` -- or for any listener that wants the click regardless --
+ * it's a plain button: every click dispatches a `click` event on the
+ * `<garden-button>` element itself (bubbling, so an `onclick="..."` attribute
+ * works too), for the host page to wire up to arbitrary behaviour.
  *
  * Attributes: `target` (id of the `<garden-animation>` to control),
  * `stop-label` (button text while playing, default `"Stop"`; the initial
@@ -19,6 +24,7 @@ import { GardenInfo } from "./Info";
  * ```html
  * <garden-info title="Fountain">
  *   <garden-button target="#fountain-anim">Play</garden-button>
+ *   <garden-button onclick="console.log('clicked')">Log</garden-button>
  * </garden-info>
  * ```
  *
@@ -59,21 +65,29 @@ export class GardenButton extends GardenControl {
         this.applyProperties(btn);
 
         btn.addEventListener("click", () => {
-            let animationEl = document.getElementById(this.target) as GardenAnimation;
-            if (!animationEl) {
-                console.warn(`<garden-button target="${this.target}"> did not match a <garden-animation>.`);
-                return;
+            if (this.target) {
+                let animationEl = document.getElementById(this.target) as GardenAnimation;
+                if (!animationEl) {
+                    console.warn(`<garden-button target="${this.target}"> did not match a <garden-animation>.`);
+                } else {
+                    let ownerMesh = info.parentElement as GardenMesh;
+                    if (this.playing) {
+                        animationEl.stop(ownerMesh);
+                        btn.textContent = label;
+                    } else {
+                        animationEl.play(ownerMesh);
+                        btn.textContent = this.stopLabel;
+                    }
+                    this.playing = !this.playing;
+                }
             }
 
-            let ownerMesh = info.parentElement as GardenMesh;
-            if (this.playing) {
-                animationEl.stop(ownerMesh);
-                btn.textContent = label;
-            } else {
-                animationEl.play(ownerMesh);
-                btn.textContent = this.stopLabel;
-            }
-            this.playing = !this.playing;
+            // The internal <button> lives in <garden-info>'s own DOM (appended
+            // to info.container, not to this element), so its click doesn't
+            // naturally bubble through <garden-button> -- re-dispatch it here
+            // so a host page can listen (or use onclick=) on this element like
+            // any other button, independent of the target/animation behaviour above.
+            this.dispatchEvent(new CustomEvent("click"));
         });
 
         info.container.appendChild(btn);

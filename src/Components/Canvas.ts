@@ -87,7 +87,7 @@ export class GardenCanvas extends GardenMesh {
             case 'text':
                 let lines = this.textContent.trim().split('\n');
                 let p = this.point;
-                p.y =+ 50;
+                p.y += 50;
                 let colours = this.foreground.split(' ');
                 for (var i = 0; i < lines.length; i++) {
                     let txt = lines[i].trim();

@@ -15,7 +15,9 @@ import { GardenMesh } from "../../GardenMesh";
  * Hosts `<garden-text>`/`<garden-button>` rows as content.
  *
  * Attributes: `title`, `close-on-outside-click` (`"false"` to disable,
- * default enabled).
+ * default enabled), `open` (start shown, instead of waiting for a click on
+ * the parent mesh -- e.g. a permanent on-screen toolbar; pair with
+ * `close-on-outside-click="false"` or any outside click/drag will hide it).
  *
  * @example
  * ```html
@@ -47,7 +49,7 @@ export class GardenInfo extends GardenElement {
             this.hide();
     };
 
-    updated() {
+    async updated() {
         let scene = this.getScene();
         this.parentMesh = this.parentElement as GardenMesh;
 
@@ -132,6 +134,15 @@ export class GardenInfo extends GardenElement {
         this.parentMesh.activate = () => {
             this.show();
         };
+
+        if (this.hasAttribute("open")) {
+            // this.parentMesh.mesh may not exist yet -- there's no ordering
+            // guarantee between a parent and a child declared in the same
+            // initial markup, see GardenElement.whenDocumentReady -- and
+            // show() silently no-ops its anchor without it.
+            await GardenInfo.whenDocumentReady();
+            this.show();
+        }
     }
 
     private updatePosition(scene: Scene) {

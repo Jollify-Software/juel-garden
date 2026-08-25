@@ -65,8 +65,16 @@ export class GardenCamera extends GardenElement {
             return;
         }
 
-        if (this.position)
-            this.camera.position = this.position;
+        if (this.position) {
+            // ArcRotateCamera recomputes .position from its alpha/beta/radius
+            // every frame, so a plain assignment gets silently overwritten on
+            // the next render. setPosition() re-derives those from the given
+            // point (keeping the current target) instead.
+            if ("setPosition" in this.camera)
+                (<any>this.camera).setPosition(this.position);
+            else
+                this.camera.position = this.position;
+        }
 
         let opt = this.buildOptions();
         this.camera = Object.assign(this.camera, opt);

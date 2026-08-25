@@ -6,7 +6,19 @@
     <body>
         <!-- https://www.babylonjs-playground.com/textures/floor.png -->
         <garden-scene>
-            <garden-camera></garden-camera>
+            <!-- 150-unit heightmap terrain, matching skybox -- the default
+                 radius-3 camera used to start essentially buried in the
+                 ground right at the origin. A plain radius pullback landed
+                 eye-level with a nearby rise in the terrain; this angle
+                 clears it for a view across the grassy landscape and sky
+                 instead. (A steeper/more distant top-down angle was tried
+                 for a wider establishing shot, but the arc camera's view
+                 matrix degenerates -- renders nothing at all -- once the
+                 look direction gets close to parallel with the up vector,
+                 i.e. too close to straight down; and pulling back much
+                 further while keeping a similar angle pushed the terrain
+                 out of frame instead. This is the widest stable angle found.) -->
+            <garden-camera position="0 60 -100"></garden-camera>
             <garden-light></garden-light>
 
             <garden-sky root="https://playground.babylonjs.com/textures/skybox" size="150"></garden-sky>

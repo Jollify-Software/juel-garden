@@ -1,0 +1,46 @@
+<html>
+
+<head>
+    <meta charset="utf-8"/>
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+
+<body>
+    <garden-scene>
+        <!-- <garden-material>/<garden-texture> declare a mesh's material as child
+             elements instead of a flat attribute soup -- useful once a shape needs
+             more than one texture slot, or the material is complex enough to want
+             its own tag. See Structures/temple.html and Structures/museum.html for
+             it in real use (garden-roof's inside/outside dome shells); this is the
+             focused, minimal version. -->
+        <garden-camera position="0 2 6"></garden-camera>
+        <garden-light></garden-light>
+
+        <garden-ground width="8" height="8" colour="#7BC8A4"></garden-ground>
+
+        <!-- colour alone, no texture -->
+        <garden-box position="-2.5 0.5 0">
+            <garden-material colour="#EF2D5E" spec-colour="0.6 0.6 0.6"></garden-material>
+        </garden-box>
+
+        <!-- a single diffuse texture -->
+        <garden-sphere position="0 1.25 0" diameter="2.5">
+            <garden-material>
+                <garden-texture src="https://playground.babylonjs.com/textures/earth.jpg"></garden-texture>
+            </garden-material>
+        </garden-sphere>
+
+        <!-- diffuse + bump textures together, and u/v-scale tiling the diffuse texture
+             several times across one face instead of stretching it once -->
+        <garden-box position="2.5 0.5 0">
+            <garden-material colour="#FFC65D">
+                <garden-texture src="https://playground.babylonjs.com/textures/floor.png"
+                    u-scale="2" v-scale="2"></garden-texture>
+                <garden-texture type="bump" src="https://playground.babylonjs.com/textures/normalMap.jpg"></garden-texture>
+            </garden-material>
+        </garden-box>
+
+    </garden-scene>
+</body>
+
+</html>

@@ -40,11 +40,17 @@ export class GardenGizmo extends GardenElement {
             }
         }
         this.manager = new GizmoManager(this.getScene(), this.thickness);
-        if (meshes) {
+        if (meshes.length) {
             this.manager.attachableMeshes = meshes;
+            // Without an initial attach, a freshly-enabled gizmo (e.g. clicking
+            // "Position") has nothing to attach to until the user separately
+            // clicks the mesh in the viewport -- attach the first one up front
+            // so enabling a gizmo shows handles immediately.
+            this.manager.attachToMesh(meshes[0]);
         }
-        if (nodes) {
+        if (nodes.length) {
             this.manager.attachableNodes = nodes;
+            this.manager.attachToNode(nodes[0]);
         }
     }
 

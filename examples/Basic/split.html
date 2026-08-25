@@ -7,7 +7,10 @@
 
 <body>
     <garden-scene>
-        <garden-camera>
+        <!-- This sphere's own radius (11.25) is well past the default camera's
+             radius (3) -- the camera used to start inside the mesh. Pulled
+             back to actually see the whole hollow/split shape from outside. -->
+        <garden-camera radius="35">
         </garden-camera>
         <garden-light></garden-light>
 

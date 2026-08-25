@@ -8,7 +8,9 @@
 
 <body>
     <garden-scene>
-        <garden-camera></garden-camera>
+        <!-- Default arc camera (radius 3) barely clears this sphere's own
+             radius (1.25) -- pulled back a little for breathing room. -->
+        <garden-camera radius="4"></garden-camera>
         <garden-light></garden-light>
 
         <garden-sphere diameter="2.50">

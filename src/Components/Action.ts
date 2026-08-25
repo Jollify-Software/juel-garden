@@ -1,4 +1,4 @@
-import { ActionManager, IAction, IncrementValueAction, SetValueAction } from "babylonjs";
+import { ActionManager, IAction, IncrementValueAction, InterpolateValueAction, SetValueAction } from "babylonjs";
 import { TargetCamera } from "babylonjs/Cameras/targetCamera";
 import { Mesh } from "babylonjs/Meshes/mesh";
 import { customElement, property } from "lit/decorators";
@@ -17,8 +17,10 @@ import { GardenScene } from "./Scene";
  * event-action pattern.
  *
  * Attributes: `type` (`"beforeRender"|"set"|"increment"|"interpolate"`),
- * `trigger` (`"enter"|"exit"|"frame"|"pointerOut"|"pointerOver"`), `target`,
- * `increment`, `parameter`, `property`, `value`.
+ * `trigger` (`"enter"|"exit"|"frame"|"pointerOut"|"pointerOver"|"pick"|"leftPick"`),
+ * `target`, `increment`, `parameter`, `property`, `value`, `duration`
+ * (`type="interpolate"`-specific, milliseconds), `stop` (`type="interpolate"`-specific,
+ * `"true"` to stop the mesh's other running animations when this one starts).
  *
  * @category Components
  */
@@ -31,6 +33,8 @@ export class GardenAction extends GardenElement {
     @property() parameter: string;
     @property() property: string;
     @property() value: string;
+    @property({ type: Number }) duration: number;
+    @property() stop: string;
 
     constructor() {
         super();
@@ -39,7 +43,12 @@ export class GardenAction extends GardenElement {
     }
 
     updated() {
-        setTimeout(() => {
+        setTimeout(async () => {
+            // `parameter`/`target` selectors (e.g. "#donut") can reference an element
+            // declared later in the same markup than this <garden-action> -- wait for
+            // the whole document before resolving them, same as GardenCamera's `target`.
+            await GardenElement.whenDocumentReady();
+
             let scene = this.getScene();
             let el = document.querySelector(this.parameter) as GardenElement;
             let owner = this.parentElement as HTMLElement;
@@ -107,6 +116,23 @@ export class GardenAction extends GardenElement {
                     };
                     break;
                 case "interpolate":
+                    action = {
+                        target: this.target,
+                        value: value,
+                        action: (ownerMesh: Mesh, target: any, value: any) => {
+                            if (ownerMesh == null) {
+                                return new InterpolateValueAction(
+                                    this.getTrigger(this.trigger), target, this.property, value,
+                                    this.duration, null, this.stop === "true"
+                                );
+                            } else {
+                                return new InterpolateValueAction({
+                                    trigger: this.getTrigger(this.trigger),
+                                    parameter: target
+                                }, ownerMesh, this.property, value, this.duration, null, this.stop === "true");
+                            }
+                        }
+                    };
                     break;
             }
             if (action && 'mesh' in owner) {
@@ -136,6 +162,10 @@ export class GardenAction extends GardenElement {
                 return ActionManager.OnPointerOutTrigger;
             case "pointerOver":
                 return ActionManager.OnPointerOverTrigger;
+            case "pick":
+                return ActionManager.OnPickTrigger;
+            case "leftPick":
+                return ActionManager.OnLeftPickTrigger;
         }
     }
 }

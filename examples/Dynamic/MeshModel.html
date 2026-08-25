@@ -6,7 +6,10 @@
     <body>
         <!-- https://www.babylonjs-playground.com/textures/floor.png -->
         <garden-scene>
-            <garden-camera></garden-camera>
+            <!-- The default radius-3 camera is far too tight for a human-scale
+                 rigged model -- pulled back and raised slightly for a full,
+                 comfortably-framed view of the walk-cycle animation. -->
+            <garden-camera position="0 3 -12"></garden-camera>
             <garden-light></garden-light>
 
             <garden-mesh-model id="chap" meshNames="him" root="https://playground.babylonjs.com/scenes/Dude/" filename="Dude.babylon"

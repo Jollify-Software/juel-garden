@@ -6,15 +6,26 @@
 </head>
 
 <body>
-    <!-- https://playground.babylonjs.com/#CXOLW#3 -->
+    <!-- https://playground.babylonjs.com/#CXOLW#3
+         The original playground's bump/reflection textures lived on a
+         third-party domain (synergy-development.fr) that no longer resolves
+         -- swapped for textures hosted on playground.babylonjs.com itself,
+         which the rest of the examples already rely on staying up. -->
     <garden-scene>
-        <garden-camera>
+        <!-- garden-duplicate-vertices' wobble deformation drifts this sphere's
+             true centre away from the origin to roughly (1.5, 1.5, 1.5) (see
+             DuplicateVertices.ts) -- the arc camera's target can't move off
+             the origin, so the camera sits on the opposite side of the
+             origin from the drifted blob (same trick as subtract.html),
+             putting both along the same viewing ray instead of well off to
+             one side of frame. -->
+        <garden-camera position="-5.2 -5.2 -5.2">
         </garden-camera>
         <garden-light></garden-light>
 
             <garden-sphere segments="32" diameter="2.50" colour="0.4 0.5 0.7"
-                bump-texture="http://www.synergy-development.fr/equalonyzer/images/grained_uv.png" bump-texture-uscale="4" bump-texture-vscale="4"
-                reflection-texture="http://www.synergy-development.fr/equalonyzer/images/spheremap.jpg" reflection-texture-level="0.6" reflection-texture-coordinates="1">
+                bump-texture="https://playground.babylonjs.com/textures/normalMap.jpg" bump-texture-uscale="4" bump-texture-vscale="4"
+                reflection-texture="https://playground.babylonjs.com/textures/reflectivity.png" reflection-texture-level="0.6" reflection-texture-coordinates="1">
                 <garden-duplicate-vertices></garden-duplicate-vertices>
             </garden-sphere>
             

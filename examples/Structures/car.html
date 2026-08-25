@@ -13,8 +13,11 @@
             <garden-camera type="follow" target="#car" radius="1.8" height-offset="1.5" rotation-offset="180"></garden-camera>
             <garden-light></garden-light>
 
+            <!-- Untiled, a single floor.png stretched across all 30 units reads as a
+                 blurry smear up close (each texel covers far too much ground). -->
             <garden-ground width="30" height="30" position="0 -0.3 0"
-                texture="https://www.babylonjs-playground.com/textures/floor.png"></garden-ground>
+                texture="https://www.babylonjs-playground.com/textures/floor.png"
+                texture-uscale="10" texture-vscale="10"></garden-ground>
 
             <!-- WASD / arrow keys drive the car; the camera above chases it from behind. -->
             <garden-polygon id="car" parent extrude="true" depth="0.2" shape="-0.3 0 -0.1, 0.2 0 -0.1, (Shape.curve()), 0 0 0.1, -0.3 0 0.1"

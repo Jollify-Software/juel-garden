@@ -16,12 +16,22 @@ export class GardenDuplicateVertices extends GardenElement {
     updated() {
         let scene = this.getScene();
         let mesh = (<GardenMesh>this.parentElement).mesh;
-        let ins = Mesh.CreateSphere("sphere1", 32, 25, scene); // mesh.createInstance("copy");
+        // The reference sphere's per-vertex positions (fx/fy/fz below) become the
+        // deformed mesh's actual coordinates, replacing its own -- a hardcoded
+        // diameter here previously always produced a diameter-25 result regardless
+        // of the real mesh's size (a diameter-2.5 sphere came out 10x too big).
+        // boundingSphere.radius is the radius of the sphere that circumscribes the
+        // bounding *box* (overshoots an actual sphere mesh's true radius by sqrt(3))
+        // -- the box's own half-extent is the mesh's real radius. Segment count is
+        // still hardcoded to 32, matching this component's typical use -- a mismatch
+        // there would misalign vertex indices between the two meshes.
+        let diameter = mesh.getBoundingInfo().boundingBox.extendSize.x * 2;
+        let ins = Mesh.CreateSphere("sphere1", 32, diameter, scene); // mesh.createInstance("copy");
         ins.isVisible = false;
 
         var v = mesh.getVerticesData(VertexBuffer.PositionKind);
         var fv = ins.getVerticesData(VertexBuffer.PositionKind);
-        
+
         var t = 0.0;
         this.getScene().registerBeforeRender(function () {
     

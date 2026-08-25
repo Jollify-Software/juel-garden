@@ -72,7 +72,7 @@ I should also say that this is the first Open Source project I have created, so 
 ## What I would like to achieve
 
 * More examples and improvements.
-  * The positioning on the basic example is not quite right, the camera needs to be rotated in order to see the scene. `rotation` attribute on camera is not working?
+  * ~~The positioning on the basic example is not quite right...~~ Fixed 2026-08-25 by giving the basic example's camera an explicit starting `position` -- the default arc camera starts at radius 3 around the origin, far too close to actually frame that example's group of shapes. `rotation` genuinely isn't implemented on `<garden-camera>` though (`GardenCamera.updated()` never reads it) -- still open if a future example specifically needs to *start* rotated rather than just repositioned.
   * The temple example is my favourite but it need some improvement.
     * The rooms really need to touch the ground not be floating in the air. Perhaps we could add a ground level variable?
     * I would like the temple to have more rooms and also a roof, like an Aztec or Greek temple.

@@ -24,6 +24,8 @@ export module Modifier {
         'diffuse-colour': ModifyColourSetter(),
         'texture': ModifyTextureSetter(),
         'diffuse-texture': ModifyTextureSetter(),
+        'texture-uscale': ModifyFloatSetter('texture-uscale', 'mat.diffuseTexture-uScale'),
+        'texture-vscale': ModifyFloatSetter('texture-vscale', 'mat.diffuseTexture-vScale'),
 
         'bump-texture': ModifyTextureSetter("bump"),
         'bump-texture-uscale': ModifyFloatSetter('bump-texture-uscale', 'mat.bumpTexture-uScale'),

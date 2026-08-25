@@ -35,7 +35,7 @@ export class GardenAnimation extends GardenElement {
     @property() target: string;
     @property() property: string;
     @property() event: string;
-    @property({ converter: StaticConvert.animationType }) type: number;
+    @property() type: string;
     @property({ type: Number }) from: number;
     @property({ type: Number }) to: number;
     @property({ type: Boolean }) loop: boolean = false;
@@ -62,7 +62,7 @@ export class GardenAnimation extends GardenElement {
             default:
                 if (!this.animation) {
                     this.animation = new Animation("animation", this.property, this.speed,
-                        this.type, this.loopmode);
+                        StaticConvert.animationType(this.type), this.loopmode);
                     this.animation.setKeys(ObjectConverter.keyframeRay(this.keyframes));
                 }
                 if (!targetEl.mesh.animations)

@@ -6,20 +6,30 @@
 </head>
 
 <body>
-<div>
-    <button onclick="document.getElementById('gizmo').enablePosition()">Position</button>
-    <button onclick="document.getElementById('gizmo').enableRotation()">Rotation</button>
-    <button onclick="document.getElementById('gizmo').enableScale()">Scale</button>
-    <button onclick="document.getElementById('gizmo').enableBoundingBox()">Bounding Box</button>
-</div>
-
     <garden-scene>
-        <garden-camera>
+        <!-- Default arc camera (radius 3) barely clears this sphere's own
+             radius (1.25) -- pulled back a little for room around the gizmo
+             handles instead of edge-to-edge cropping. -->
+        <garden-camera radius="4.5">
         </garden-camera>
         <garden-light></garden-light>
 
-
-        <garden-sphere id="sphere" diameter="2.50" colour="#EF2D5E"></garden-sphere>
+        <garden-sphere id="sphere" diameter="2.50" colour="#EF2D5E">
+            <!-- open + close-on-outside-click="false": a <garden-info> panel normally
+                 only appears once its mesh is clicked, and hides on any click/drag
+                 outside it -- neither fits a toolbar that has to stay up throughout,
+                 including while dragging the gizmo handles themselves. -->
+            <garden-info title="Gizmo" open close-on-outside-click="false">
+                <!-- No target -- these are plain buttons, not the animation-toggle
+                     that <garden-button target="..."> normally drives. Each still
+                     dispatches a "click" event on itself either way, so onclick=
+                     here works exactly like it would on a plain <button>. -->
+                <garden-button onclick="document.getElementById('gizmo').enablePosition()">Position</garden-button>
+                <garden-button onclick="document.getElementById('gizmo').enableRotation()">Rotation</garden-button>
+                <garden-button onclick="document.getElementById('gizmo').enableScale()">Scale</garden-button>
+                <garden-button onclick="document.getElementById('gizmo').enableBoundingBox()">Bounding Box</garden-button>
+            </garden-info>
+        </garden-sphere>
 
         <garden-gizmo id="gizmo" elements="#sphere"></garden-gizmo>
 

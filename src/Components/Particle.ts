@@ -91,7 +91,7 @@ this.particleSystem.maxEmitBox = this.maxEmitBox; // maximum box dimensions
 this.particleSystem.color1 = this.colour1;
 this.particleSystem.color2 = this.colour2;
 this.particleSystem.colorDead = this.colourDead;
-this.particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+this.particleSystem.blendMode = ParticleSystem.BLENDMODE_ONEONE;
 
 this.particleSystem.minSize = this.minSize;
 this.particleSystem.maxSize = this.maxSize;
@@ -101,10 +101,12 @@ this.particleSystem.maxLifeTime = this.maxLifeTime;
 this.particleSystem.emitRate = this.emitRate;
 
 this.particleSystem.direction1 = this.direction1;
-this.particleSystem.direction2 = this.direction1;
+this.particleSystem.direction2 = this.direction2;
 this.particleSystem.minEmitPower = this.minEmitPower;
 this.particleSystem.maxEmitPower = this.maxEmitPower;
 this.particleSystem.updateSpeed = this.updateSpeed;
+this.particleSystem.minAngularSpeed = this.minAngularSpeed;
+this.particleSystem.maxAngularSpeed = this.maxAngularSpeed;
 
 this.particleSystem.gravity = this.gravity;
         }

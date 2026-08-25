@@ -5,7 +5,15 @@
     </head>
     <body>
         <garden-scene>
-            <garden-camera></garden-camera>
+            <!-- BehaviourOrbit reads this position ("2 0 8") as world-space (the
+                 outer sphere has no `parent` attribute, so it's never actually
+                 reparented under it before orbiting) -- so the orbiting sphere
+                 sweeps a full circle of radius ~8.25 around the origin, and at
+                 its own radius (5.125) the swept envelope reaches out to
+                 roughly 13.4 units. The default radius-3 camera used to start
+                 almost inside the central sphere (radius 2.625) with the
+                 orbiting one entirely out of frame most of the time. -->
+            <garden-camera radius="38"></garden-camera>
             <garden-light></garden-light>
 
             <garden-sphere diameter="5.25">

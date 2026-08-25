@@ -79,6 +79,7 @@ export class GardenWaypoint extends GardenElement {
     }
 
     moveToPosition(position: Vector3, onComplete?: () => void) {
+        this.lookAtOrigin();
         let scene = this.getScene();
         let camera = (<Camera>(<any>this.parentElement).camera);
         let anime = new Animation("anime", "position", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE, false);
@@ -101,8 +102,20 @@ export class GardenWaypoint extends GardenElement {
         if (this.offset)
             pos = pos.add(this.offset);
 
-        console.log(pos);
         (<any>this.parentElement).setPosition(pos);
+        this.lookAtOrigin();
+    }
+
+    // A fresh FreeCamera keeps whatever rotation it was constructed with (facing
+    // Babylon's default +Z) -- nothing ever points it at the scene, so simply
+    // teleporting it to a waypoint can leave it staring at empty sky instead of
+    // whatever that stop is meant to show. The waypoint markers/content in these
+    // tours tend to sit near the world origin, so aiming there on every move is a
+    // reasonable default look direction without needing a per-waypoint "look at".
+    lookAtOrigin() {
+        let camera = (<any>this.parentElement).camera;
+        if (camera && 'setTarget' in camera)
+            camera.setTarget(Vector3.Zero());
     }
 
     next() {

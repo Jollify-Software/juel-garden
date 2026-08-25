@@ -7,7 +7,11 @@
 
 <body>
     <garden-scene>
-        <garden-camera>
+        <!-- The default camera (radius 3, target the origin) only ever framed
+             the cylinder sitting at the origin -- the split sphere 5 units out
+             in -z was completely out of view. Pulled back along the same axis
+             so both are visible together. -->
+        <garden-camera position="0 1 -13">
         </garden-camera>
         <garden-light></garden-light>
 

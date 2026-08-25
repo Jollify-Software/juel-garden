@@ -5,7 +5,10 @@
     </head>
     <body>
         <garden-scene>
-            <garden-camera></garden-camera>
+            <!-- The 4x4 track loop's diagonal (~2.8) barely fit the default
+                 radius-3 camera -- pulled back a bit for a full, uncropped
+                 view of the loop as the sphere tracks around it. -->
+            <garden-camera radius="6"></garden-camera>
             <garden-light></garden-light>
 
             <garden-line points="2 0 2, 2 0 -2, -2 0 -2, 2 0 2">

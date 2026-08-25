@@ -11,7 +11,13 @@
     <body>
         <!-- https://www.babylonjs-playground.com/#T6NP3F#0 -->
         <garden-scene>
-            <garden-camera></garden-camera>
+            <!-- Every shape here sits directly above the origin (x=z=0, only y
+                 varies from 0.5 to 7) -- the default camera's fixed target
+                 (the origin) was right at the bottom edge of the group, well
+                 below all of it. Camera height matched to the group's own
+                 vertical centre (~4) so it reads as centred on screen, not
+                 just barely in frame at the top. -->
+            <garden-camera position="0 4 -30"></garden-camera>
             <garden-light></garden-light>
 
             <garden-sphere id="sphere" segments="16" diameter="4" position="0 5 0"
