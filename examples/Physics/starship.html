@@ -1,0 +1,153 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <script src="../../dist/juel-garden.js"></script>
+    </head>
+    <body>
+        <garden-scene>
+            <!--
+              STARSHIP
+
+              The ship never moves -- it sits at the origin the whole time.
+              Every bit of "flight" is faked with particles:
+
+              * Forward motion  ->  the star field. A big box of particles
+                spawned out ahead (+Z) and streaming straight back down -Z at
+                high speed, every one drawn billboard="stretched" (a streak
+                along its own velocity, not a flat dot) so they rip past the
+                camera as long comet-lines. Real parallax -- it reads as the
+                ship charging forward. A skybox can only ever be *rotated*,
+                which always looks like the ship yawing/sliding sideways, so
+                <garden-sky> is left perfectly still and the streaks do all
+                the work.
+
+              * Thrust  ->  two plasma plumes blasting straight out the back
+                of the engine nacelles (-Z), well behind the hull. A big
+                angular spread on direction1/direction2 flares each plume into
+                a broad cone rather than a tight pencil, and additive blending
+                (the default for a custom <garden-particle> system) lets the
+                overlapping pair bloom into one wide wash of exhaust.
+
+              The camera sits behind and above the ship (it flies away from
+              the viewer, +Z), so the twin plumes read as one wide burst of
+              exhaust firing back toward the camera and the star streaks tear
+              past on every side.
+
+              The hull is built from real meshes -- a lathed spindle fuselage,
+              swept delta wings, twin nacelles, canards, a tail fin and a
+              tinted canopy -- not a flat extruded plane.
+            -->
+            <garden-camera position="3 2.2 -8.2"></garden-camera>
+            <garden-light diffuse="0.6 0.65 0.85"></garden-light>
+
+            <garden-sky root="../assets/space" size="200"></garden-sky>
+
+            <garden-element parent id="ship">
+
+                <!-- Fuselage: a lathed profile (x = radius, y = length along the
+                     lathe's Y axis) revolved into a spindle, then tipped 90 deg
+                     so the point faces +Z -- the direction of travel. -->
+                <garden-lathe id="hull" tessellation="48"
+                    shape="0 -1.65 0, 0.16 -1.25 0, 0.30 -0.5 0, 0.35 0.3 0, 0.30 0.95 0, 0.15 1.5 0, 0 1.95 0"
+                    rotation="90 0 0"
+                    colour="#C7D0DE" spec-colour="#FFFFFF">
+
+                    <!-- Star field: the forward-motion cue. Spawned in a big
+                         volume ahead of and around the ship, streaking straight
+                         back down -Z. Wide enough that it never reads as a
+                         tunnel or a force-bubble wrapped around the hull. -->
+                    <garden-particle event="load" billboard="stretched"
+                        capacity="2200" emitter="0 0 20"
+                        minEmitBox="-15 -11 -18" maxEmitBox="15 11 18"
+                        colour1="0.85 0.93 1 1" colour2="0.6 0.75 1 1" colourDead="0.4 0.5 0.85 0"
+                        minSize="0.16" maxSize="0.5" minLifeTime="0.5" maxLifeTime="1.2" emitRate="700"
+                        direction1="0 0 -1" direction2="0 0 -1"
+                        minEmitPower="95" maxEmitPower="180" updateSpeed="0.02" gravity="0 0 0"
+                        url="https://playground.babylonjs.com/textures/flare.png"></garden-particle>
+                </garden-lathe>
+
+                <!-- Tinted bubble canopy, stretched long over the nose. -->
+                <garden-sphere diameter="0.5" position="0 0.2 0.5" scale="1 0.62 1.9"
+                    colour="#3A5C8F" emissive-colour="#12305C" spec-colour="#BFE0FF"></garden-sphere>
+
+                <!-- Swept delta wings: two halves angled back for the sweep. -->
+                <garden-box width="1.7" height="0.1" depth="1.2"
+                    position="-0.82 -0.06 -0.05" rotation="0 18 0"
+                    colour="#9AA7BC" spec-colour="#FFFFFF"></garden-box>
+                <garden-box width="1.7" height="0.1" depth="1.2"
+                    position="0.82 -0.06 -0.05" rotation="0 -18 0"
+                    colour="#9AA7BC" spec-colour="#FFFFFF"></garden-box>
+
+                <!-- Wingtip fins. -->
+                <garden-box width="0.06" height="0.34" depth="0.44"
+                    position="-1.52 0.1 -0.42" colour="#6E7A8F"></garden-box>
+                <garden-box width="0.06" height="0.34" depth="0.44"
+                    position="1.52 0.1 -0.42" colour="#6E7A8F"></garden-box>
+
+                <!-- Canards, up near the nose. -->
+                <garden-box width="0.8" height="0.06" depth="0.4"
+                    position="-0.5 0.02 0.95" rotation="0 24 0" colour="#9AA7BC"></garden-box>
+                <garden-box width="0.8" height="0.06" depth="0.4"
+                    position="0.5 0.02 0.95" rotation="0 -24 0" colour="#9AA7BC"></garden-box>
+
+                <!-- Vertical tail fin. -->
+                <garden-box width="0.06" height="0.66" depth="0.8"
+                    position="0 0.34 -1.1" colour="#9AA7BC" spec-colour="#FFFFFF"></garden-box>
+
+                <!-- Belly intake. -->
+                <garden-box width="0.46" height="0.14" depth="0.95"
+                    position="0 -0.3 0.05" colour="#3A4150"></garden-box>
+
+                <!-- Nose accent ring. -->
+                <garden-torus diameter="0.34" thickness="0.04" rotation="90 0 0"
+                    position="0 0.02 1.3" colour="#5A6577"></garden-torus>
+
+                <!-- Engine-mouth glow: exhaust rings + white-hot cores. These
+                     are direct children of #ship (local == world, ship is at
+                     the origin), not of the nacelles -- a nacelle carries its
+                     own 90deg roll, which would drag these off-position. -->
+                <garden-torus diameter="0.4" thickness="0.07" rotation="90 0 0"
+                    position="-0.36 -0.12 -1.5" colour="#39D0FF" emissive-colour="#39D0FF"></garden-torus>
+                <garden-torus diameter="0.4" thickness="0.07" rotation="90 0 0"
+                    position="0.36 -0.12 -1.5" colour="#39D0FF" emissive-colour="#39D0FF"></garden-torus>
+                <garden-sphere diameter="0.24" position="-0.36 -0.12 -1.52"
+                    colour="#EAF6FF" emissive-colour="#8FEBFF"></garden-sphere>
+                <garden-sphere diameter="0.24" position="0.36 -0.12 -1.52"
+                    colour="#EAF6FF" emissive-colour="#8FEBFF"></garden-sphere>
+
+                <!-- Port nacelle. The plume rides as a child so it auto-plays
+                     (only a GardenMesh scans its children for event="load"
+                     particles); its `emitter` is an absolute world coord, so
+                     the nacelle's own transform doesn't shift it. -->
+                <garden-cylinder diameter="0.36" height="1.0" rotation="90 0 0"
+                    position="-0.36 -0.12 -1.0" colour="#3A4150" spec-colour="#FFFFFF">
+                    <garden-particle event="load"
+                        capacity="1600" emitter="-0.36 -0.12 -1.7"
+                        minEmitBox="-0.28 -0.28 0" maxEmitBox="0.28 0.28 0"
+                        colour1="0.4 0.62 1 0.4" colour2="0.78 0.28 1 0.42" colourDead="0.1 0.04 0.28 0"
+                        minSize="0.14" maxSize="0.6" minLifeTime="0.28" maxLifeTime="0.85" emitRate="440"
+                        direction1="-0.75 -0.75 -1" direction2="0.75 0.75 -1"
+                        minEmitPower="4" maxEmitPower="22" updateSpeed="0.02" gravity="0 0 0"
+                        url="https://playground.babylonjs.com/textures/flare.png"></garden-particle>
+                </garden-cylinder>
+
+                <!-- Starboard nacelle. -->
+                <garden-cylinder diameter="0.36" height="1.0" rotation="90 0 0"
+                    position="0.36 -0.12 -1.0" colour="#3A4150" spec-colour="#FFFFFF">
+                    <garden-particle event="load"
+                        capacity="1600" emitter="0.36 -0.12 -1.7"
+                        minEmitBox="-0.28 -0.28 0" maxEmitBox="0.28 0.28 0"
+                        colour1="0.4 0.62 1 0.4" colour2="0.78 0.28 1 0.42" colourDead="0.1 0.04 0.28 0"
+                        minSize="0.14" maxSize="0.6" minLifeTime="0.28" maxLifeTime="0.85" emitRate="440"
+                        direction1="-0.75 -0.75 -1" direction2="0.75 0.75 -1"
+                        minEmitPower="4" maxEmitPower="22" updateSpeed="0.02" gravity="0 0 0"
+                        url="https://playground.babylonjs.com/textures/flare.png"></garden-particle>
+                </garden-cylinder>
+
+                <!-- Nose running light. -->
+                <garden-sphere diameter="0.16" position="0 0.02 1.78"
+                    colour="#FFE3B0" emissive-colour="#FFB020"></garden-sphere>
+            </garden-element>
+        </garden-scene>
+    </body>
+</html>

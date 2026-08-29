@@ -1,6 +1,7 @@
 import { Color4, ParticleHelper, ParticleSystem, Texture, Vector3 } from "babylonjs";
 import { customElement, property } from "lit/decorators";
 import { Colour4Convert } from "../Converters/Colour4Convert";
+import { StaticConvert } from "../Converters/StaticConvert";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
@@ -19,7 +20,11 @@ import { Utility } from "../Utility";
  * and for a custom system: `url`, `capacity`, `emitter`, `minemitbox`/
  * `maxemitbox`, `colour1`/`colour2`/`colourdead`, `minsize`/`maxsize`,
  * `minlifetime`/`maxlifetime`, `emitrate`, `direction1`/`direction2`,
- * `minemitpower`/`maxemitpower`, `updatespeed`, `gravity`.
+ * `minemitpower`/`maxemitpower`, `updatespeed`, `gravity`, `billboard`
+ * (`"all"` (default)|`"y"`|`"stretched"` -- stretched draws each particle as
+ * a streak along its own current velocity instead of a flat sprite, e.g. for
+ * stars rushing past a moving viewpoint: fast-moving particles read as long
+ * comet-like lines rather than dots).
  *
  * @example
  * ```html
@@ -46,6 +51,8 @@ export class GardenParticle extends GardenElement {
     @property({ type: Number }) minEmitPower: number;
     @property({ type: Number }) maxEmitPower: number;
     @property({ type: Number }) updateSpeed: number;
+
+    @property() billboard: string;
 
     @property() url: string;
     @property({ converter: Vector3Convert.fromString }) emitter: Vector3;
@@ -109,6 +116,9 @@ this.particleSystem.minAngularSpeed = this.minAngularSpeed;
 this.particleSystem.maxAngularSpeed = this.maxAngularSpeed;
 
 this.particleSystem.gravity = this.gravity;
+
+if (this.billboard)
+    this.particleSystem.billboardMode = StaticConvert.particleBillboardMode(this.billboard);
         }
     }
 

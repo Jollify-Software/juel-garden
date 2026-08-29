@@ -1,9 +1,10 @@
-import { Animation, Mesh } from "babylonjs";
+import { Animation, Mesh, ParticleSystem } from "babylonjs";
 
 /**
  * Maps a handful of string attribute values onto Babylon's own numeric enum
- * constants: animation loop mode/type (for `<garden-animation>`) and mesh
- * side-orientation (`"default"|"front"|"back"|"double"`).
+ * constants: animation loop mode/type (for `<garden-animation>`), mesh
+ * side-orientation (`"default"|"front"|"back"|"double"`), and particle
+ * billboard mode (`"all"|"y"|"stretched"`).
  *
  * @category Converters
  */
@@ -52,6 +53,20 @@ export module StaticConvert {
                 return Mesh.DOUBLESIDE;
             default:
                 return Mesh.DEFAULTSIDE;
+        }
+    }
+    // "stretched" -- particles are stretched into streaks along their own
+    // per-frame velocity, e.g. stars rushing past a moving viewpoint. See
+    // GardenParticle's `billboard` attribute.
+    export var particleBillboardMode = (str: string) => {
+        switch (str) {
+            case "y":
+                return ParticleSystem.BILLBOARDMODE_Y;
+            case "stretched":
+                return ParticleSystem.BILLBOARDMODE_STRETCHED;
+            case "all":
+            default:
+                return ParticleSystem.BILLBOARDMODE_ALL;
         }
     }
 }
