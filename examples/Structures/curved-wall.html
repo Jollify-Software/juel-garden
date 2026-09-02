@@ -10,7 +10,7 @@
         <!-- The gallery spans roughly x=-14..14, z=-10..16. A free camera on the
              south side, lifted to eye height and pulled back, frames the apsidal
              (curved) north wall and the standalone screen wall in front of it. -->
-        <garden-camera type="arc" position="0 26 -34" target="0 2 3"></garden-camera>
+        <garden-camera type="arc" position="6 32 -40" target="6 2 3"></garden-camera>
         <garden-light></garden-light>
         <garden-webxr></garden-webxr>
 
@@ -20,6 +20,12 @@
             <garden-room id="gallery" width="24" depth="18" height="6" collisions>
                 <garden-wall slot="north" curve="4" segments="24"></garden-wall>
             </garden-room>
+
+            <!-- A plain rectangular annex abutting the gallery's (straight) east
+                 wall: <garden-structure> auto-joins them even though the gallery
+                 is a curved-outline room whose bounding box no longer matches
+                 its wall line (tryCurvedRoomJoin). -->
+            <garden-room id="annex" position="20 0 0" width="16" depth="16" height="6" collisions></garden-room>
 
             <!-- A free-standing curved screen wall inside the room (a partition
                  you walk around). Lower than the room so the apse stays visible

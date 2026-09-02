@@ -126,6 +126,9 @@ export class GardenStructure extends GardenElement {
         if (this.tryWallCrossing(a, b))
             return;
 
+        if (this.tryCurvedRoomJoin(a, b))
+            return;
+
         let aBox = a.mesh.getBoundingInfo().boundingBox;
         let bBox = b.mesh.getBoundingInfo().boundingBox;
 
@@ -300,9 +303,109 @@ export class GardenStructure extends GardenElement {
         return true;
     }
 
-    private cutDoorway(room: GardenMesh, wall: GardenMesh, at: Vector3, floorY: number) {
+    /**
+     * Cut a doorway where a curved room's wall outline runs up against another
+     * room. `tryWallCrossing` only covers a `<garden-wall>` piercing a room;
+     * this covers the room-to-room case the box-vs-box test can't, because a
+     * curved-slot room or a rotunda has a bounding box that bulges past where
+     * its wall actually is.
+     *
+     * Fires when at least one of the pair is a `GardenRoom` carrying a stored
+     * `wallLoop` (built by buildWithWallSlots / buildRotunda -- a plain box room
+     * has none and falls through to the box test). Walks that loop in world
+     * space; a run of loop points sitting in the thin shell around the other
+     * room's outline (its own `wallLoop` if it has one, else its box) is a
+     * shared wall, and one opening is cut at the run's midpoint. Returns true
+     * whenever a curved room was involved -- the loop walk is a superset of what
+     * the box test could do for it, so the caller must not also run that.
+     */
+    private tryCurvedRoomJoin(a: GardenMesh, b: GardenMesh): boolean {
+        let curved =
+            (a instanceof GardenRoom && a.wallLoop) ? a :
+            (b instanceof GardenRoom && b.wallLoop) ? b : null;
+        if (!curved || !curved.mesh)
+            return false;
+
+        let other = curved === a ? b : a;
+        if (!other.mesh)
+            return true;
+
+        let aBox = curved.mesh.getBoundingInfo().boundingBox;
+        let bBox = other.mesh.getBoundingInfo().boundingBox;
+        // Stacked storeys (no vertical overlap) are never a wall join.
+        if (Math.max(aBox.minimumWorld.y, bBox.minimumWorld.y) >= Math.min(aBox.maximumWorld.y, bBox.maximumWorld.y) - this.tolerance)
+            return true;
+
+        let loop = curved.wallLoop!.map(p => Vector3.TransformCoordinates(p, curved.mesh.getWorldMatrix()));
+        let otherLoop = (other instanceof GardenRoom && other.wallLoop)
+            ? other.wallLoop.map(p => Vector3.TransformCoordinates(p, other.mesh.getWorldMatrix()))
+            : null;
+
+        let shell = this.tolerance * 4;
+        let inBox = (p: Vector3, pad: number) =>
+            p.x >= bBox.minimumWorld.x - pad && p.x <= bBox.maximumWorld.x + pad &&
+            p.z >= bBox.minimumWorld.z - pad && p.z <= bBox.maximumWorld.z + pad;
+        let touching = (p: Vector3) => otherLoop
+            ? this.distToPolylineXZ(p, otherLoop) <= shell
+            : (inBox(p, shell) && !inBox(p, -shell));
+
+        // For each loop segment, find the stretch that runs against the other room's
+        // outline and, if it's long enough to be a real shared wall (not a grazed
+        // corner), cut one doorway at its midpoint. Sampling per segment -- rather
+        // than per vertex -- keeps the doorway centred on the *shared* span even when
+        // the neighbour only covers part of a long straight side.
+        const SAMPLES = 12;
+        // A shared wall shorter than this is a grazed corner, not a doorway.
+        let minRun = Math.max(this.tolerance * 6, this.openingWidth * 0.4);
+        let doorways: Vector3[] = [];
+        for (let i = 0; i < loop.length - 1; i++) {
+            let p0 = loop[i], p1 = loop[i + 1];
+            let firstT = -1, lastT = -1;
+            for (let s = 0; s <= SAMPLES; s++) {
+                let t = s / SAMPLES;
+                if (touching(Vector3.Lerp(p0, p1, t))) {
+                    if (firstT < 0) firstT = t;
+                    lastT = t;
+                }
+            }
+            if (firstT < 0)
+                continue;
+
+            let start = Vector3.Lerp(p0, p1, firstT);
+            let end = Vector3.Lerp(p0, p1, lastT);
+            if (Vector3.Distance(start, end) < minRun)
+                continue;
+
+            let mid = Vector3.Lerp(start, end, 0.5);
+            if (!doorways.some(q => Vector3.Distance(q, mid) < this.openingWidth))
+                doorways.push(mid);
+        }
+
+        if (doorways.length === 0)
+            return true;
+
+        let floorY = Math.max(aBox.minimumWorld.y, bBox.minimumWorld.y);
+        for (let at of doorways)
+            this.cutDoorway(curved, other, at, floorY);
+        return true;
+    }
+
+    /** Shortest distance from a point to a polyline, in the XZ plane (walls span all Y). */
+    private distToPolylineXZ(p: Vector3, pts: Vector3[]): number {
+        let best = Infinity;
+        for (let i = 0; i < pts.length - 1; i++) {
+            let ax = pts[i].x, az = pts[i].z;
+            let bx = pts[i + 1].x - ax, bz = pts[i + 1].z - az;
+            let len2 = bx * bx + bz * bz;
+            let t = len2 > 0 ? Math.max(0, Math.min(1, ((p.x - ax) * bx + (p.z - az) * bz) / len2)) : 0;
+            best = Math.min(best, Math.hypot(p.x - (ax + bx * t), p.z - (az + bz * t)));
+        }
+        return best;
+    }
+
+    private cutDoorway(first: GardenMesh, second: GardenMesh, at: Vector3, floorY: number) {
         let scene = this.getScene();
-        // Square in plan so it carves a clean opening whatever angle the wall meets at.
+        // Square in plan so it carves a clean opening whatever angle the walls meet at.
         let cutter = MeshBuilder.CreateBox("structure-wall-opening", {
             width: this.openingWidth,
             height: this.openingHeight,
@@ -312,7 +415,7 @@ export class GardenStructure extends GardenElement {
         cutter.isVisible = false;
 
         let cutterCsg = CSG.FromMesh(cutter);
-        for (let el of [room, wall]) {
+        for (let el of [first, second]) {
             let mesh: Mesh = CSG.FromMesh(el.mesh).subtract(cutterCsg).toMesh(el.id, el.getMaterial(), scene, true);
             el.setMesh(mesh);
             if (el instanceof GardenRoom)

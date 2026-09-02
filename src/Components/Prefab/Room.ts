@@ -131,6 +131,15 @@ export class GardenRoom extends GardenMesh {
      */
     private twoSlotModel = false;
 
+    /**
+     * The room's wall-outline centreline in local space (open ring, no repeated
+     * closing point), set by {@link buildWithWallSlots} / {@link buildRotunda}.
+     * `<garden-structure>` reads it to auto-join a curved room to a neighbour,
+     * since such a room's bounding box bulges past its real wall line. Left
+     * undefined for a plain box room (the box test handles those).
+     */
+    wallLoop?: Vector3[];
+
     constructor() {
         super();
         this.width = 8;
@@ -201,6 +210,7 @@ export class GardenRoom extends GardenMesh {
 
     /** The classic rectangular room: floor slab + four wall boxes, inset so they don't overlap at the corners. */
     private buildBox(scene: Scene, colors: Record<string, Color3>): Mesh {
+        this.wallLoop = undefined; // box rooms use <garden-structure>'s bounding-box join
         let hh = this.height / 2;
         let dt = this.thickness * 2;
 
@@ -294,7 +304,10 @@ export class GardenRoom extends GardenMesh {
                     loop.push(p.clone());
             }
         }
-        if (loop.length > 1 && !loop[0].equalsWithEpsilon(loop[loop.length - 1], 1e-4))
+        // Open ring for <garden-structure> (see wallLoop); closed copy for the sweep.
+        let closes = loop.length > 1 && loop[0].equalsWithEpsilon(loop[loop.length - 1], 1e-4);
+        this.wallLoop = (closes ? loop.slice(0, -1) : loop).map(p => p.clone());
+        if (!closes)
             loop.push(loop[0].clone());
 
         let wall = createWall("wall", loop, this.height, this.thickness, scene)!;
@@ -328,6 +341,8 @@ export class GardenRoom extends GardenMesh {
             let ang = (i / tess) * Math.PI * 2;
             ring.push(new Vector3(Math.cos(ang) * wallR, 0, Math.sin(ang) * wallR));
         }
+        // Open ring (drop the repeated closing point) for <garden-structure>'s join.
+        this.wallLoop = ring.slice(0, tess).map(p => p.clone());
         let wall = createWall("wall", ring, this.height, this.thickness, scene)!;
         wall.material = this.matte("mat-wall", colors.north, scene, true);
 
