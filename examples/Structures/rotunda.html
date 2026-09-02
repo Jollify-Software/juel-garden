@@ -1,0 +1,36 @@
+<html>
+
+<head>
+    <meta charset="utf-8"/>
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+
+<body>
+    <garden-scene gravity="0 -0.4 0" collisions>
+        <!-- A 16-unit-wide rotunda, 8 tall. Camera outside and slightly above,
+             looking at the domed drum. -->
+        <garden-camera type="free" collisions position="0 6 -24"></garden-camera>
+        <garden-light></garden-light>
+        <garden-webxr></garden-webxr>
+
+        <garden-structure collisions>
+            <!-- type="rotunda": a circular floor + one swept wall. slot="wall"
+                 textures the drum; slot="floor" the floor. -->
+            <garden-room id="drum" type="rotunda" width="16" height="8" collisions>
+                <garden-material slot="floor" colour="#b8ad98">
+                    <garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture>
+                </garden-material>
+                <garden-material slot="wall" colour="#ece7db"></garden-material>
+            </garden-room>
+
+            <!-- A dome over the whole structure (sized to the rotunda's footprint). -->
+            <garden-roof type="dome" outside-colour="#c9bfa8" inside-colour="#f4efe4"></garden-roof>
+
+            <garden-opening between="#drum" position="0 2 -8" width="4" height="5"></garden-opening>
+        </garden-structure>
+
+        <garden-ground width="120" height="120" position="0 -0.1 0" collisions></garden-ground>
+    </garden-scene>
+</body>
+
+</html>

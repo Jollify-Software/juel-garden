@@ -89,6 +89,12 @@ export class GardenDoorway extends GardenMesh {
                 el.setMesh(
                     thatCsg.subtract(thisCsg).toMesh(el.id, mat, scene, true)
                 );
+                // CSG.subtract().toMesh() doesn't reliably keep each submesh pointing
+                // at the material it started on (see GardenRoom.fixMaterialIndices) --
+                // without this the freshly cut doorway reveal can come out wearing the
+                // floor's material. GardenStructure does the same after its own cuts.
+                if (el instanceof GardenRoom)
+                    el.fixMaterialIndices();
             }
         } finally {
             this.endBuild();

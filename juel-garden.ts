@@ -37,6 +37,7 @@ import "./src/Components/Prefab/SemiHouse";
 
 import "./src/Components/Prefab/Stairs";
 import "./src/Components/Prefab/Room";
+import "./src/Components/Prefab/Wall";
 import "./src/Components/Prefab/Roof";
 import "./src/Components/Prefab/Column";
 import "./src/Components/Prefab/Opening";
