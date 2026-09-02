@@ -1,8 +1,9 @@
 # Design: curved walls, room wall composition, sensible default materials
 
-Status: **PR 1 + PR 2 committed in juel-garden (branch `feature/curved-walls`);
-PR 3 (Parterre) implemented but still uncommitted in that repo; PR 4 not
-started.** Spans two repos — juel-garden (the component contract) and
+Status: **PR 1 + PR 2 + PR 4 committed in juel-garden (branch
+`feature/curved-walls`); PR 3 committed in Parterre (branch
+`feature/curved-walls`). All four PRs done; neither branch merged or pushed.**
+Spans two repos — juel-garden (the component contract) and
 [Parterre](../parterre) (the generator that emits it). Parterre's `TODO.md`
 milestone 2 ("real walls") depends on this; the "decide the juel-garden side
 first" note there is resolved by this document.
@@ -154,17 +155,24 @@ both re-run `fixMaterialIndices` after each CSG cut.
 
 ### `<garden-structure>` — doorway joins
 
-Unchanged for now: bounding-box vs bounding-box detection, which does not
-reflect where a curved wall actually is.
+Room↔room is still bounding-box vs bounding-box. **A `<garden-wall>` child is
+handled by `tryWallCrossing` (PR 4, done):** its world-space centreline is
+walked, and each segment that goes from outside another child's (x,z) box to
+inside gets the crossing point binary-searched and an `opening-*`-sized box
+CSG-cut through both the wall and that child. So a curved wall running into a
+room auto-joins — no `<garden-opening>` needed.
 
-- **Phase 1 (ship):** a doorway where a curved wall meets a room comes from an
-  explicit `<garden-opening between="#room #wall">` (CSG-cuts any mesh it is
-  pointed at). Parterre already plans to emit these from
-  `data-fixture="opening"` rects. Rotundas need manual openings.
-- **Later PR:** teach `<garden-structure>` a per-wall test — sample a
-  `<garden-wall>` child's polyline/arc segments and test them against each
-  room's box, cutting an opening where they cross. Retires the "curved shapes
-  need a hand-placed opening" known issue in the README.
+Still need a hand-placed `<garden-opening between="#a #b">`:
+
+- a **rotunda** meeting anything (it has no `<garden-wall>` child — the wall is
+  internal to the room mesh);
+- two **rooms** that meet along a curved shared edge (both are `GardenRoom`, so
+  the wall-crossing path doesn't apply and the box test only sees the bulged
+  bounding box);
+- a `curvature` stairway or a dome roof (rotated/curved, no centreline to walk).
+
+Parterre also emits `<garden-opening>` from `data-fixture="opening"` rects (a
+later milestone) for anything the automatic paths miss.
 
 ---
 
@@ -274,7 +282,7 @@ One fixture still maps to one element; the dispatch table is untouched.
 | 1 | juel-garden | **DONE (uncommitted).** Sensible room + ground default materials. `GardenRoom.COLORS`, matte specular, `GardenGround` default, opt-in `debug-colors`. `museum.html` / `temple.html` set materials explicitly so are visually unaffected. |
 | 2 | juel-garden | **DONE (uncommitted).** `<garden-wall>` (both modes) + `<garden-room>` wall slots + `type="rotunda"` + two-slot `fixMaterialIndices` + curved-wall-follows floor. Registered in `juel-garden.ts`. `examples/Structures/curved-wall.html` + `rotunda.html`, camera-tuned, verified headless (Playwright). `<garden-opening>` fixMaterialIndices fix. `tsc` / `parcel` / `typedoc` all pass. |
 | 3 | parterre | **DONE (uncommitted).** `Geometry/PathFlattener.cs` (M/L/H/V/Z, C/S/Q/T, A) + `WallFixture` `<path>` → `<garden-wall>` + `RoomFixture` `<circle>`→rotunda and `data-edge`→slot walls (with plan-north↔garden-south flip) + `GroundColour`/`WallFixture` material cleanup + `--curve-segments` + `samples/curved-wall-plan.svg` + README/TODO + new `Parterre.Tests` (19 tests, MSTest). juel-garden `buildWithWallSlots` insets the loop by `thickness/2` so a curved room's outer face matches a box room's for structure joins; `<garden-opening>` fix from PR 2 carried in. Verified: generated scene renders (Playwright) — 2 rooms auto-join, rotunda + apse + standalone curved wall all correct. |
-| 4 | juel-garden | *(optional)* `<garden-structure>` per-wall segment/arc-vs-box join test, so curved walls auto-cut doorways against rooms. |
+| 4 | juel-garden | **DONE (committed).** `GardenStructure.tryWallCrossing` — when one child of a pair is a `<garden-wall>`, its world-space centreline is walked; each segment with one end inside the other child's (x,z) box and one outside gets the crossing point binary-searched and an opening-box CSG-cut through both meshes (room re-runs `fixMaterialIndices`). Falls through to the box-vs-box test when it cuts nothing. `curved-wall.html` gained a curved entrance wall that auto-joins the gallery. No regression: temple/museum room vertex counts unchanged. |
 
 ---
 

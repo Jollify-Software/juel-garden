@@ -23,13 +23,18 @@
 
             <!-- A free-standing curved screen wall inside the room (a partition
                  you walk around). Lower than the room so the apse stays visible
-                 behind it. -->
+                 behind it. Fully inside the room -> no doorway cut. -->
             <garden-wall points="-7 0 -2, 7 0 -2" curve="-3" segments="24"
                 height="3" thickness="0.3" colour="#c7bda8" collisions></garden-wall>
 
-            <!-- A doorway in the south wall (the curved auto-join in
-                 <garden-structure> is bounding-box based, so a curved wall is cut
-                 with a hand-placed <garden-opening>). -->
+            <!-- A curved entrance wall running in from the west: it crosses the
+                 gallery's west wall, and <garden-structure> auto-cuts the doorway
+                 there (tryWallCrossing) -- no hand-placed <garden-opening> needed. -->
+            <garden-wall points="-24 0 -6, -10 0 -6" curve="2.5" segments="24"
+                height="5" thickness="0.4" collisions></garden-wall>
+
+            <!-- The south doorway isn't on a piercing wall, so it's still a
+                 hand-placed opening. -->
             <garden-opening between="#gallery" position="0 1.5 -9" width="4" height="4"></garden-opening>
         </garden-structure>
 

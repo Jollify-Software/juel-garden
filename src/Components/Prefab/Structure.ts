@@ -3,6 +3,7 @@ import { customElement, property } from "lit/decorators";
 import { GardenElement } from "../../GardenElement";
 import { GardenMesh } from "../../GardenMesh";
 import { GardenRoom } from "./Room";
+import { GardenWall } from "./Wall";
 
 type Axis = "x" | "y" | "z";
 const AXES: Axis[] = ["x", "y", "z"];
@@ -29,10 +30,12 @@ interface AxisOverlap {
  * vertical extent is instead anchored to the higher of the two floor levels and
  * grown upward by opening-height, which is what a real doorway does.
  *
- * Caveat: detection is purely bounding-box based, so it only works for axis-aligned,
- * box-ish geometry (rooms, stairs). Rotated children or curved shapes (a `curvature`
- * stairway, a dome roof) won't have a bounding box that reflects where they actually
- * touch, so joins involving those still need a hand-placed <garden-opening>.
+ * Caveat: the box-vs-box detection only works for axis-aligned, box-ish geometry
+ * (rooms, stairs). A `<garden-wall>` is handled separately (see tryWallCrossing) --
+ * its own centreline is walked against each other child's box and a doorway cut
+ * where it pierces one -- so a curved wall running into a room joins without a
+ * hand-placed opening. Other rotated/curved children (a `curvature` stairway, a
+ * dome roof) still need a hand-placed <garden-opening>.
  *
  * Floor/ceiling joins (the touch axis is "y") are handled separately from wall joins
  * (see tryFloorOpening): two rooms simply stacked on top of each other do *not* get an
@@ -118,6 +121,9 @@ export class GardenStructure extends GardenElement {
         b.mesh.computeWorldMatrix(true);
 
         if (this.tryFloorOpening(a, b))
+            return;
+
+        if (this.tryWallCrossing(a, b))
             return;
 
         let aBox = a.mesh.getBoundingInfo().boundingBox;
@@ -228,6 +234,90 @@ export class GardenStructure extends GardenElement {
         // which original wall -- see GardenRoom.fixMaterialIndices for the empirical
         // case this was written against.
         room.fixMaterialIndices();
+
+        cutter.dispose();
+    }
+
+    /**
+     * Cut a doorway where a `<garden-wall>` centreline pierces another child's box.
+     * The box-vs-box test in connect() can't see this: a curved wall's bounding box
+     * is a big rectangle that doesn't follow where the wall actually runs.
+     *
+     * Only fires when exactly one of the pair is a `<garden-wall>`. Walks the wall's
+     * world-space centreline; for every segment with one end inside the other mesh's
+     * (x,z) box footprint and one end outside, binary-searches the crossing point and
+     * cuts an opening-sized hole through both the wall and that mesh there. Returns
+     * true only when it actually cut something -- otherwise the caller still runs the
+     * normal box-vs-box check (a plain straight wall butting a wall face perpendicular
+     * is handled fine by that).
+     */
+    private tryWallCrossing(a: GardenMesh, b: GardenMesh): boolean {
+        let wall: GardenWall, other: GardenMesh;
+        if (a instanceof GardenWall && !(b instanceof GardenWall)) { wall = a; other = b; }
+        else if (b instanceof GardenWall && !(a instanceof GardenWall)) { wall = b; other = a; }
+        else return false;
+
+        let line = wall.centreline();
+        if (!line || line.length < 2 || !wall.mesh || !other.mesh)
+            return false;
+
+        let world = wall.mesh.getWorldMatrix();
+        let pts = line.map(p => Vector3.TransformCoordinates(p, world));
+
+        let box = other.mesh.getBoundingInfo().boundingBox;
+        let min = box.minimumWorld, max = box.maximumWorld;
+        let m = this.tolerance;
+        // Footprint test only (x,z) -- a wall spans the full height, so "does it reach
+        // into the room" is a plan-view question.
+        let inside = (p: Vector3) =>
+            p.x >= min.x - m && p.x <= max.x + m && p.z >= min.z - m && p.z <= max.z + m;
+
+        let floorY = (other instanceof GardenRoom ? other.position?.y : undefined) ?? min.y;
+
+        let hits: Vector3[] = [];
+        for (let i = 0; i < pts.length - 1; i++) {
+            let p0 = pts[i], p1 = pts[i + 1];
+            let in0 = inside(p0);
+            if (in0 === inside(p1))
+                continue; // both inside (a partition) or both outside (a miss)
+
+            let lo = 0, hi = 1;
+            for (let k = 0; k < 24; k++) {
+                let mid = (lo + hi) / 2;
+                if (inside(Vector3.Lerp(p0, p1, mid)) === in0) lo = mid;
+                else hi = mid;
+            }
+            let hit = Vector3.Lerp(p0, p1, (lo + hi) / 2);
+            if (!hits.some(q => Vector3.Distance(q, hit) < this.openingWidth))
+                hits.push(hit);
+        }
+
+        if (hits.length === 0)
+            return false;
+
+        for (let hit of hits)
+            this.cutDoorway(other, wall, hit, floorY);
+        return true;
+    }
+
+    private cutDoorway(room: GardenMesh, wall: GardenMesh, at: Vector3, floorY: number) {
+        let scene = this.getScene();
+        // Square in plan so it carves a clean opening whatever angle the wall meets at.
+        let cutter = MeshBuilder.CreateBox("structure-wall-opening", {
+            width: this.openingWidth,
+            height: this.openingHeight,
+            depth: this.openingWidth
+        }, scene);
+        cutter.position = new Vector3(at.x, floorY + this.openingHeight / 2, at.z);
+        cutter.isVisible = false;
+
+        let cutterCsg = CSG.FromMesh(cutter);
+        for (let el of [room, wall]) {
+            let mesh: Mesh = CSG.FromMesh(el.mesh).subtract(cutterCsg).toMesh(el.id, el.getMaterial(), scene, true);
+            el.setMesh(mesh);
+            if (el instanceof GardenRoom)
+                el.fixMaterialIndices();
+        }
 
         cutter.dispose();
     }
