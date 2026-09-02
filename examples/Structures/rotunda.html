@@ -32,6 +32,20 @@
         </garden-structure>
 
         <garden-ground width="120" height="120" position="0 -0.1 0" collisions></garden-ground>
+
+        <!-- A campfire out in front of the entrance and off to one side of it
+             (the doorway faces -z; this sits at -x, a few units further out).
+             <garden-particle effect="fire"> emits from its parent mesh's
+             world position raised by that parent's `height`, so the low anchor
+             cylinder puts the flames just above the logs. -->
+        <garden-torus position="-4 0 -11" diameter="2.4" thickness="0.5" colour="#4a4640"></garden-torus>
+        <garden-cylinder position="-4 0.28 -11" diameter="0.32" height="2" rotation="0 25 90" colour="#5b3a29"></garden-cylinder>
+        <garden-cylinder position="-4 0.32 -11" diameter="0.32" height="2" rotation="0 -35 90" colour="#6b4a34"></garden-cylinder>
+        <garden-cylinder position="-4 0.24 -11" diameter="0.32" height="2" rotation="0 80 90" colour="#4a3020"></garden-cylinder>
+        <garden-cylinder id="campfire" position="-4 0 -11" diameter="0.7" height="0.5" colour="#2a2018">
+            <garden-particle effect="fire"></garden-particle>
+        </garden-cylinder>
+        <garden-light type="point" position="-4 1.4 -11" diffuse="1 0.6 0.3"></garden-light>
     </garden-scene>
 </body>
 
