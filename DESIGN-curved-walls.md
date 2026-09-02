@@ -204,6 +204,11 @@ later milestone) for anything the automatic paths miss.
   is an axis-aligned box; a rotunda/apse wall curves away from the doorway
   plane, so a thin cutter only punches through at the very centre. `rotunda.html`
   uses `depth="2"` on a 16-wide drum.
+- **`<garden-opening>` threshold flicker** — the cutter's base used to land right
+  on a room floor's top face (both ~y = 0); a coincident CSG plane there
+  z-fights as a white shimmer along the threshold. `GardenDoorway` now extends
+  the box down by `SILL_DROP` (0.6) so its base is buried below the floor;
+  the visible opening is unchanged.
 - **`<garden-roof>` `clip`** (default on) trims the dome/flat roof's flat base
   caps to a curved room's real footprint (`GardenRoom.wallLoop`, via a new
   `outline` param on `createDomeRoof` / `createBaseCap`) so a square cap doesn't
