@@ -33,18 +33,33 @@
 
         <garden-ground width="120" height="120" position="0 -0.1 0" collisions></garden-ground>
 
-        <!-- A campfire out in front of the entrance and off to one side of it
-             (the doorway faces -z; this sits at -x, a few units further out).
-             <garden-particle effect="fire"> emits from its parent mesh's
-             world position raised by that parent's `height`, so the low anchor
-             cylinder puts the flames just above the logs. -->
-        <garden-torus position="-4 0 -11" diameter="2.4" thickness="0.5" colour="#4a4640"></garden-torus>
-        <garden-cylinder position="-4 0.28 -11" diameter="0.32" height="2" rotation="0 25 90" colour="#5b3a29"></garden-cylinder>
-        <garden-cylinder position="-4 0.32 -11" diameter="0.32" height="2" rotation="0 -35 90" colour="#6b4a34"></garden-cylinder>
-        <garden-cylinder position="-4 0.24 -11" diameter="0.32" height="2" rotation="0 80 90" colour="#4a3020"></garden-cylinder>
-        <garden-cylinder id="campfire" position="-4 0 -11" diameter="0.7" height="0.5" colour="#2a2018">
-            <garden-particle effect="fire"></garden-particle>
-        </garden-cylinder>
+        <!-- The whole campsite in one <garden-element parent> group: move it with
+             a single `position`. Everything inside is authored relative to the
+             group origin (the fire pit). `parent` re-parents each child mesh into
+             the group's node; <garden-particle effect="fire"> now reads its
+             parent's *world* position so it lands right inside a group too. -->
+        <garden-element parent position="-4 0 -11" id="campsite">
+            <!-- fire pit: stone ring, three logs, and a low anchor for the flames -->
+            <garden-torus diameter="2.4" thickness="0.5" colour="#4a4640"></garden-torus>
+            <garden-cylinder position="0 0.28 0" diameter="0.32" height="2" rotation="0 25 90" colour="#5b3a29"></garden-cylinder>
+            <garden-cylinder position="0 0.32 0" diameter="0.32" height="2" rotation="0 -35 90" colour="#6b4a34"></garden-cylinder>
+            <garden-cylinder position="0 0.24 0" diameter="0.32" height="2" rotation="0 80 90" colour="#4a3020"></garden-cylinder>
+            <garden-cylinder position="0 0 0" diameter="0.7" height="0.5" colour="#2a2018">
+                <garden-particle effect="fire"></garden-particle>
+            </garden-cylinder>
+
+            <!-- a roasting spit set up opposite the fire: two uprights, a skewer
+                 bar between them, two fish hung from it by a short line -->
+            <garden-cylinder position="-2.2 0.8 -1" diameter="0.14" height="1.7" colour="#3a2a1a"></garden-cylinder>
+            <garden-cylinder position="-2.2 0.8 1" diameter="0.14" height="1.7" colour="#3a2a1a"></garden-cylinder>
+            <garden-cylinder position="-2.2 1.5 0" diameter="0.1" height="2.6" rotation="90 0 0" colour="#5a4028"></garden-cylinder>
+            <garden-cylinder position="-2.2 1.35 -0.45" diameter="0.03" height="0.32" colour="#5a4a2a"></garden-cylinder>
+            <garden-cylinder position="-2.2 1.35 0.45" diameter="0.03" height="0.32" colour="#5a4a2a"></garden-cylinder>
+            <garden-sphere position="-2.2 1 -0.45" diameter="0.5" scale="0.35 1.8 0.8" colour="#9aa7ad"></garden-sphere>
+            <garden-sphere position="-2.2 1 0.45" diameter="0.5" scale="0.35 1.8 0.8" colour="#8f9ea6"></garden-sphere>
+        </garden-element>
+        <!-- the fire's glow -- a plain PointLight, so it isn't part of the group;
+             nudge it with the group if you move the campsite -->
         <garden-light type="point" position="-4 1.4 -11" diffuse="1 0.6 0.3"></garden-light>
     </garden-scene>
 </body>

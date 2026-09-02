@@ -74,16 +74,15 @@ export class GardenParticle extends GardenElement {
         if (this.effect) {
             ParticleHelper.CreateAsync(this.effect, scene).then((set) => {
                 if ('mesh' in this.parentElement) {
-                    //var node = Utility.nodeFromMesh(
-                    //    (<GardenMesh>this.parentElement).mesh
-                    //);
-                    set.systems.forEach(s => s.emitter = (<GardenMesh>this.parentElement).mesh.position)
-                }
-                if (this.parentElement.hasAttribute("height")) {
-                    let h = Number(this.parentElement.getAttribute("height"));
-                    set.systems.forEach(s => s.emitter = (<Vector3>s.emitter).add(
-                        new Vector3(0, h, 0)
-                    ));
+                    // World position, not the raw local `.position` -- so the emitter is
+                    // right even when the parent mesh is nested under a <garden-element
+                    // parent position="..."> group. Each system gets its own copy.
+                    let mesh = (<GardenMesh>this.parentElement).mesh;
+                    mesh.computeWorldMatrix(true);
+                    let origin = mesh.getAbsolutePosition().clone();
+                    if (this.parentElement.hasAttribute("height"))
+                        origin.y += Number(this.parentElement.getAttribute("height"));
+                    set.systems.forEach(s => s.emitter = origin.clone());
                 }
                 set.start();
             });
