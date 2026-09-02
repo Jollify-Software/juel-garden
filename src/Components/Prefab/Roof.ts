@@ -22,15 +22,18 @@ interface RoofContainer {
 
 /**
  * A roof over a `<garden-room>` or, spanning every `<garden-room>` sibling at
- * once, a `<garden-structure>`. Two types: `"flat"` (a simple box slab, the
- * default) or `"dome"` (an ellipsoid vault with separate outside/inside
- * shells and materials, and a supplemental uplight so a painted ceiling
- * doesn't read as black -- see {@link createDomeRoof}).
+ * once, a `<garden-structure>`. Types: `"flat"` (a simple box slab, the
+ * default), `"dome"` (an ellipsoid vault with separate outside/inside shells and
+ * materials, and a supplemental uplight so a painted ceiling doesn't read as
+ * black -- see {@link createDomeRoof}), or `"cone"` (an apex/pitched roof --
+ * a primitive hut over a rotunda).
  *
- * Attributes: `type` (`"flat"|"dome"`), `thickness`, `clip` (default on;
- * `clip="false"` lets the roof overhang -- otherwise it's trimmed to a curved
- * room's actual footprint so a dome/slab over a rotunda or apse doesn't leave
- * corners hanging past the walls), and for `type="dome"`:
+ * Attributes: `type` (`"flat"|"dome"|"cone"`), `thickness`, `overhang` (extend
+ * the roof this far past the walls all round -- eaves; default `0`), `pitch`
+ * (`"cone"` only -- rise as a multiple of the base radius, default `1`), `clip`
+ * (default on; `clip="false"` lets the roof overhang square -- otherwise a
+ * dome/slab is trimmed to a curved room's footprint plus `overhang`, so no
+ * corners hang past the walls), and for `type="dome"`:
  * `outside-colour`/`outside-texture`/`inside-colour`/`inside-texture` (or a
  * `<garden-material slot="outside"|"inside">` child, which takes full
  * precedence), `outside-texture-center`/`outside-texture-rotation`/
@@ -50,6 +53,10 @@ interface RoofContainer {
 export class GardenRoof extends GardenMesh {
     @property() type: string;
     @property({ type: Number }) thickness: number;
+    /** Extend the roof this far past the walls all round (eaves / a "slight circular overlap"). */
+    @property({ type: Number }) overhang = 0;
+    /** `type="cone"` only: apex rise as a multiple of the base radius. */
+    @property({ type: Number }) pitch = 1;
     // Default-on toggle: any value other than the string "false" clips the roof to a
     // curved room's footprint. (A plain Boolean property can't default to true and
     // still honour clip="false", so it's read as a string.)
@@ -124,7 +131,37 @@ export class GardenRoof extends GardenMesh {
             let thickness = container.thickness;
             let mesh: Mesh;
 
+            // Eaves: grow the footprint outward all round, and the clip outline with it.
+            let over = Math.max(this.overhang || 0, 0);
+            let rw = container.width + over * 2;
+            let rd = container.depth + over * 2;
+            let outline = this.expandOutline(container.outline, over);
+
             switch (this.type) {
+                case "cone": {
+                    // An apex roof: a cone whose base covers the (widened) footprint,
+                    // rising `pitch` * base-radius. Baked base-at-y=0 so the shared
+                    // positioning below drops it onto the wall top.
+                    let radius = Math.max(rw, rd) / 2;
+                    let rise = radius * (this.pitch || 1);
+                    mesh = MeshBuilder.CreateCylinder("roof", {
+                        // A hair of top diameter rather than a true point: a
+                        // zero-radius apex collapses every top triangle into a
+                        // degenerate fan that shades as a bright streak.
+                        diameterTop: radius * 0.02,
+                        diameterBottom: radius * 2,
+                        height: rise,
+                        // Deliberately low: faceted reads as hand-built, and the
+                        // flat panels break up the smooth-shading band a
+                        // single-colour cone would otherwise show.
+                        tessellation: 12
+                    }, scene);
+                    mesh.convertToFlatShadedMesh();
+                    mesh.position.y = rise / 2;
+                    mesh.bakeCurrentTransformIntoVertices();
+                    break;
+                }
+
                 case "dome": {
                     // A <garden-material slot="outside"/"inside"> child, if present, takes
                     // full precedence over the legacy outside-*/inside-* attributes below --
@@ -172,9 +209,9 @@ export class GardenRoof extends GardenMesh {
                         insideTextureTransform = this.textureTransform(this.insideTextureCenter, this.insideTextureRotation);
                     }
 
-                    mesh = createDomeRoof("roof", container.width, container.depth, scene, thickness,
+                    mesh = createDomeRoof("roof", rw, rd, scene, thickness,
                         outsideMaterial, insideMaterial, outsideTextureTransform, insideTextureTransform,
-                        container.outline);
+                        outline);
 
                     // The dome's inside faces mostly away from the scene's main overhead
                     // light (worst at the apex, where an inward normal points straight down),
@@ -195,17 +232,17 @@ export class GardenRoof extends GardenMesh {
 
                 case "flat":
                 default:
-                    if (container.outline && container.outline.length >= 3) {
+                    if (outline && outline.length >= 3) {
                         // Slab trimmed to the room footprint; PolygonMeshBuilder lays it at
                         // y = 0 extruding down, so lift it to straddle y = 0 like the box.
-                        mesh = new PolygonMeshBuilder("roof", container.outline, scene, earcut).build(false, thickness);
+                        mesh = new PolygonMeshBuilder("roof", outline, scene, earcut).build(false, thickness);
                         mesh.position.y = thickness / 2;
                         mesh.bakeCurrentTransformIntoVertices();
                     } else {
                         mesh = MeshBuilder.CreateBox("roof", {
-                            width: container.width,
+                            width: rw,
                             height: thickness,
-                            depth: container.depth
+                            depth: rd
                         }, scene);
                     }
                     break;
@@ -281,6 +318,21 @@ export class GardenRoof extends GardenMesh {
     /** Whether the roof is trimmed to a curved room's footprint (the `clip` attribute, default on). */
     private get clipping(): boolean {
         return this.clip !== "false";
+    }
+
+    /** Push every outline vertex `by` units out from the outline's centroid (eaves). */
+    private expandOutline(outline: Vector2[] | undefined, by: number): Vector2[] | undefined {
+        if (!outline || outline.length < 3 || by <= 0)
+            return outline;
+        let cx = 0, cz = 0;
+        for (let p of outline) { cx += p.x; cz += p.y; }
+        cx /= outline.length;
+        cz /= outline.length;
+        return outline.map(p => {
+            let dx = p.x - cx, dz = p.y - cz;
+            let d = Math.hypot(dx, dz) || 1;
+            return new Vector2(p.x + dx / d * by, p.y + dz / d * by);
+        });
     }
 
     private textureTransform(center: Vector3, rotationDegrees: number): DomeTextureTransform {

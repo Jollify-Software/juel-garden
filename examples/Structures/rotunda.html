@@ -7,28 +7,29 @@
 
 <body>
     <garden-scene gravity="0 -0.4 0" collisions>
-        <!-- A 16-unit-wide rotunda, 8 tall. Camera outside and slightly above,
-             looking at the domed drum. -->
-        <garden-camera type="free" collisions position="0 6 -24"></garden-camera>
+        <!-- A primitive round hut: a low daubed drum under a steep thatch cone
+             with a slight eave overhang. Camera outside and slightly above. -->
+        <garden-camera type="free" collisions position="0 9 -32"></garden-camera>
         <garden-light></garden-light>
         <garden-webxr></garden-webxr>
 
         <garden-structure collisions>
             <!-- type="rotunda": a circular floor + one swept wall. slot="wall"
                  textures the drum; slot="floor" the floor. -->
-            <garden-room id="drum" type="rotunda" width="16" height="8" collisions>
-                <garden-material slot="floor" colour="#b8ad98">
+            <garden-room id="drum" type="rotunda" width="16" height="5" collisions>
+                <garden-material slot="floor" colour="#8a7d63">
                     <garden-texture src="https://assets.babylonjs.com/textures/floor.png"></garden-texture>
                 </garden-material>
-                <garden-material slot="wall" colour="#ece7db"></garden-material>
+                <garden-material slot="wall" colour="#a68a63"></garden-material>
             </garden-room>
 
-            <!-- A dome over the whole structure (sized to the rotunda's footprint). -->
-            <garden-roof type="dome" outside-colour="#c9bfa8" inside-colour="#f4efe4"></garden-roof>
+            <!-- An apex/thatch roof: `pitch` sets how steep, `overhang` gives it
+                 a slight circular eave past the wall. -->
+            <garden-roof type="cone" pitch="1.1" overhang="0.8" colour="#7a5a38" spec-colour="0 0 0"></garden-roof>
 
             <!-- depth spans the curved wall's thickness across the doorway width
                  (a thinner cutter only punches through at the very centre). -->
-            <garden-opening between="#drum" position="0 2 -8" width="4" height="5" depth="1"></garden-opening>
+            <garden-opening between="#drum" position="0 1.6 -8" width="3.4" height="3.6" depth="1"></garden-opening>
         </garden-structure>
 
         <garden-ground width="120" height="120" position="0 -0.1 0" collisions></garden-ground>
@@ -60,7 +61,7 @@
         </garden-element>
         <!-- the fire's glow -- a plain PointLight, so it isn't part of the group;
              nudge it with the group if you move the campsite -->
-        <garden-light type="point" position="-4 1.4 -11" diffuse="1 0.6 0.3"></garden-light>
+        <garden-light type="point" position="-4 1.2 -11" diffuse="0.7 0.42 0.2"></garden-light>
     </garden-scene>
 </body>
 
