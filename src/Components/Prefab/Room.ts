@@ -310,7 +310,9 @@ export class GardenRoom extends GardenMesh {
         if (!closes)
             loop.push(loop[0].clone());
 
-        let wall = createWall("wall", loop, this.height, this.thickness, scene)!;
+        // `sink` overlaps the wall base into the floor slab so they don't share the
+        // y = 0 plane (z-fighting -- see createWall).
+        let wall = createWall("wall", loop, this.height, this.thickness, scene, false, this.thickness * 2)!;
         wall.material = this.matte("mat-wall", colors.north, scene, true);
 
         let floor = this.buildFloorPolygon(scene, loop);
@@ -343,7 +345,8 @@ export class GardenRoom extends GardenMesh {
         }
         // Open ring (drop the repeated closing point) for <garden-structure>'s join.
         this.wallLoop = ring.slice(0, tess).map(p => p.clone());
-        let wall = createWall("wall", ring, this.height, this.thickness, scene)!;
+        // `sink` overlaps the wall base into the floor slab -- see buildWithWallSlots.
+        let wall = createWall("wall", ring, this.height, this.thickness, scene, false, this.thickness * 2)!;
         wall.material = this.matte("mat-wall", colors.north, scene, true);
 
         // [floor, wall] -- rotunda's own two-slot order (see applyMaterialSlots).

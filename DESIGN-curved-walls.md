@@ -204,11 +204,17 @@ later milestone) for anything the automatic paths miss.
   is an axis-aligned box; a rotunda/apse wall curves away from the doorway
   plane, so a thin cutter only punches through at the very centre. `rotunda.html`
   uses `depth="2"` on a 16-wide drum.
-- **`<garden-opening>` threshold flicker** — the cutter's base used to land right
-  on a room floor's top face (both ~y = 0); a coincident CSG plane there
-  z-fights as a white shimmer along the threshold. `GardenDoorway` now extends
-  the box down by `SILL_DROP` (0.6) so its base is buried below the floor;
-  the visible opening is unchanged.
+- **`<garden-opening>` threshold flicker** — the cutter box's bottom cap ended
+  at floor level (~y = 0) with wall material on it; where a round rotunda floor
+  doesn't quite reach the doorway jamb it showed as a white strip along the
+  threshold (and z-fought the coplanar floor top). `GardenDoorway` now builds
+  the box `SILL_DROP` (0.25) taller and shifts it down by half that, so only the
+  base moves -- fully below a ~0.2 floor slab, hiding the cap -- while the
+  visible opening is unchanged. A doorway on a curved wall should also use a
+  modest `depth` (not a huge one) so only a thin sill's worth of floor goes with
+  the cut. `createWall` also gained a `sink` param (rooms pass `thickness*2`) so
+  a room's wall base overlaps its floor slab instead of meeting it exactly at
+  y = 0 -- another coplanar pair that z-fought once a doorway was cut.
 - **`<garden-roof>` `clip`** (default on) trims the dome/flat roof's flat base
   caps to a curved room's real footprint (`GardenRoom.wallLoop`, via a new
   `outline` param on `createDomeRoof` / `createBaseCap`) so a square cap doesn't

@@ -81,6 +81,11 @@ export function arcPoints(start: Vector3, end: Vector3, sagitta: number, segment
  * Consecutive duplicate points are dropped (ExtrudeShape produces degenerate
  * segments otherwise). Returns `null` if fewer than two distinct points remain.
  *
+ * `sink` extends the cross-section *below* local y = 0 (default 0). A room passes
+ * a small value so its wall base overlaps the floor slab rather than meeting it
+ * exactly at y = 0 -- two coplanar faces there z-fight, worst once
+ * `<garden-opening>` retriangulates the mesh at a doorway.
+ *
  * @category Utilities
  */
 export function createWall(
@@ -89,7 +94,8 @@ export function createWall(
     height: number,
     thickness: number,
     scene: Scene,
-    smooth = false
+    smooth = false,
+    sink = 0
 ): Mesh | null {
     let path = centreline.filter((p, i) =>
         i === 0 || Vector3.Distance(p, centreline[i - 1]) > 1e-4);
@@ -104,12 +110,13 @@ export function createWall(
     }
 
     const half = thickness / 2;
+    const base = -sink;
     const shape = [
-        new Vector3(-half, 0, 0),
-        new Vector3(half, 0, 0),
+        new Vector3(-half, base, 0),
+        new Vector3(half, base, 0),
         new Vector3(half, height, 0),
         new Vector3(-half, height, 0),
-        new Vector3(-half, 0, 0)
+        new Vector3(-half, base, 0)
     ];
 
     return MeshBuilder.ExtrudeShape(name, {

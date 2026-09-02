@@ -26,13 +26,16 @@ import { GardenRoom } from "./Room";
 @customElement("garden-opening")
 export class GardenDoorway extends GardenMesh {
     /**
-     * How far the cutter box is extended *below* its sill. A doorway's base
-     * otherwise lands right at a room floor's top face (both near y = 0), and a
-     * coincident CSG plane there z-fights -- a white flicker along the threshold.
-     * The extra depth is buried in the floor slab / below it, so only the flicker
-     * goes away; the visible opening is unchanged.
+     * How far the cutter's base is dropped below its `position`, so it clears a
+     * room floor (a ~0.2-thick slab whose top is at y = 0) entirely rather than
+     * slicing through it at floor level. A cut that stops at or just above the
+     * floor top leaves the box's bottom cap (wall material) sitting at floor
+     * level, and it shows as a white strip along the threshold wherever the
+     * floor -- round, in a rotunda -- doesn't quite reach the doorway jamb.
+     * Dropping the whole cap below the slab hides it; the doorway just needs a
+     * modest `depth` so only a thin sill's worth of floor goes with it.
      */
-    static readonly SILL_DROP = 0.6;
+    static readonly SILL_DROP = 0.25;
 
     @property() type: string;
     @property() between: string;
@@ -64,8 +67,8 @@ export class GardenDoorway extends GardenMesh {
                 case "square":
                     this.mesh = MeshBuilder.CreateBox("opening", {
                         width: this.width,
-                        // Taller by SILL_DROP; the position shift below moves only the
-                        // base down, so its top stays where `height` alone would put it.
+                        // Taller by SILL_DROP; the shift below moves only the base
+                        // down (clear of the floor), the visible opening is unchanged.
                         height: this.height + GardenDoorway.SILL_DROP,
                         depth: this.depth
                     }, scene);

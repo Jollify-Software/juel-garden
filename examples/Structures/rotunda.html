@@ -26,10 +26,9 @@
             <!-- A dome over the whole structure (sized to the rotunda's footprint). -->
             <garden-roof type="dome" outside-colour="#c9bfa8" inside-colour="#f4efe4"></garden-roof>
 
-            <!-- depth is generous on purpose: the drum wall curves away from the
-                 doorway plane, so a thin cutter would only punch through at the
-                 very centre. -->
-            <garden-opening between="#drum" position="0 2 -8" width="4" height="5" depth="2"></garden-opening>
+            <!-- depth spans the curved wall's thickness across the doorway width
+                 (a thinner cutter only punches through at the very centre). -->
+            <garden-opening between="#drum" position="0 2 -8" width="4" height="5" depth="1"></garden-opening>
         </garden-structure>
 
         <garden-ground width="120" height="120" position="0 -0.1 0" collisions></garden-ground>
