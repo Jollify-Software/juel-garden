@@ -222,13 +222,15 @@ later milestone) for anything the automatic paths miss.
   single-curved-room case is clipped under a `<garden-structure>` (a multi-room
   union would need real polygon-union); box-room structures are untouched, so
   temple/museum roofs are byte-for-byte unchanged.
-- **`<garden-roof type="cone"`** — an apex/pitched roof (a `CreateCylinder`
-  cone, deliberately low tessellation + `convertToFlatShadedMesh` for a
-  hand-built faceted look; `pitch` = rise ÷ base radius). **`overhang`** (all
-  types) grows the footprint outward by that much all round -- eaves / "a
-  slight circular overlap" -- and the clip outline with it (`expandOutline`).
-  rotunda.html is now a primitive round hut: low daubed drum + `type="cone"
-  pitch="1.1" overhang="0.8"`.
+- **`<garden-roof type="cone"`** — an apex/pitched roof. `createConeRoof`
+  (new util) mirrors `createDomeRoof`: an outer faceted cone + a smaller inner
+  cone (`BACKSIDE`, lit from inside) + a flat annular rim closing the eave gap
+  between their bases, so the roof is hollow *and* has real `thickness`. Low
+  segment count + `convertToFlatShadedMesh` for a hand-built look. `pitch` =
+  rise ÷ base radius. **`overhang`** (all roof types) grows the footprint
+  outward all round -- eaves / "a slight circular overlap" -- and the clip
+  outline with it (`expandOutline`). rotunda.html is now a primitive round hut:
+  low daubed drum + `type="cone" pitch="1.1" overhang="0.8" thickness="0.5"`.
 
 ---
 

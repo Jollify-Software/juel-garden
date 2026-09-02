@@ -5,6 +5,7 @@ import { GardenMaterial } from "../Material";
 import { GardenMesh } from "../../GardenMesh";
 import { Vector3Convert } from "../../Converters/Vector3Convert";
 import { createDomeRoof, DEFAULT_DOME_TEXTURE_TRANSFORM, DomeTextureTransform } from "../../Utils/Mesh/createDomeRoof";
+import { createConeRoof } from "../../Utils/Mesh/createConeRoof";
 import { ColorConverter, GardenRoom } from "./Room";
 import { GardenStructure } from "./Structure";
 
@@ -139,31 +140,13 @@ export class GardenRoof extends GardenMesh {
 
             switch (this.type) {
                 case "cone": {
-                    // An apex roof: a cone whose base covers the (widened) footprint,
-                    // rising `pitch` * base-radius. Baked base-at-y=0 so the shared
-                    // positioning below drops it onto the wall top.
+                    // An apex roof: outer + inner faceted cones with a rim between
+                    // them (see createConeRoof), covering the (widened) footprint
+                    // and rising `pitch` * base-radius. Base sits at local y = 0
+                    // so the shared positioning below drops it onto the wall top.
                     let radius = Math.max(rw, rd) / 2;
                     let rise = radius * (this.pitch || 1);
-                    mesh = MeshBuilder.CreateCylinder("roof", {
-                        // A hair of top diameter rather than a true point: a
-                        // zero-radius apex collapses every top triangle into a
-                        // degenerate fan that shades as a bright streak.
-                        diameterTop: radius * 0.02,
-                        diameterBottom: radius * 2,
-                        height: rise,
-                        // Deliberately low: faceted reads as hand-built, and the
-                        // flat panels break up the smooth-shading band a
-                        // single-colour cone would otherwise show.
-                        tessellation: 12,
-                        // Hollow: no base disc (you're under it, looking up the
-                        // slope to the apex), and DOUBLESIDE so the one shell is
-                        // lit from inside the hut as well as outside.
-                        cap: Mesh.NO_CAP,
-                        sideOrientation: Mesh.DOUBLESIDE
-                    }, scene);
-                    mesh.convertToFlatShadedMesh();
-                    mesh.position.y = rise / 2;
-                    mesh.bakeCurrentTransformIntoVertices();
+                    mesh = createConeRoof("roof", radius, rise, thickness, scene);
                     break;
                 }
 
