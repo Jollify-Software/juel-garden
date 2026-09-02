@@ -1,4 +1,5 @@
-import { CSG, Material, Mesh, MeshBuilder, Scene, Vector3, VertexBuffer } from "babylonjs";
+import { CSG, Material, Mesh, MeshBuilder, PolygonMeshBuilder, Scene, Vector2, Vector3, VertexBuffer } from "babylonjs";
+import earcut from "earcut";
 
 /** Where a dome texture's own centre point sits, in the texture's own 0..1 UV space. */
 /** @category Utilities */
@@ -56,12 +57,16 @@ function applyPolarDomeUVs(mesh: Mesh, radiusX: number, radiusZ: number, transfo
 }
 
 /**
- * Build the flat ceiling patch that fills the rectangular footprint outside the dome's
- * elliptical rim (the corners an ellipse inscribed in a rectangle doesn't cover). It's a
- * real solid (a thin box with an elliptical hole punched out via CSG), not a bare plane,
- * so it doesn't also cover the area *inside* the ellipse -- a full rectangle there would
- * sit exactly at the dome's rim height and occlude the entire curved surface above it
- * from any point in the room.
+ * Build the flat ceiling patch that fills the footprint outside the dome's elliptical
+ * rim (the corners an ellipse inscribed in a rectangle doesn't cover). It's a real solid
+ * (a thin slab with an elliptical hole punched out via CSG), not a bare plane, so it
+ * doesn't also cover the area *inside* the ellipse -- a full slab there would sit exactly
+ * at the dome's rim height and occlude the entire curved surface above it from any point
+ * in the room.
+ *
+ * The outer shape is the `boxWidth` x `boxDepth` rectangle by default; pass `outline` (a
+ * local-XZ polygon, e.g. a room's own wall loop) to clip the cap to that instead, so a
+ * dome over a round or apsidal room doesn't leave slab corners hanging past the walls.
  */
 function createBaseCap(
     name: string,
@@ -71,13 +76,23 @@ function createBaseCap(
     holeRadiusZ: number,
     capThickness: number,
     material: Material,
-    scene: Scene
+    scene: Scene,
+    outline?: Vector2[]
 ): Mesh {
-    const box = MeshBuilder.CreateBox(`${name}_box`, {
-        width: boxWidth,
-        height: capThickness,
-        depth: boxDepth
-    }, scene);
+    let slab: Mesh;
+    if (outline && outline.length >= 3) {
+        // PolygonMeshBuilder lays the shape at y = 0 and extrudes down by `depth`;
+        // lift it so it straddles y = 0 like the box does, then bake for CSG.
+        slab = new PolygonMeshBuilder(`${name}_poly`, outline, scene, earcut).build(false, capThickness);
+        slab.position.y = capThickness / 2;
+        slab.bakeCurrentTransformIntoVertices();
+    } else {
+        slab = MeshBuilder.CreateBox(`${name}_box`, {
+            width: boxWidth,
+            height: capThickness,
+            depth: boxDepth
+        }, scene);
+    }
 
     // A circular cylinder stretched into an ellipse via non-uniform scaling, baked into
     // its vertices before the CSG op (CSG works on baked geometry, not live transforms).
@@ -88,8 +103,8 @@ function createBaseCap(
     hole.scaling = new Vector3(holeRadiusX, 1, holeRadiusZ);
     hole.bakeCurrentTransformIntoVertices();
 
-    const cap = CSG.FromMesh(box).subtract(CSG.FromMesh(hole)).toMesh(name, material, scene, true);
-    box.dispose();
+    const cap = CSG.FromMesh(slab).subtract(CSG.FromMesh(hole)).toMesh(name, material, scene, true);
+    slab.dispose();
     hole.dispose();
 
     return cap;
@@ -109,6 +124,10 @@ function createBaseCap(
  * into one mesh via a MultiMaterial (Mesh.MergeMeshes' multiMultiMaterials flag),
  * the same technique GardenRoom uses to give each wall its own colour.
  *
+ * Pass `outline` (a local-XZ polygon) to clip the flat base caps to a room's real
+ * footprint instead of the `width` x `depth` rectangle -- so a dome over a rotunda
+ * or an apsidal room doesn't leave cap corners overhanging the walls.
+ *
  * @category Utilities
  */
 export function createDomeRoof(
@@ -120,7 +139,8 @@ export function createDomeRoof(
     outsideMaterial: Material = null,
     insideMaterial: Material = null,
     outsideTextureTransform: DomeTextureTransform = DEFAULT_DOME_TEXTURE_TRANSFORM,
-    insideTextureTransform: DomeTextureTransform = DEFAULT_DOME_TEXTURE_TRANSFORM
+    insideTextureTransform: DomeTextureTransform = DEFAULT_DOME_TEXTURE_TRANSFORM,
+    outline?: Vector2[]
 ): Mesh {
     const radiusX = width / 2;
     const radiusZ = depth / 2;
@@ -148,7 +168,7 @@ export function createDomeRoof(
     // sliver of the flat ceiling -- between the two ellipses, under the curved shell's
     // thickness -- uncovered by either cap, visible as a crack showing the inside
     // material through when viewed from a shallow angle outside.
-    const outerBase = createBaseCap(`${name}_outer_base`, width, depth, innerRadiusX, innerRadiusZ, thickness, outsideMaterial, scene);
+    const outerBase = createBaseCap(`${name}_outer_base`, width, depth, innerRadiusX, innerRadiusZ, thickness, outsideMaterial, scene, outline);
 
     const innerDome = MeshBuilder.CreateSphere(`${name}_inner`, {
         diameterX: innerRadiusX * 2,
@@ -161,7 +181,7 @@ export function createDomeRoof(
     innerDome.material = insideMaterial;
     applyPolarDomeUVs(innerDome, innerRadiusX, innerRadiusZ, insideTextureTransform);
 
-    const innerBase = createBaseCap(`${name}_inner_base`, width, depth, innerRadiusX, innerRadiusZ, thickness, insideMaterial, scene);
+    const innerBase = createBaseCap(`${name}_inner_base`, width, depth, innerRadiusX, innerRadiusZ, thickness, insideMaterial, scene, outline);
 
     const dome = Mesh.MergeMeshes(
         [outerDome, outerBase, innerDome, innerBase],

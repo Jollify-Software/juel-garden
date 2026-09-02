@@ -1,5 +1,6 @@
-import { Color3, HemisphericLight, Mesh, MeshBuilder, StandardMaterial, Texture, TransformNode, Vector3 } from "babylonjs";
+import { Color3, HemisphericLight, Mesh, MeshBuilder, PolygonMeshBuilder, StandardMaterial, Texture, TransformNode, Vector2, Vector3 } from "babylonjs";
 import { customElement, property } from "lit/decorators";
+import earcut from "earcut";
 import { GardenMaterial } from "../Material";
 import { GardenMesh } from "../../GardenMesh";
 import { Vector3Convert } from "../../Converters/Vector3Convert";
@@ -15,6 +16,8 @@ interface RoofContainer {
     thickness: number;
     centerX: number;
     centerZ: number;
+    /** The room footprint in container-local XZ, when clipping is on and a curved room defines one. */
+    outline?: Vector2[];
 }
 
 /**
@@ -24,7 +27,10 @@ interface RoofContainer {
  * shells and materials, and a supplemental uplight so a painted ceiling
  * doesn't read as black -- see {@link createDomeRoof}).
  *
- * Attributes: `type` (`"flat"|"dome"`), `thickness`, and for `type="dome"`:
+ * Attributes: `type` (`"flat"|"dome"`), `thickness`, `clip` (default on;
+ * `clip="false"` lets the roof overhang -- otherwise it's trimmed to a curved
+ * room's actual footprint so a dome/slab over a rotunda or apse doesn't leave
+ * corners hanging past the walls), and for `type="dome"`:
  * `outside-colour`/`outside-texture`/`inside-colour`/`inside-texture` (or a
  * `<garden-material slot="outside"|"inside">` child, which takes full
  * precedence), `outside-texture-center`/`outside-texture-rotation`/
@@ -44,6 +50,10 @@ interface RoofContainer {
 export class GardenRoof extends GardenMesh {
     @property() type: string;
     @property({ type: Number }) thickness: number;
+    // Default-on toggle: any value other than the string "false" clips the roof to a
+    // curved room's footprint. (A plain Boolean property can't default to true and
+    // still honour clip="false", so it's read as a string.)
+    @property() clip: string;
 
     // Only used by type="dome" -- the flat roof keeps using the generic colour/texture
     // attributes (applied later by the base class), since it only has one visible face.
@@ -89,7 +99,10 @@ export class GardenRoof extends GardenMesh {
                 height: room.height,
                 thickness: this.thickness ?? room.thickness,
                 centerX: 0,
-                centerZ: 0
+                centerZ: 0,
+                outline: this.clipping && room.wallLoop
+                    ? room.wallLoop.map(p => new Vector2(p.x, p.z))
+                    : undefined
             };
         } else if (parent instanceof GardenStructure) {
             container = await this.computeStructureContainer(parent);
@@ -160,7 +173,8 @@ export class GardenRoof extends GardenMesh {
                     }
 
                     mesh = createDomeRoof("roof", container.width, container.depth, scene, thickness,
-                        outsideMaterial, insideMaterial, outsideTextureTransform, insideTextureTransform);
+                        outsideMaterial, insideMaterial, outsideTextureTransform, insideTextureTransform,
+                        container.outline);
 
                     // The dome's inside faces mostly away from the scene's main overhead
                     // light (worst at the apex, where an inward normal points straight down),
@@ -181,11 +195,19 @@ export class GardenRoof extends GardenMesh {
 
                 case "flat":
                 default:
-                    mesh = MeshBuilder.CreateBox("roof", {
-                        width: container.width,
-                        height: thickness,
-                        depth: container.depth
-                    }, scene);
+                    if (container.outline && container.outline.length >= 3) {
+                        // Slab trimmed to the room footprint; PolygonMeshBuilder lays it at
+                        // y = 0 extruding down, so lift it to straddle y = 0 like the box.
+                        mesh = new PolygonMeshBuilder("roof", container.outline, scene, earcut).build(false, thickness);
+                        mesh.position.y = thickness / 2;
+                        mesh.bakeCurrentTransformIntoVertices();
+                    } else {
+                        mesh = MeshBuilder.CreateBox("roof", {
+                            width: container.width,
+                            height: thickness,
+                            depth: container.depth
+                        }, scene);
+                    }
                     break;
             }
 
@@ -226,15 +248,39 @@ export class GardenRoof extends GardenMesh {
             maxHeight = Math.max(maxHeight, room.height);
         }
 
+        let centerX = (minX + maxX) / 2;
+        let centerZ = (minZ + maxZ) / 2;
+
+        // Clip to the room footprint only when there's a single curved room to trace
+        // (the common "dome on a rotunda" case). A multi-room structure would need a
+        // real polygon union; its rectangular cap is left alone. `wallLoop` is built
+        // state, so wait for the room here -- safe, since the structure waits on its
+        // rooms but nothing waits on this roof.
+        let outline: Vector2[] | undefined;
+        if (this.clipping && rooms.length === 1) {
+            await rooms[0].whenReady;
+            let loop = rooms[0].wallLoop;
+            if (loop) {
+                let pos = rooms[0].position ?? Vector3.Zero();
+                outline = loop.map(p => new Vector2(p.x + pos.x - centerX, p.z + pos.z - centerZ));
+            }
+        }
+
         return {
             node: structure.getNode(),
             width: maxX - minX,
             depth: maxZ - minZ,
             height: maxHeight,
             thickness: this.thickness ?? GardenRoom.WallThickness,
-            centerX: (minX + maxX) / 2,
-            centerZ: (minZ + maxZ) / 2
+            centerX,
+            centerZ,
+            outline
         };
+    }
+
+    /** Whether the roof is trimmed to a curved room's footprint (the `clip` attribute, default on). */
+    private get clipping(): boolean {
+        return this.clip !== "false";
     }
 
     private textureTransform(center: Vector3, rotationDegrees: number): DomeTextureTransform {

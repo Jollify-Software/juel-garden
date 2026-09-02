@@ -200,6 +200,17 @@ later milestone) for anything the automatic paths miss.
   `garden-material`).
 - **`file://`** — examples must be served over HTTP (`npm run examples`);
   Chromium blocks juel-garden / Babylon asset + worker loads under `file:`.
+- **`<garden-opening>` on a curved wall** needs a generous `depth`. The cutter
+  is an axis-aligned box; a rotunda/apse wall curves away from the doorway
+  plane, so a thin cutter only punches through at the very centre. `rotunda.html`
+  uses `depth="2"` on a 16-wide drum.
+- **`<garden-roof>` `clip`** (default on) trims the dome/flat roof's flat base
+  caps to a curved room's real footprint (`GardenRoom.wallLoop`, via a new
+  `outline` param on `createDomeRoof` / `createBaseCap`) so a square cap doesn't
+  hang past a round wall. `clip="false"` keeps the rectangular cap. Only the
+  single-curved-room case is clipped under a `<garden-structure>` (a multi-room
+  union would need real polygon-union); box-room structures are untouched, so
+  temple/museum roofs are byte-for-byte unchanged.
 
 ---
 
