@@ -154,7 +154,12 @@ export class GardenRoof extends GardenMesh {
                         // Deliberately low: faceted reads as hand-built, and the
                         // flat panels break up the smooth-shading band a
                         // single-colour cone would otherwise show.
-                        tessellation: 12
+                        tessellation: 12,
+                        // Hollow: no base disc (you're under it, looking up the
+                        // slope to the apex), and DOUBLESIDE so the one shell is
+                        // lit from inside the hut as well as outside.
+                        cap: Mesh.NO_CAP,
+                        sideOrientation: Mesh.DOUBLESIDE
                     }, scene);
                     mesh.convertToFlatShadedMesh();
                     mesh.position.y = rise / 2;
