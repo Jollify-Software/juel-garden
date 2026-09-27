@@ -58,6 +58,32 @@ My favourite example is the [temple example](https://jollify.app/doc/temple.html
 </garden-scene>
 ```
 
+# Related projects
+
+## Parterre
+
+[Parterre](../parterre) (`@C:\Jollify\parterre`) is a **generator that targets
+this library**: annotated SVG floor plan in, a juel-garden scene out. It walks
+the SVG with AngleSharp, maps each `data-fixture` element to a `<garden-room>` /
+`<garden-stairs>` / `<garden-ground>` / wall, wraps the joinable ones in a
+`<garden-structure>`, and drops the result into a `<garden-scene>` page with a
+free camera and `<garden-webxr>`. The intended use is venues &mdash; museums,
+galleries, shopping centres &mdash; publishing a walk-through 3D/VR map of their
+space straight from a CAD/vector plan.
+
+It is a separate C# repo (a sibling checkout, like `jellyfish-cli` is to
+`Jellyfish`), not part of this build. It depends only on the **authoring
+contract** for `<garden-structure>` and friends &mdash; the same markup a person
+would write by hand &mdash; never on the juel-garden package itself. Practical
+consequence for work in this repo: the attribute names and semantics of
+`garden-structure` / `garden-room` / `garden-stairs` / `garden-ground` /
+`garden-opening` are now a consumed API. If they change, update Parterre's
+fixture handlers (`Parterre/Fixtures/`) and its `README` schema table to match.
+
+This revives an idea first prototyped years ago as
+`Api/Services/Generators/VirtualLayout`, which emitted A-Frame markup; the
+target is now a first-party library.
+
 # Contribution
 
 Contribution would be greatly appreciated.  
