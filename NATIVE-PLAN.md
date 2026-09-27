@@ -148,14 +148,14 @@ are additive. `--runtime "web grotto"` makes Parterre write the
 The cheap route to a double-clickable scene. It shares its plumbing with the
 Jetty viewer (`jetty/VIEWER-PLAN.md`).
 
-1. **`.garden` archive.** Same container rules as `jetty/ARCHIVE.md`: zip,
-   first entry `mimetype` = `application/vnd.jollify.garden+zip`, a
-   `manifest.json` (copying the scene's `garden-*` metas), the scene HTML, the
-   bundled `juel-garden.js` runtime, and `assets/` (textures,
-   `.glb`/`.babylon` models, sounds).
-   → Before building `Jetty.Archive`, **generalise it into one container
-   library** (working name `Jollify.Packaging`) with typed manifests for
-   `jetty` and `garden`. Nothing is built yet, so this is free now.
+1. **`.garden` archive** = a Jollify package (spec:
+   `../jollify-packaging/PACKAGE.md`; `.garden` is an extension alias for a
+   package of `scene` items). It holds the scene HTML, the bundled
+   `juel-garden.js` runtime, and `assets/` (textures, `.glb`/`.babylon`
+   models, sounds). The item's `scene` block copies `garden-runtime` /
+   `garden-contract`. Built with the shared `Jollify.Packaging` library.
+   Grotto (Track B) can read the same package directly, because it loads
+   scene HTML at runtime.
 2. **`parterre pack`:** collects references with AngleSharp (as
    `slipway pack` will), bundles the runtime, and writes the manifest.
 3. **Player:** the MAUI Windows viewer opens `.garden` as well as `.jetty`,
