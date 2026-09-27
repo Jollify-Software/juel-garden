@@ -196,7 +196,7 @@ behaves the same as in Chrome. Parterre sample plan → `Museum.exe`.
 
 ### Projects (new repo, sibling folder `juel-garden-grotto/`)
 ```
-JuelGarden.Grotto.Runtime   Stride: one component per element, SceneLoader(model) → entities.
+JuelGarden.Grotto           Stride runtime (library): one component per element, SceneBuilder → entities.
                             References ../parterre/Garden.Contract.
 JuelGarden.Grotto.Player    The exe shell: loads an embedded or adjacent scene, input, window.
 JuelGarden.Grotto.Build     No Stride reference: compiles assets, runs `dotnet publish` on

@@ -117,7 +117,8 @@ C:\Jollify\juel-garden-grotto\          (new repo, git init)
 
 No `Runtime` / `Build` / `Tests` split yet: that's B2/B3 once the approach is
 proven. `SceneBuilder` + `Coords` + `ArcRotateCamera` are the pieces that
-survive into `JuelGarden.Grotto.Runtime`.
+survive into the runtime library, named plain `JuelGarden.Grotto` (split
+out from the Player 2026-09-27).
 
 ---
 
