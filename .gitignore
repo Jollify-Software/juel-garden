@@ -2,4 +2,5 @@ node_modules/
 .cache/
 .parcel-cache/
 dist/
-doc/tests/*.png
+doc/
+tests/*.png
