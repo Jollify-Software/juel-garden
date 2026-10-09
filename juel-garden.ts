@@ -29,6 +29,7 @@ import "./src/Components/Texture";
 import "./src/Components/Boolean";
 import "./src/Components/Gizmo";
 import "./src/Components/Sound";
+import "./src/Components/Physics";
 import "./src/Components/Gui/Info";
 import "./src/Components/Gui/Text";
 import "./src/Components/Gui/Button";

@@ -1,0 +1,109 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <script src="../../dist/juel-garden.js"></script>
+        <style>
+            #hud {
+                position: absolute; top: 12px; left: 12px; z-index: 1;
+                font: 16px sans-serif; color: white;
+            }
+            #hud button { font-size: 16px; padding: 6px 14px; }
+        </style>
+    </head>
+    <body>
+        <div id="hud">
+            <button id="shoot">Shoot</button>
+            <span id="status">Drag to look around, then shoot the white ball the way the camera faces.</span>
+        </div>
+
+        <garden-scene>
+            <!--
+              ZERO-G
+
+              Physics with no gravity: balls float inside a closed cube and
+              bounce off its six walls. A high restitution keeps the bounces
+              lively, and linear/angular damping slow every ball down so the
+              cube settles -- without damping (or a floor to roll on) a ball
+              would bounce for ever.
+
+              Each corner holds a trigger sphere (a pocket). A ball that
+              enters one is taken out of the simulation; the white ball goes
+              back to the centre instead. "garden-rest" fires when everything
+              has stopped, which re-enables the Shoot button.
+            -->
+            <garden-physics gravity="0 0 0"></garden-physics>
+            <garden-camera position="0 3 -16"></garden-camera>
+            <garden-light></garden-light>
+            <garden-sky root="../assets/space" size="200"></garden-sky>
+
+            <!-- Walls: thick static boxes, 10 x 10 x 10 inside. -->
+            <garden-box class="wall" physics="static" restitution="0.9" width="12" height="1" depth="12" position="0 -5.5 0"></garden-box>
+            <garden-box class="wall" physics="static" restitution="0.9" width="12" height="1" depth="12" position="0 5.5 0"></garden-box>
+            <garden-box class="wall" physics="static" restitution="0.9" width="1" height="12" depth="12" position="-5.5 0 0"></garden-box>
+            <garden-box class="wall" physics="static" restitution="0.9" width="1" height="12" depth="12" position="5.5 0 0"></garden-box>
+            <garden-box class="wall" physics="static" restitution="0.9" width="12" height="12" depth="1" position="0 0 -5.5"></garden-box>
+            <garden-box class="wall" physics="static" restitution="0.9" width="12" height="12" depth="1" position="0 0 5.5"></garden-box>
+
+            <!-- Pockets: one trigger in each corner. -->
+            <garden-sphere class="pocket" physics="trigger" diameter="2" position="-4.4 -4.4 -4.4" colour="#000000"></garden-sphere>
+            <garden-sphere class="pocket" physics="trigger" diameter="2" position="4.4 -4.4 -4.4" colour="#000000"></garden-sphere>
+            <garden-sphere class="pocket" physics="trigger" diameter="2" position="-4.4 4.4 -4.4" colour="#000000"></garden-sphere>
+            <garden-sphere class="pocket" physics="trigger" diameter="2" position="4.4 4.4 -4.4" colour="#000000"></garden-sphere>
+            <garden-sphere class="pocket" physics="trigger" diameter="2" position="-4.4 -4.4 4.4" colour="#000000"></garden-sphere>
+            <garden-sphere class="pocket" physics="trigger" diameter="2" position="4.4 -4.4 4.4" colour="#000000"></garden-sphere>
+            <garden-sphere class="pocket" physics="trigger" diameter="2" position="-4.4 4.4 4.4" colour="#000000"></garden-sphere>
+            <garden-sphere class="pocket" physics="trigger" diameter="2" position="4.4 4.4 4.4" colour="#000000"></garden-sphere>
+
+            <!-- Balls. -->
+            <garden-sphere id="cue" class="ball" physics restitution="0.9" linear-damping="0.4" angular-damping="0.4" diameter="1" position="0 0 0" colour="#FFFFFF"></garden-sphere>
+            <garden-sphere class="ball" physics restitution="0.9" linear-damping="0.4" angular-damping="0.4" diameter="1" position="0 0 2" colour="#FF0000"></garden-sphere>
+            <garden-sphere class="ball" physics restitution="0.9" linear-damping="0.4" angular-damping="0.4" diameter="1" position="-0.55 0 2.95" colour="#FF0000"></garden-sphere>
+            <garden-sphere class="ball" physics restitution="0.9" linear-damping="0.4" angular-damping="0.4" diameter="1" position="0.55 0 2.95" colour="#FF0000"></garden-sphere>
+            <garden-sphere class="ball" physics restitution="0.9" linear-damping="0.4" angular-damping="0.4" diameter="1" position="0 0.55 2.95" colour="#FFFF00"></garden-sphere>
+            <garden-sphere class="ball" physics restitution="0.9" linear-damping="0.4" angular-damping="0.4" diameter="1" position="0 -0.55 2.95" colour="#00C800"></garden-sphere>
+        </garden-scene>
+
+        <script>
+            const scene = document.querySelector("garden-scene");
+            const physics = document.querySelector("garden-physics");
+            const cue = document.getElementById("cue");
+            const shoot = document.getElementById("shoot");
+            const status = document.getElementById("status");
+            let potted = 0;
+
+            // See-through walls, so the balls are visible from outside the cube.
+            window.addEventListener("load", async () => {
+                for (const wall of document.querySelectorAll(".wall")) {
+                    await wall.whenReady;
+                    wall.mesh.visibility = 0.12;
+                }
+            });
+
+            shoot.addEventListener("click", () => {
+                const camera = scene.scene.activeCamera;
+                const direction = camera.getForwardRay().direction.normalize();
+                cue.impulse(direction.scale(8));
+                shoot.disabled = true;
+                status.textContent = "Moving...";
+            });
+
+            scene.addEventListener("garden-trigger-enter", e => {
+                const ball = e.detail.other;
+                if (!ball || !ball.classList.contains("ball")) return;
+                if (ball === cue) {
+                    cue.teleport("0 0 0");
+                    status.textContent = "Cue ball potted: back to the centre.";
+                } else {
+                    ball.removePhysics();
+                    ball.mesh.setEnabled(false);
+                    potted++;
+                }
+            });
+
+            physics.addEventListener("garden-rest", () => {
+                shoot.disabled = false;
+                status.textContent = `At rest. Potted: ${potted}`;
+            });
+        </script>
+    </body>
+</html>

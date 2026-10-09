@@ -1,4 +1,4 @@
-import { Material, Mesh, PointerEventTypes, Scene, TransformNode, Vector3 } from "babylonjs";
+import { Material, Mesh, PhysicsAggregate, PhysicsEventType, PhysicsMotionType, PhysicsShapeType, PointerEventTypes, Scene, TransformNode, Vector3 } from "babylonjs";
 import { CSG } from "babylonjs";
 import { MeshBuilder } from "babylonjs";
 import { property } from "lit/decorators";
@@ -9,6 +9,24 @@ import { Vector3Convert } from "./Converters/Vector3Convert";
 import { GardenElement } from "./GardenElement";
 import { GardenMaterial } from "./Components/Material";
 import { Modifier } from "./Modifiers/Modifier";
+import { GardenPhysics, elementOfBody } from "./Components/Physics";
+
+/** `physics-shape` values, and the shape each tag gets when it's left unset. */
+const shapeNames: {[name: string]: PhysicsShapeType} = {
+    'sphere': PhysicsShapeType.SPHERE,
+    'box': PhysicsShapeType.BOX,
+    'cylinder': PhysicsShapeType.CYLINDER,
+    'capsule': PhysicsShapeType.CAPSULE,
+    'convex': PhysicsShapeType.CONVEX_HULL,
+    'mesh': PhysicsShapeType.MESH,
+};
+const shapeByTag: {[tag: string]: PhysicsShapeType} = {
+    'garden-sphere': PhysicsShapeType.SPHERE,
+    'garden-box': PhysicsShapeType.BOX,
+    'garden-ground': PhysicsShapeType.BOX,
+    'garden-plane': PhysicsShapeType.BOX,
+    'garden-cylinder': PhysicsShapeType.CYLINDER,
+};
 
 /**
  * Base class for every custom element that owns a real Babylon `Mesh`
@@ -21,6 +39,23 @@ import { Modifier } from "./Modifiers/Modifier";
  * `hollow` (CSG-subtracts a scaled clone of itself, for a shell/box effect),
  * and `split` (CSG-halves the mesh). Also wires up any `track`/`orbit`/
  * `action`/`drive`/`suspension` behaviour attribute via {@link Behaviours}.
+ *
+ * **Physics** (needs a `<garden-physics>` in the scene, see {@link GardenPhysics}):
+ * - `physics` -- `"dynamic"` (the default when the attribute is bare),
+ *   `"static"` (walls, floors), `"animated"` (moved by code, pushes others)
+ *   or `"trigger"` (a sensor: nothing bounces off it, but it fires
+ *   `garden-trigger-enter`/`-exit`).
+ * - `physics-shape` -- `sphere`, `box`, `cylinder`, `capsule`, `convex` or
+ *   `mesh` (exact triangles, static bodies only). Default: the tag's own
+ *   shape, else `convex` (dynamic) or `mesh` (static).
+ * - `mass` (default 1; 0 for static/trigger), `friction`, `restitution`
+ *   (bounciness, 0-1), `linear-damping`, `angular-damping` (slow a body down
+ *   over time -- what stops balls rolling for ever when there's no floor).
+ * - `velocity`, `angular-velocity` -- `Vector3`s set once the body exists.
+ *
+ * Script API: {@link impulse}, {@link getVelocity}, {@link setVelocity},
+ * {@link stop}, {@link teleport}, {@link removePhysics}, and the underlying
+ * Babylon {@link physicsAggregate}.
  *
  * A subclass's `updated()` builds the actual Babylon geometry (typically via
  * `MeshBuilder`) and hands it to {@link GardenMesh.setMesh}, which applies all
@@ -36,6 +71,9 @@ export abstract class GardenMesh extends GardenElement {
     @property() split: string;
 
     mesh: Mesh;
+
+    /** The Babylon physics body + shape, when the `physics` attribute is set and physics has started. */
+    physicsAggregate: PhysicsAggregate;
 
     getNode(): TransformNode {
         return this.mesh;
@@ -80,7 +118,9 @@ export abstract class GardenMesh extends GardenElement {
         if (!this.node)
             return;
 
-        if (this.position)
+        if (this.physicsAggregate && this.position)
+            this.teleport(this.position);
+        else if (this.position)
             this.mesh.position = this.position;
         if (this.rotation)
             this.mesh.rotation = this.rotation;
@@ -91,6 +131,7 @@ export abstract class GardenMesh extends GardenElement {
     }
 
     setMesh(mesh: Mesh) {
+        this.removePhysics();
         let orphans: TransformNode[] = [];
         if (this.mesh) {
             orphans = this.mesh.getChildTransformNodes(true).concat(this.mesh.getChildMeshes(true));
@@ -114,6 +155,131 @@ export abstract class GardenMesh extends GardenElement {
 
         if (this.hasAttribute("collisions"))
             this.mesh.checkCollisions = true;
+
+        if (this.hasAttribute("physics"))
+            this.attachPhysics(mesh);
+    }
+
+    /**
+     * Gives `mesh` a physics body once the scene's `<garden-physics>` has
+     * loaded Havok. Skipped if the mesh has been replaced in the meantime.
+     */
+    private async attachPhysics(mesh: Mesh) {
+        await GardenElement.whenDocumentReady();
+        let physicsEl = GardenPhysics.forElement(this);
+        if (!physicsEl) {
+            console.warn(`<${this.localName} physics> needs a <garden-physics> element in its <garden-scene>.`);
+            return;
+        }
+        await physicsEl.ready;
+        if (this.mesh != mesh || this.physicsAggregate)
+            return;
+
+        let kind = (this.getAttribute("physics") || "dynamic").toLowerCase();
+        let motion = kind == "static" || kind == "trigger" ? PhysicsMotionType.STATIC
+            : kind == "animated" ? PhysicsMotionType.ANIMATED
+            : PhysicsMotionType.DYNAMIC;
+        let isStatic = motion != PhysicsMotionType.DYNAMIC;
+
+        let shapeAttr = this.getAttribute("physics-shape");
+        let shape = shapeAttr ? shapeNames[shapeAttr.toLowerCase()] : shapeByTag[this.localName];
+        if (shapeAttr && shape == null)
+            console.warn(`Unknown physics-shape "${shapeAttr}"; using the default.`);
+        if (shape == null)
+            shape = isStatic ? PhysicsShapeType.MESH : PhysicsShapeType.CONVEX_HULL;
+
+        let num = (name: string) => this.hasAttribute(name) ? Number(this.getAttribute(name)) : undefined;
+        let options: any = {
+            mass: isStatic ? 0 : (num("mass") ?? 1),
+            friction: num("friction"),
+            restitution: num("restitution"),
+            mesh: shape == PhysicsShapeType.MESH || shape == PhysicsShapeType.CONVEX_HULL ? mesh : undefined,
+            isTriggerShape: kind == "trigger",
+        };
+        for (let key in options)
+            if (options[key] === undefined) delete options[key];
+
+        let aggregate = new PhysicsAggregate(mesh, shape, options, this.getScene());
+        let body = aggregate.body;
+        body.setMotionType(motion);
+        this.physicsAggregate = aggregate;
+
+        let linearDamping = num("linear-damping");
+        if (linearDamping != null) body.setLinearDamping(linearDamping);
+        let angularDamping = num("angular-damping");
+        if (angularDamping != null) body.setAngularDamping(angularDamping);
+
+        let velocity = Vector3Convert.fromString(this.getAttribute("velocity"));
+        if (velocity) body.setLinearVelocity(velocity);
+        let spin = Vector3Convert.fromString(this.getAttribute("angular-velocity"));
+        if (spin) body.setAngularVelocity(spin);
+
+        if (motion == PhysicsMotionType.DYNAMIC) {
+            physicsEl.trackDynamic(body, true);
+            body.setCollisionCallbackEnabled(true);
+            body.getCollisionObservable().add(ev => {
+                if (ev.type != PhysicsEventType.COLLISION_STARTED)
+                    return;
+                this.dispatchEvent(new CustomEvent("garden-collide", {
+                    bubbles: true,
+                    detail: {
+                        other: elementOfBody(ev.collidedAgainst),
+                        point: ev.point,
+                        normal: ev.normal,
+                        impulse: ev.impulse,
+                    }
+                }));
+            });
+        }
+    }
+
+    /** Pushes the body: `impulse` is mass x change in velocity, applied at `point` (world space; default the centre). */
+    impulse(impulse: Vector3 | string, point?: Vector3) {
+        let body = this.physicsAggregate?.body;
+        if (!body) return;
+        let v = typeof impulse == "string" ? Vector3Convert.fromString(impulse) : impulse;
+        body.applyImpulse(v, point ?? this.mesh.getAbsolutePosition());
+    }
+
+    getVelocity(): Vector3 {
+        return this.physicsAggregate?.body.getLinearVelocity() ?? Vector3.Zero();
+    }
+
+    setVelocity(velocity: Vector3 | string) {
+        let v = typeof velocity == "string" ? Vector3Convert.fromString(velocity) : velocity;
+        this.physicsAggregate?.body.setLinearVelocity(v);
+    }
+
+    /** Zeroes linear and angular velocity. */
+    stop() {
+        let body = this.physicsAggregate?.body;
+        if (!body) return;
+        body.setLinearVelocity(Vector3.Zero());
+        body.setAngularVelocity(Vector3.Zero());
+    }
+
+    /**
+     * Moves a physics body to `position` and stops it. Plain `mesh.position`
+     * writes are ignored once a body exists (Havok owns the transform), so
+     * setting the `position` attribute or property comes through here too.
+     */
+    teleport(position: Vector3 | string) {
+        let p = typeof position == "string" ? Vector3Convert.fromString(position) : position;
+        let body = this.physicsAggregate?.body;
+        this.mesh.position = p.clone();
+        if (!body) return;
+        this.stop();
+        // Let the next step copy the node's transform into the body, then hand it back.
+        body.disablePreStep = false;
+        this.getScene().onAfterPhysicsObservable.addOnce(() => body.disablePreStep = true);
+    }
+
+    /** Disposes the physics body (e.g. a ball that has been potted). The mesh stays. */
+    removePhysics() {
+        if (!this.physicsAggregate) return;
+        GardenPhysics.forElement(this)?.trackDynamic(this.physicsAggregate.body, false);
+        this.physicsAggregate.dispose();
+        this.physicsAggregate = null;
     }
 
     hollowMesh(mesh: Mesh, hollowScale: Vector3) {
