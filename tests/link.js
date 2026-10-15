@@ -158,6 +158,10 @@ async function clickOn(page, find) {
         await page.waitForTimeout(1500);
         check("directory button flies into the toy shop", near(await cameraAt(page), [7, 1.6, 5.5]), JSON.stringify(await cameraAt(page)));
         check("directory stays open after the click", await dir.isVisible());
+        await page.locator("button", { hasText: "▾" }).click();
+        check("folding the directory hides its buttons", !(await dir.isVisible()));
+        await page.locator("button", { hasText: "▸" }).click();
+        check("unfolding shows them again", await dir.isVisible());
 
         check("no console errors", errors.length == 0, errors.join(" | "));
     } finally {

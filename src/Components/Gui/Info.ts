@@ -20,7 +20,8 @@ import { GardenMesh } from "../../GardenMesh";
  * `close-on-outside-click="false"` or any outside click/drag will hide it),
  * `pin` (`"top-left"|"top-right"|"bottom-left"|"bottom-right"`: fix the card
  * to that corner of the scene instead of tracking a mesh -- a venue's
- * directory, say; it needs no parent mesh).
+ * directory, say; it needs no parent mesh). A pinned card's button folds it
+ * to its title bar and back, rather than closing it.
  *
  * @example
  * ```html
@@ -109,7 +110,19 @@ export class GardenInfo extends GardenElement {
             fontSize: "14px",
             lineHeight: "1",
         });
-        this.closeBtn.addEventListener("click", () => this.hide());
+        if (this.pin) {
+            // A pinned card has nothing to click to reopen it, so its button
+            // folds it to the title bar and back instead of closing it.
+            this.closeBtn.textContent = "▾";
+            this.closeBtn.title = "Fold";
+            this.closeBtn.addEventListener("click", () => {
+                let folded = this.container.style.display == "none";
+                this.container.style.display = folded ? "" : "none";
+                this.closeBtn.textContent = folded ? "▾" : "▸";
+                this.closeBtn.title = folded ? "Fold" : "Unfold";
+            });
+        } else
+            this.closeBtn.addEventListener("click", () => this.hide());
 
         header.append(titleEl, this.closeBtn);
 
