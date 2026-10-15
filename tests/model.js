@@ -125,6 +125,12 @@ const near = (a, b, tol = 0.02) => a && b.every((v, i) => Math.abs(a[i] - v) <= 
             return { shown: info.panel.style.display != "none", anchor: info.anchor?.asArray().map(v => +v.toFixed(2)) };
         });
         check("clicking the model opens its info card", info.shown, JSON.stringify(info));
+        const inside = await page.evaluate(() => {
+            const r = document.querySelector("#exhibit garden-info").panel.getBoundingClientRect();
+            const c = document.querySelector("garden-scene").canvas.getBoundingClientRect();
+            return r.left >= c.left && r.top >= c.top && r.right <= c.right && r.bottom <= c.bottom;
+        });
+        check("info card is kept inside the canvas", inside);
         check("info card anchors to the model's centre", near(info.anchor, [0, 1.2, 0], 0.05), JSON.stringify(info.anchor));
 
         await page.screenshot({ path: path.join(outDir, "model-gltf.png") });

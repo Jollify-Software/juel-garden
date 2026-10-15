@@ -192,8 +192,16 @@ export class GardenInfo extends GardenElement {
         let y = rect.top + projected.y;
         this.marker.style.left = `${x}px`;
         this.marker.style.top = `${y}px`;
-        this.panel.style.left = `${x}px`;
-        this.panel.style.top = `${y}px`;
+        // The card sits centred above the marker, but is kept inside the
+        // canvas: a tall mesh (a lift shaft, a tower) close up would otherwise
+        // push it off the top of the screen.
+        let margin = 8;
+        let w = this.panel.offsetWidth, h = this.panel.offsetHeight;
+        let left = Math.min(Math.max(x - w / 2, rect.left + margin), rect.right - w - margin);
+        let top = Math.min(Math.max(y - h - 24, rect.top + margin), rect.bottom - h - margin);
+        this.panel.style.transform = "none";
+        this.panel.style.left = `${left}px`;
+        this.panel.style.top = `${top}px`;
     }
 
     /** A pinned card sits in a corner of the canvas, with no marker. */
