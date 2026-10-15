@@ -20,7 +20,8 @@
     "test:physics": "node tests/physics-zero-g.js",
     "test:link": "node tests/link.js",
     "test:model": "node tests/model.js",
-    "copy-decoders": "node -e \"const fs=require('fs');fs.mkdirSync('dist/decoders',{recursive:true});for(const f of fs.readdirSync('vendor/decoders'))if(!f.endsWith('.md'))fs.copyFileSync('vendor/decoders/'+f,'dist/decoders/'+f)\""
+    "copy-decoders": "node -e \"const fs=require('fs');fs.mkdirSync('dist/decoders',{recursive:true});for(const f of fs.readdirSync('vendor/decoders'))if(!f.endsWith('.md'))fs.copyFileSync('vendor/decoders/'+f,'dist/decoders/'+f)\"",
+    "test:rotunda": "node tests/rotunda.js"
   },
   "repository": {
     "type": "git",

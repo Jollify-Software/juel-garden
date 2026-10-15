@@ -1,0 +1,30 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+<body>
+    <garden-scene collisions>
+        <!-- A country house in the manner of a rotunda with wings: an oval
+             rotunda (type="rotunda" with an explicit depth) and a corridor out
+             to a wing on each side, doorways cut where they meet. -->
+        <garden-camera position="0 30 -45"></garden-camera>
+        <garden-light></garden-light>
+        <garden-structure collisions>
+            <garden-room id="rotunda" type="rotunda" width="24" depth="16" height="9" collisions>
+                <garden-material slot="floor" colour="#b9ab8c"></garden-material>
+                <garden-material slot="wall" colour="#d8c9a8"></garden-material>
+            </garden-room>
+            <garden-room id="east-corridor" position="16 0 0" width="8.4" depth="3" height="4" collisions></garden-room>
+            <garden-room id="west-corridor" position="-16 0 0" width="8.4" depth="3" height="4" collisions></garden-room>
+            <garden-room id="east-wing" position="26 0 0" width="12" depth="10" height="6" collisions></garden-room>
+            <garden-room id="west-wing" position="-26 0 0" width="12" depth="10" height="6" collisions></garden-room>
+            <!-- Doorways from the rotunda into each corridor (the cutter spans
+                 the curved wall's thickness). -->
+            <garden-opening between="#rotunda #east-corridor" position="12 1.6 0" width="1.6" height="3" depth="2.4"></garden-opening>
+            <garden-opening between="#rotunda #west-corridor" position="-12 1.6 0" width="1.6" height="3" depth="2.4"></garden-opening>
+        </garden-structure>
+        <garden-ground width="90" height="60" position="0 -0.1 0" collisions></garden-ground>
+    </garden-scene>
+</body>
+</html>

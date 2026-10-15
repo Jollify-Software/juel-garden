@@ -45,6 +45,7 @@ const WALL_SIDES: WallSide[] = ["north", "east", "south", "west"];
  * slot="north"|"east"|"south"|"west">` child -- straight, or bowed with that
  * wall's `curve` attribute -- for an apsidal end, a bow front, or (all four
  * curved) a rounded room. `type="rotunda"` is the shortcut for a fully circular
+ * (or, with an explicit `depth`, oval)
  * room: a round floor and one swept wall.
  *
  * When any side is curved, the floor is generated from the actual wall loop
@@ -324,24 +325,30 @@ export class GardenRoom extends GardenMesh {
 
     /** A round room: a cylinder-slab floor (top at y = 0) and one swept circular wall. */
     private buildRotunda(scene: Scene, colors: Record<string, Color3>): Mesh {
-        let radius = this.width / 2;
-        let tess = Math.max(24, Math.round(this.width * 4));
+        // An explicit `depth` makes it oval (width across x, depth along z);
+        // without one it's round. (depth has a default for box rooms, so only
+        // the attribute counts here.)
+        let width = this.width;
+        let depth = this.hasAttribute("depth") ? this.depth : this.width;
+        let tess = Math.max(24, Math.round(Math.max(width, depth) * 4));
 
         let floor = MeshBuilder.CreateCylinder("floor", {
-            diameter: this.width,
+            diameter: width,
             height: this.thickness,
             tessellation: tess
         }, scene);
         floor.position.y = -this.thickness / 2;
+        floor.scaling.z = depth / width; // baked in by MergeMeshes below
         floor.material = this.matte("mat-floor", colors.floor, scene);
 
         // Pull the centreline in by half the thickness so the outer face sits at
-        // roughly `width`.
-        let wallR = Math.max(radius - this.thickness / 2, 0.01);
+        // roughly `width` x `depth`.
+        let wallRx = Math.max(width / 2 - this.thickness / 2, 0.01);
+        let wallRz = Math.max(depth / 2 - this.thickness / 2, 0.01);
         let ring: Vector3[] = [];
         for (let i = 0; i <= tess; i++) {
             let ang = (i / tess) * Math.PI * 2;
-            ring.push(new Vector3(Math.cos(ang) * wallR, 0, Math.sin(ang) * wallR));
+            ring.push(new Vector3(Math.cos(ang) * wallRx, 0, Math.sin(ang) * wallRz));
         }
         // Open ring (drop the repeated closing point) for <garden-structure>'s join.
         this.wallLoop = ring.slice(0, tess).map(p => p.clone());
