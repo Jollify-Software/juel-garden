@@ -28,4 +28,6 @@ jobs:
         run: |
           npx parcel build juel-garden.ts --no-source-maps
           npm run copy-wasm
+          npm run copy-decoders
+          test -s dist/decoders/draco_decoder_gltf.wasm
           test -s dist/juel-garden.js

@@ -2,11 +2,14 @@ import { AnimationGroup, Mesh, SceneLoader, Vector3 } from "babylonjs";
 // Registers the glTF/GLB, OBJ and STL plugins with SceneLoader (side effect).
 // Without it only Babylon's own .babylon format loads.
 import "babylonjs-loaders";
+// Compressed glTF (Draco, meshopt) decodes with copies next to the bundle, not Babylon's CDN.
+import "../Decoders";
 import { customElement, property } from "lit/decorators";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 
 /**
- * Imports an external 3D model file (glTF/GLB, OBJ, STL, .babylon) via
+ * Imports an external 3D model file (glTF/GLB -- Draco- or meshopt-compressed
+ * too, decoded offline from `decoders/` beside the bundle -- OBJ, STL, .babylon) via
  * Babylon's `SceneLoader.ImportMeshAsync`. A {@link GardenSkeletonMesh}, so an
  * imported rig's skeleton is picked up automatically for
  * `<garden-animation type="skeleton">`.

@@ -11,15 +11,16 @@
     }
   },
   "scripts": {
-    "dev": "parcel build juel-garden.ts --no-optimize && npm run copy-wasm",
-    "build": "del .parcel-cache && parcel build juel-garden.ts --no-source-maps && npm run copy-wasm",
+    "dev": "parcel build juel-garden.ts --no-optimize && npm run copy-wasm && npm run copy-decoders",
+    "build": "del .parcel-cache && parcel build juel-garden.ts --no-source-maps && npm run copy-wasm && npm run copy-decoders",
     "examples": "http-server . -o /examples/ -c-1",
     "doc": "typedoc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "copy-wasm": "node -e \"require('fs').copyFileSync('node_modules/@babylonjs/havok/lib/esm/HavokPhysics.wasm','dist/HavokPhysics.wasm')\"",
     "test:physics": "node tests/physics-zero-g.js",
     "test:link": "node tests/link.js",
-    "test:model": "node tests/model.js"
+    "test:model": "node tests/model.js",
+    "copy-decoders": "node -e \"const fs=require('fs');fs.mkdirSync('dist/decoders',{recursive:true});for(const f of fs.readdirSync('vendor/decoders'))if(!f.endsWith('.md'))fs.copyFileSync('vendor/decoders/'+f,'dist/decoders/'+f)\""
   },
   "repository": {
     "type": "git",

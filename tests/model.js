@@ -37,6 +37,9 @@ const near = (a, b, tol = 0.02) => a && b.every((v, i) => Math.abs(a[i] - v) <= 
             route.fulfill({ status: 200, body: fs.readFileSync(file),
                 contentType: TYPES[path.extname(file).toLowerCase()] || "application/octet-stream" });
         });
+        // Compressed models must decode with dist/decoders/, never Babylon's CDN.
+        const cdn = [];
+        await page.route(/babylonjs\.com/, route => { cdn.push(route.request().url()); route.abort(); });
         page.setDefaultTimeout(15000);
         const errors = [];
         page.on("console", m => { if ((m.type() == "error" || m.type() == "warning") && !/Failed to load resource|WebXR/.test(m.text())) errors.push(`${m.type()}: ${m.text()}`); });
@@ -74,7 +77,13 @@ const near = (a, b, tol = 0.02) => a && b.every((v, i) => Math.abs(a[i] - v) <= 
         const h = turnedB.max[1] - turnedB.min[1];
         check("fit scales the largest side to 1.5 (then tilted 17°)", Math.abs(h - (1.5 * Math.cos(17 * Math.PI / 180) + 0.75 * Math.sin(17 * Math.PI / 180))) < 0.02, JSON.stringify(turnedB));
 
-        check("progress events fired", await page.evaluate(() => window.__progress) > 0);
+        for (const id of ["draco", "meshopt"]) {
+            const b = await bounds(id);
+            check(`${id}-compressed glTF loads (and is grounded at 1.2 m)`,
+                near(b.min.slice(1, 2), [0], 0.02) && near(b.max.slice(1, 2), [1.2], 0.02), JSON.stringify(b));
+        }
+        check("no requests to Babylon's CDN", cdn.length == 0, cdn.join(" "));
+                check("progress events fired", await page.evaluate(() => window.__progress) > 0);
 
         // A real click on the model's (child) mesh opens its <garden-info>,
         // anchored to the model's centre rather than the empty holder's origin.
