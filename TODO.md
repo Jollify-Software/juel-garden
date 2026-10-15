@@ -271,6 +271,34 @@ WebXR hardware) that only an actual render can confirm.
   since Structure.ts is core to the already-verified temple/museum
   examples and not worth touching blind.
 
+## `<garden-link>` next steps (added 2026-10-15, after `d020bec`)
+
+- **Headset test.** `#id` jumps teleport in XR (`Navigation.applyPose`
+  skips the flight for `WebXRCamera`) and `<garden-webxr>` re-enters VR on
+  `sessiongranted` -- neither has been tried on a device. Check on the
+  tablet/phone-in-viewer and, if one turns up, a Quest (Quest Browser is the
+  only browser with WebXR navigation): controller-select on a portal, sign
+  and info-card button; teleport lands at real head height; next page
+  re-enters VR.
+- **Parterre output.** Let a floor plan carry links (e.g. `data-href` on a
+  shop, or a `data-fixture="link"`) and emit `<garden-link>` -- makes a
+  mall map clickable with no hand edits. Tracked in `parterre/TODO.md`
+  Milestone 4.
+- **Grotto.** The native runtime has no `<garden-link>` yet: portal mesh,
+  `#id` camera jumps, and page links that load another scene from the same
+  `.garden` package.
+- **Jollify Player.** Decide whether the player listens for
+  `garden-navigate` to route links between entries of one package (and to
+  open external sites in the system browser) rather than letting WebView2
+  navigate.
+- **Nice-to-haves.** Portal "peek" (A-Frame's `peekMode`: a live/equirect
+  preview of the destination instead of a flat `image`); keyboard focus /
+  Enter on links for accessibility; `look-at` for deep-link arrivals
+  (currently default offset, current heading); extend `tests/link.js` to
+  click an in-shop "Back to the concourse" portal.
+- The sign text drawn by `<garden-canvas>` is lit diffuse, so it reads dim in
+  the example -- consider an `emissive`/unlit option there.
+
 ## 2026-08-25, real browser pass (Playwright/Chromium, headless)
 
 Everything above was code-review-only guesswork. This pass actually
