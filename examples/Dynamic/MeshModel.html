@@ -6,14 +6,13 @@
     <body>
         <!-- https://www.babylonjs-playground.com/textures/floor.png -->
         <garden-scene>
-            <!-- The default radius-3 camera is far too tight for a human-scale
-                 rigged model -- pulled back and raised slightly for a full,
-                 comfortably-framed view of the walk-cycle animation. -->
-            <garden-camera position="0 3 -12"></garden-camera>
+            <!-- Dude.babylon is ~72 units tall; height="1.8" scales him to a
+                 1.8 m person standing on the ground, whatever the file's units. -->
+            <garden-camera position="0 1.5 -5"></garden-camera>
             <garden-light></garden-light>
 
             <garden-mesh-model id="chap" meshNames="him" root="https://playground.babylonjs.com/scenes/Dude/" filename="Dude.babylon"
-                scale="0.25 0.25 0.25">
+                height="1.8">
                 <garden-animation target="chap" event="load" type="skeleton" from="0" to="100" loop="true" speed="1.0"></garden-animation>
             </garden-mesh-model>
 

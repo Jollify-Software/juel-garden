@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <script src="../../dist/juel-garden.js"></script>
+    </head>
+    <body>
+        <!-- Importing glTF models, e.g. a museum exhibit scanned at an unknown
+             scale. block.gltf is 4 units tall and floats 1 unit above its own
+             origin; height="2.4" scales it to 2.4 m and stands it on its
+             position. -->
+        <garden-scene>
+            <garden-camera position="0 2 -9"></garden-camera>
+            <garden-light></garden-light>
+
+            <garden-mesh-model id="as-is" src="../assets/block.gltf" position="-3 0 0"></garden-mesh-model>
+            <garden-mesh-model id="exhibit" src="../assets/block.gltf" height="2.4" position="0 0 0"></garden-mesh-model>
+            <garden-mesh-model id="turned" src="../assets/block.gltf" fit="1.5" position="3 0.5 0" rotation="0 45 17"></garden-mesh-model>
+
+            <garden-ground width="12" height="10" colour="grey"></garden-ground>
+        </garden-scene>
+    </body>
+</html>
