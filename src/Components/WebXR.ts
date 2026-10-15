@@ -19,6 +19,11 @@ import { GardenScene } from "./Scene";
  * teleport-target meshes, defaults to every `<garden-ground>`), `teleportation`
  * (boolean, default `true`).
  *
+ * Arriving from another page that was in VR -- through a `<garden-link>` --
+ * re-enters VR straight away where the browser supports WebXR navigation
+ * (the `sessiongranted` event, e.g. Meta Quest Browser), so a visitor can
+ * walk from scene to scene without taking the headset off.
+ *
  * @example
  * ```html
  * <garden-webxr></garden-webxr>
@@ -34,6 +39,8 @@ export class GardenWebXR extends GardenElement {
 
     xr: WebXRDefaultExperience;
 
+    private sessionGranted = false;
+
     constructor() {
         super();
         this.mode = "vr";
@@ -41,6 +48,15 @@ export class GardenWebXR extends GardenElement {
     }
 
     async updated() {
+        // Listen before any awaits: the browser grants the session as the page loads.
+        let xrSystem = (<any>navigator).xr;
+        if (xrSystem && !this.xr) {
+            xrSystem.addEventListener("sessiongranted", () => {
+                this.sessionGranted = true;
+                this.enterGrantedSession();
+            }, { once: true });
+        }
+
         this.beginBuild();
         try {
             let sceneEl = this.parentElement as GardenScene;
@@ -68,8 +84,18 @@ export class GardenWebXR extends GardenElement {
                 // camera is already a full fallback, so this is not fatal.
                 console.warn("garden-webxr: WebXR experience unavailable.", err);
             }
+            this.enterGrantedSession();
         } finally {
             this.endBuild();
         }
+    }
+
+    private enterGrantedSession() {
+        if (!this.sessionGranted || !this.xr?.baseExperience)
+            return;
+        this.sessionGranted = false;
+        this.xr.baseExperience.enterXRAsync(
+            this.mode === "ar" ? "immersive-ar" : "immersive-vr", "local-floor", this.xr.renderTarget
+        ).catch(err => console.warn("garden-webxr: could not resume the immersive session.", err));
     }
 }

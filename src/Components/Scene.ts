@@ -6,6 +6,7 @@ import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { JuelGarden } from "../JuelGarden";
+import { Navigation } from "../Navigation";
 import { Utility } from "../Utility";
 
 // Babylon requests images (textures, etc.) with crossOrigin="anonymous" by default,
@@ -122,6 +123,8 @@ export class GardenScene extends LitElement {
                     }
                     window.addEventListener("resize", this._resizeHandler);
                     this.engine.resize();
+                    // `#id` deep links and back/forward between <garden-link> jumps.
+                    Navigation.install(this.scene);
                 });
             } catch (err) {
                 console.error("Error during scene setup:", err);

@@ -49,19 +49,7 @@ export class GardenButton extends GardenControl {
         await GardenButton.whenDocumentReady();
 
         let label = this.textContent.trim();
-        let btn = document.createElement("button");
-        btn.textContent = label;
-        Object.assign(btn.style, {
-            display: "block",
-            marginTop: "8px",
-            padding: "6px 14px",
-            background: "orange",
-            color: "#123",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            font: "bold 13px sans-serif",
-        });
+        let btn = createInfoButton(label);
         this.applyProperties(btn);
 
         btn.addEventListener("click", () => {
@@ -92,4 +80,22 @@ export class GardenButton extends GardenControl {
 
         info.container.appendChild(btn);
     }
+}
+
+/** A button row styled for a `<garden-info>` card -- shared by `<garden-button>` and `<garden-link>`. */
+export function createInfoButton(label: string): HTMLButtonElement {
+    let btn = document.createElement("button");
+    btn.textContent = label;
+    Object.assign(btn.style, {
+        display: "block",
+        marginTop: "8px",
+        padding: "6px 14px",
+        background: "orange",
+        color: "#123",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+        font: "bold 13px sans-serif",
+    });
+    return btn;
 }

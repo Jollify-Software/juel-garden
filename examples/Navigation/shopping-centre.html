@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Shopping centre - garden-link</title>
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+
+<body>
+    <!--
+        <garden-link> three ways:
+        - inside a mesh (the shop signs): click the sign to go into the shop;
+        - inside a <garden-info> (the counters): a button on the info card;
+        - on its own: a portal (back to the concourse, through to the food court).
+        "#id" links fly the camera to that element -- use the browser's back
+        button to fly back out. Other pages can link straight into a shop:
+        shopping-centre.html#coffee (the food court does).
+    -->
+    <garden-scene>
+        <garden-camera type="free" position="0 1.6 -8"></garden-camera>
+        <garden-webxr></garden-webxr>
+        <garden-light></garden-light>
+
+        <garden-ground position="0 -0.2 4" width="40" height="30" colour="#c9c2b6"></garden-ground>
+
+        <!-- Where "#concourse" links land. -->
+        <garden-element id="concourse" position="0 0 -8"></garden-element>
+
+        <!-- Books -->
+        <garden-room id="books" position="-7 0 8" width="6" depth="6" height="3.5"></garden-room>
+        <garden-plane position="-7 2.9 4.85" width="4" height="1">
+            <garden-canvas canvas="512 128" point="40 30" font="bold 64px sans-serif"
+                background="#264653" foreground="white">Books</garden-canvas>
+            <garden-link href="#books" offset="0 1.6 -2.5" look-at="#books-counter"></garden-link>
+        </garden-plane>
+        <garden-box id="books-counter" position="-7 0.5 9.5" width="3" height="1" depth="1" colour="#8d6e63">
+            <garden-info title="Books">
+                <garden-text text-wrapping="true">Fiction, travel and children's books.</garden-text>
+                <garden-link href="https://example.com/" target="_blank">Website</garden-link>
+            </garden-info>
+        </garden-box>
+        <garden-link href="#concourse" title="Back to the concourse" look-at="0 1.6 8"
+            position="-4.8 1.2 10.4" radius="0.4"></garden-link>
+
+        <!-- Coffee -->
+        <garden-room id="coffee" position="0 0 8" width="6" depth="6" height="3.5"></garden-room>
+        <garden-plane position="0 2.9 4.85" width="4" height="1">
+            <garden-canvas canvas="512 128" point="40 30" font="bold 64px sans-serif"
+                background="#e76f51" foreground="white">Coffee</garden-canvas>
+            <garden-link href="#coffee" offset="0 1.6 -2.5" look-at="#coffee-counter"></garden-link>
+        </garden-plane>
+        <garden-box id="coffee-counter" position="0 0.5 9.5" width="3" height="1" depth="1" colour="#6d4c41">
+            <garden-info title="Coffee">
+                <garden-text text-wrapping="true">Espresso, filter and cake. Seating in the food court.</garden-text>
+                <garden-link href="food-court.html">To the food court</garden-link>
+            </garden-info>
+        </garden-box>
+        <garden-link href="#concourse" title="Back to the concourse" look-at="0 1.6 8"
+            position="2.2 1.2 10.4" radius="0.4"></garden-link>
+
+        <!-- Toys -->
+        <garden-room id="toys" position="7 0 8" width="6" depth="6" height="3.5"></garden-room>
+        <garden-plane position="7 2.9 4.85" width="4" height="1">
+            <garden-canvas canvas="512 128" point="40 30" font="bold 64px sans-serif"
+                background="#2a9d8f" foreground="white">Toys</garden-canvas>
+            <garden-link href="#toys" offset="0 1.6 -2.5" look-at="#toys-counter"></garden-link>
+        </garden-plane>
+        <garden-box id="toys-counter" position="7 0.5 9.5" width="3" height="1" depth="1" colour="#f4a261"></garden-box>
+        <garden-link href="#concourse" title="Back to the concourse" look-at="0 1.6 8"
+            position="9.2 1.2 10.4" radius="0.4"></garden-link>
+
+        <!-- Another scene -->
+        <garden-link href="food-court.html" title="Food court" colour="#e9c46a"
+            position="-4 1.5 1" radius="0.8"></garden-link>
+    </garden-scene>
+</body>
+
+</html>

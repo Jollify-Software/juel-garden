@@ -17,7 +17,8 @@
     "doc": "typedoc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "copy-wasm": "node -e \"require('fs').copyFileSync('node_modules/@babylonjs/havok/lib/esm/HavokPhysics.wasm','dist/HavokPhysics.wasm')\"",
-    "test:physics": "node tests/physics-zero-g.js"
+    "test:physics": "node tests/physics-zero-g.js",
+    "test:link": "node tests/link.js"
   },
   "repository": {
     "type": "git",

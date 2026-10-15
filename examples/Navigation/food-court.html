@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Food court - garden-link</title>
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+
+<body>
+    <!-- The other end of shopping-centre.html's food-court portal. -->
+    <garden-scene>
+        <garden-camera type="free" position="0 1.6 -6"></garden-camera>
+        <garden-webxr></garden-webxr>
+        <garden-light></garden-light>
+
+        <garden-ground width="30" height="30" colour="#e9c46a"></garden-ground>
+
+        <garden-cylinder position="-3 0.4 2" diameter="1.2" height="0.8" colour="white"></garden-cylinder>
+        <garden-cylinder position="0 0.4 3" diameter="1.2" height="0.8" colour="white"></garden-cylinder>
+        <garden-cylinder position="3 0.4 2" diameter="1.2" height="0.8" colour="white"></garden-cylinder>
+
+        <!-- A deep link: straight into the coffee shop, not just the other page. -->
+        <garden-link href="shopping-centre.html#coffee" title="Coffee" colour="#e76f51"
+            position="-2 1.5 7"></garden-link>
+        <garden-link href="shopping-centre.html" title="Back to the shops"
+            position="2 1.5 7"></garden-link>
+    </garden-scene>
+</body>
+
+</html>

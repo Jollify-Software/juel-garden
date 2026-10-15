@@ -58,6 +58,38 @@ My favourite example is the [temple example](https://jollify.app/doc/temple.html
 </garden-scene>
 ```
 
+## Links between and within scenes
+
+`<garden-link>` is the equivalent of A-Frame's [`link`](https://aframe.io/docs/1.8.0/components/link.html).
+Its `href` is another page (the next scene, a website) or `#id` of an element
+in this scene, which flies the camera there -- e.g. from a shopping centre's
+concourse into one shop. Each `#id` jump is a browser history entry, so the
+back button flies back out, and another page can link straight to
+`mall.html#shop-12`. Where you put it decides how it looks:
+
+```html
+<!-- On its own: a portal, turned to face the camera. -->
+<garden-link href="food-court.html" title="Food court" image="food-court.jpg" position="-4 1.5 1"></garden-link>
+
+<!-- Inside a mesh: the mesh is the link (outlined on hover). -->
+<garden-plane position="0 2.9 4.85" width="4" height="1" texture="coffee-sign.png">
+    <garden-link href="#coffee" offset="0 1.6 -2.5" look-at="#coffee-counter"></garden-link>
+</garden-plane>
+
+<!-- Inside a <garden-info>: a button on the info card. -->
+<garden-info title="Coffee">
+    <garden-link href="https://example.com/" target="_blank">Website</garden-link>
+</garden-info>
+```
+
+In a headset `#id` jumps teleport instead of flying, and on browsers with WebXR
+navigation (Meta Quest Browser) `<garden-webxr>` re-enters VR on the next
+page, so visitors can walk from scene to scene without leaving VR. Every
+link fires a cancelable `garden-navigate` event first, for host pages that
+want to route it themselves. See
+[examples/Navigation/shopping-centre.html](examples/Navigation/shopping-centre.html);
+`npm run test:link` drives it in Chrome.
+
 # Related projects
 
 ## Parterre
