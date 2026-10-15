@@ -17,7 +17,10 @@ import { GardenMesh } from "../../GardenMesh";
  * Attributes: `title`, `close-on-outside-click` (`"false"` to disable,
  * default enabled), `open` (start shown, instead of waiting for a click on
  * the parent mesh -- e.g. a permanent on-screen toolbar; pair with
- * `close-on-outside-click="false"` or any outside click/drag will hide it).
+ * `close-on-outside-click="false"` or any outside click/drag will hide it),
+ * `pin` (`"top-left"|"top-right"|"bottom-left"|"bottom-right"`: fix the card
+ * to that corner of the scene instead of tracking a mesh -- a venue's
+ * directory, say; it needs no parent mesh).
  *
  * @example
  * ```html
@@ -33,6 +36,7 @@ import { GardenMesh } from "../../GardenMesh";
 @customElement("garden-info")
 export class GardenInfo extends GardenElement {
     @property() title: string;
+    @property() pin: string;
 
     panel: HTMLDivElement;
     container: HTMLDivElement;
@@ -146,6 +150,10 @@ export class GardenInfo extends GardenElement {
     }
 
     private updatePosition(scene: Scene) {
+        if (this.pin && this.visible) {
+            this.placePinned(scene);
+            return;
+        }
         if (!this.visible || !this.anchor || !scene.activeCamera)
             return;
 
@@ -175,13 +183,29 @@ export class GardenInfo extends GardenElement {
         this.panel.style.top = `${y}px`;
     }
 
+    /** A pinned card sits in a corner of the canvas, with no marker. */
+    private placePinned(scene: Scene) {
+        let rect = scene.getEngine().getRenderingCanvas().getBoundingClientRect();
+        let [v, h] = this.pin.split("-");
+        let margin = 12;
+        Object.assign(this.panel.style, {
+            display: "block",
+            transform: "none",
+            left: h == "left" ? `${rect.left + margin}px` : "auto",
+            right: h == "right" ? `${window.innerWidth - rect.right + margin}px` : "auto",
+            top: v == "top" ? `${rect.top + margin}px` : "auto",
+            bottom: v == "bottom" ? `${window.innerHeight - rect.bottom + margin}px` : "auto",
+        });
+        this.marker.style.display = "none";
+    }
+
     show() {
         // Snapshot the mesh's world position once, rather than re-reading it every frame:
         // a running <garden-animation> (e.g. a bounce on position.y) would otherwise drag
         // the panel and its buttons around the screen with it, fighting the click the user
         // is trying to make. The panel still tracks the camera every frame below -- only
         // the mesh's own (possibly-animated) motion is deliberately ignored while it's open.
-        let mesh = this.parentMesh.mesh;
+        let mesh = this.parentMesh?.mesh;
         if (mesh && mesh.getChildMeshes(false).length) {
             // An imported model: the element's own mesh is an empty holder,
             // so anchor to the centre of everything under it.

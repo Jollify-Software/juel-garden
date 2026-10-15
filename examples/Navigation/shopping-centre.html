@@ -12,7 +12,8 @@
         <garden-link> three ways:
         - inside a mesh (the shop signs): click the sign to go into the shop;
         - inside a <garden-info> (the counters): a button on the info card;
-        - on its own: a portal (back to the concourse, through to the food court).
+        - on its own: a portal (back to the concourse, through to the food court);
+        - in a pinned <garden-info>: a store directory in the corner of the screen.
         "#id" links fly the camera to that element -- use the browser's back
         button to fly back out. Other pages can link straight into a shop:
         shopping-centre.html#coffee (the food court does).
@@ -70,6 +71,13 @@
         <garden-link href="#concourse" title="Back to the concourse" look-at="0 1.6 8"
             position="9.2 1.2 10.4" radius="0.4"></garden-link>
 
+        <!-- A store directory pinned to a corner of the screen: each button
+             flies to its shop. -->
+        <garden-info title="Directory" pin="top-left" open close-on-outside-click="false">
+            <garden-link href="#books" offset="0 1.6 -2.5" look-at="#books-counter">Books</garden-link>
+            <garden-link href="#coffee" offset="0 1.6 -2.5" look-at="#coffee-counter">Coffee</garden-link>
+            <garden-link href="#toys" offset="0 1.6 -2.5" look-at="#toys-counter">Toys</garden-link>
+        </garden-info>
         <!-- Another scene -->
         <garden-link href="food-court.html" title="Food court" colour="#e9c46a"
             position="-4 1.5 1" radius="0.8"></garden-link>

@@ -149,6 +149,16 @@ async function clickOn(page, find) {
         const hashAfter = await page.evaluate(() => location.hash);
         check("garden-navigate is cancelable", cancelled == "#toys" && hashAfter == "#coffee", `${cancelled} ${hashAfter}`);
 
+        // 6. A pinned <garden-info> directory: always on screen, its buttons fly to shops.
+        const dir = page.locator("button", { hasText: "Toys" });
+        check("pinned directory is showing", await dir.isVisible());
+        const box = await dir.boundingBox();
+        check("directory sits in the top-left corner", box && box.x < 300 && box.y < 300, JSON.stringify(box));
+        await dir.click();
+        await page.waitForTimeout(1500);
+        check("directory button flies into the toy shop", near(await cameraAt(page), [7, 1.6, 5.5]), JSON.stringify(await cameraAt(page)));
+        check("directory stays open after the click", await dir.isVisible());
+
         check("no console errors", errors.length == 0, errors.join(" | "));
     } finally {
         await browser.close();
