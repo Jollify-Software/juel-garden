@@ -1,0 +1,25 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+<body>
+    <!-- A covered courtyard: a square court under a glass roof
+         (<garden-material opacity>), with a round reading room in the middle
+         under its own dome. Separate rooms, not a <garden-structure>: the drum
+         stands inside the court, and a structure would cut doorways between them. -->
+    <garden-scene>
+        <garden-camera type="free" position="0 1.7 -19"></garden-camera>
+        <garden-light></garden-light>
+        <garden-room id="court" width="44" depth="44" height="16" collisions>
+            <garden-roof id="glass" thickness="0.3">
+                <garden-material colour="#d6ecff" spec-colour="#ffffff" opacity="0.3"></garden-material>
+            </garden-roof>
+        </garden-room>
+        <garden-room id="reading-room" type="rotunda" width="22" height="12" collisions>
+            <garden-roof type="dome" outside-colour="#e8e1d0" inside-colour="#c6d7e8"></garden-roof>
+        </garden-room>
+        <garden-ground width="80" height="80" position="0 -0.1 0"></garden-ground>
+    </garden-scene>
+</body>
+</html>

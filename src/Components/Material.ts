@@ -26,7 +26,9 @@ const colourConverter = {
  *
  * Attributes: `slot` (which named material slot this fills, on elements like
  * `<garden-roof>`/`<garden-room>` that have more than one), `colour`,
- * `spec-colour`, `emissive-colour`.
+ * `spec-colour`, `emissive-colour`, `opacity` (0 clear to 1 solid: below 1
+ * the material is see-through and both faces draw -- glass, water, a
+ * glazed roof).
  *
  * @example
  * ```html
@@ -45,6 +47,7 @@ export class GardenMaterial extends GardenElement {
     @property({ converter: colourConverter }) colour: Color3;
     @property({ attribute: "spec-colour", converter: colourConverter }) specColour: Color3;
     @property({ attribute: "emissive-colour", converter: colourConverter }) emissiveColour: Color3;
+    @property({ type: Number }) opacity: number;
 
     material: StandardMaterial;
 
@@ -66,6 +69,11 @@ export class GardenMaterial extends GardenElement {
             material.specularColor = this.specColour;
         if (this.emissiveColour)
             material.emissiveColor = this.emissiveColour;
+        if (this.opacity != null && this.opacity < 1) {
+            material.alpha = Math.max(0, this.opacity);
+            // See-through: the far side shows, so draw back faces too.
+            material.backFaceCulling = false;
+        }
 
         for (let textureEl of this.getTextures())
             material[`${textureEl.type ?? "diffuse"}Texture`] = textureEl.texture;

@@ -1,4 +1,4 @@
-// Browser test of rotundas: round (examples/Structures/rotunda.html) and oval
+// Browser test of rotundas and glass: round (examples/Structures/rotunda.html) and oval
 // (examples/Structures/oval-rotunda.html, type="rotunda" with an explicit
 // depth). Run after a build: npm run dev && npm run test:rotunda
 // Same harness as link.js.
@@ -69,6 +69,17 @@ const cast = (page, from, dir) => page.evaluate(([from, dir]) => {
         check("the doorway is cut: a ray east goes through to the wing", east > 19, String(east));
         await page.screenshot({ path: path.join(process.argv[2] || __dirname, "oval-rotunda.png") });
         check("no errors (oval)", errors.length == 0, errors.join(" | "));
+        await page.close();
+
+        // <garden-material opacity>: a glass roof over a court.
+        ({ page, errors } = await open(browser, "great-court.html"));
+        const glass = await page.evaluate(() => {
+            const m = document.getElementById("glass").mesh;
+            return { alpha: m.material?.alpha, backFaceCulling: m.material?.backFaceCulling, y: +m.getBoundingInfo().boundingBox.centerWorld.y.toFixed(2) };
+        });
+        check("opacity makes a see-through, double-sided material", glass.alpha == 0.3 && glass.backFaceCulling === false, JSON.stringify(glass));
+        check("the glass roof sits on the court's walls", Math.abs(glass.y - 16) < 0.2, String(glass.y));
+        check("no errors (great court)", errors.length == 0, errors.join(" | "));
     } finally {
         await browser.close();
     }
