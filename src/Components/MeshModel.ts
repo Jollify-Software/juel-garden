@@ -26,8 +26,14 @@ import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
  * - `animation`: a glTF animation group to loop (by name), or `"none"` to stop
  *   the loader's auto-play.
  *
- * Fires `garden-model-load` (detail: `{ meshes, animationGroups }`) once
- * loaded, and `garden-model-error` (detail: `{ error }`) if it fails.
+ * - `loading-screen`: `"false"` to skip Babylon's loading screen, which
+ *   otherwise covers the canvas while any model is loading.
+ *
+ * Fires `garden-model-progress` (detail: `{ loaded, total }`, bytes; `total`
+ * is 0 when the server doesn't say), `garden-model-load` (detail:
+ * `{ meshes, animationGroups }`) once loaded, and `garden-model-error`
+ * (detail: `{ error }`) if it fails. A `<garden-info>` child opens when the
+ * model is clicked and anchors to the model's centre.
  *
  * @example
  * ```html
@@ -48,6 +54,8 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     @property() animation: string;
 
     animationGroups: AnimationGroup[] = [];
+    /** Models still loading, across the page: the loading screen shows while this is above 0. */
+    private static loading = 0;
     private loadedKey: string;
 
     /** Resolves once the model has loaded (or failed). */
@@ -71,13 +79,26 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         let [root, file] = this.src ? splitUrl(this.src) : [this.root ?? "", this.filename];
         if (!file) return;
         let names = !this.meshNames || this.meshNames == "*" ? "" : this.meshNames;
+        let screen = this.getAttribute("loading-screen") != "false";
+        let engine = scene.getEngine();
+        if (screen && GardenMeshModel.loading++ == 0)
+            engine.displayLoadingUI();
+        let progress = (e: { loaded: number, total: number, lengthComputable: boolean }) => {
+            let total = e.lengthComputable ? e.total : 0;
+            if (screen && total)
+                engine.loadingUIText = `Loading ${Math.round(100 * e.loaded / total)}%`;
+            this.dispatchEvent(new CustomEvent("garden-model-progress", { bubbles: true, detail: { loaded: e.loaded, total } }));
+        };
         let result;
         try {
-            result = await SceneLoader.ImportMeshAsync(names, root, file, scene);
+            result = await SceneLoader.ImportMeshAsync(names, root, file, scene, progress);
         } catch (error) {
             console.error(`<garden-mesh-model> couldn't load ${root}${file}`, error);
             this.dispatchEvent(new CustomEvent("garden-model-error", { bubbles: true, detail: { error } }));
             return;
+        } finally {
+            if (screen && --GardenMeshModel.loading == 0)
+                engine.hideLoadingUI();
         }
 
         for (let group of this.animationGroups) group.dispose();

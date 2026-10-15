@@ -42,6 +42,10 @@ const near = (a, b, tol = 0.02) => a && b.every((v, i) => Math.abs(a[i] - v) <= 
         page.on("console", m => { if ((m.type() == "error" || m.type() == "warning") && !/Failed to load resource|WebXR/.test(m.text())) errors.push(`${m.type()}: ${m.text()}`); });
         page.on("pageerror", e => errors.push("pageerror: " + e.message));
 
+        await page.addInitScript(() => {
+            window.__progress = 0;
+            document.addEventListener("garden-model-progress", () => window.__progress++);
+        });
         await page.goto(URL, { waitUntil: "load" });
         await page.waitForFunction(() => [...document.querySelectorAll("garden-mesh-model")].every(m => m.mesh), null);
         await page.waitForTimeout(500);
@@ -69,6 +73,36 @@ const near = (a, b, tol = 0.02) => a && b.every((v, i) => Math.abs(a[i] - v) <= 
         const turnedB = await bounds("turned");
         const h = turnedB.max[1] - turnedB.min[1];
         check("fit scales the largest side to 1.5 (then tilted 17°)", Math.abs(h - (1.5 * Math.cos(17 * Math.PI / 180) + 0.75 * Math.sin(17 * Math.PI / 180))) < 0.02, JSON.stringify(turnedB));
+
+        check("progress events fired", await page.evaluate(() => window.__progress) > 0);
+
+        // A real click on the model's (child) mesh opens its <garden-info>,
+        // anchored to the model's centre rather than the empty holder's origin.
+        await page.waitForFunction(() => document.querySelector("garden-scene").scene.getFrameId() > 10);
+        await page.waitForTimeout(1500); // the loading screen fades out
+        check("loading screen gone once loaded", await page.evaluate(() => {
+            const div = document.getElementById("babylonjsLoadingDiv");
+            return !div || !div.isConnected || getComputedStyle(div).display == "none" || getComputedStyle(div).opacity == "0";
+        }));
+        const pt = await page.evaluate(() => {
+            const sceneEl = document.querySelector("garden-scene"), scene = sceneEl.scene, engine = scene.getEngine();
+            const holder = document.getElementById("exhibit").mesh;
+            const { min, max } = holder.getHierarchyBoundingVectors(true);
+            const centre = min.add(max).scale(0.5);
+            const M = holder.getWorldMatrix().constructor;
+            const vp = scene.activeCamera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight());
+            const p = centre.constructor.Project(centre, M.Identity(), scene.getTransformMatrix(), vp);
+            const rect = sceneEl.canvas.getBoundingClientRect(), k = rect.width / engine.getRenderWidth();
+            return { x: rect.left + p.x * k, y: rect.top + p.y * k };
+        });
+        await page.mouse.click(pt.x, pt.y);
+        await page.waitForTimeout(300);
+        const info = await page.evaluate(() => {
+            const info = document.querySelector("#exhibit garden-info");
+            return { shown: info.panel.style.display != "none", anchor: info.anchor?.asArray().map(v => +v.toFixed(2)) };
+        });
+        check("clicking the model opens its info card", info.shown, JSON.stringify(info));
+        check("info card anchors to the model's centre", near(info.anchor, [0, 1.2, 0], 0.05), JSON.stringify(info.anchor));
 
         await page.screenshot({ path: path.join(outDir, "model-gltf.png") });
         check("no console errors", errors.length == 0, errors.join(" | "));

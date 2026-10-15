@@ -139,12 +139,13 @@ export class GardenScene extends LitElement {
 
         this.scene.onPointerDown = (evt, pickResult) => {
             // We try to pick an object
-            if (
-                pickResult?.hit &&
-                pickResult.pickedMesh &&
-                "element" in pickResult.pickedMesh
-            ) {
-                const el = (pickResult.pickedMesh as any).element;
+            // An imported model's meshes hang under the element's own holder
+            // mesh, so walk up to the nearest node that belongs to an element.
+            let node: any = pickResult?.hit ? pickResult.pickedMesh : null;
+            while (node && !("element" in node))
+                node = node.parent;
+            if (node) {
+                const el = node.element;
                 // Type safety: check if el is a GardenMesh and has activate
                 if (el && typeof el.activate === "function") {
                     this.selectedElement = el as GardenMesh;

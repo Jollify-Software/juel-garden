@@ -181,8 +181,14 @@ export class GardenInfo extends GardenElement {
         // the panel and its buttons around the screen with it, fighting the click the user
         // is trying to make. The panel still tracks the camera every frame below -- only
         // the mesh's own (possibly-animated) motion is deliberately ignored while it's open.
-        if (this.parentMesh.mesh)
-            this.anchor = this.parentMesh.mesh.getBoundingInfo().boundingSphere.centerWorld.clone();
+        let mesh = this.parentMesh.mesh;
+        if (mesh && mesh.getChildMeshes(false).length) {
+            // An imported model: the element's own mesh is an empty holder,
+            // so anchor to the centre of everything under it.
+            let { min, max } = mesh.getHierarchyBoundingVectors(true);
+            this.anchor = Vector3.Center(min, max);
+        } else if (mesh)
+            this.anchor = mesh.getBoundingInfo().boundingSphere.centerWorld.clone();
         this.visible = true;
     }
 
