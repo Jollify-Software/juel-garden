@@ -50,7 +50,7 @@ const near = (a, b, tol = 0.02) => a && b.every((v, i) => Math.abs(a[i] - v) <= 
             document.addEventListener("garden-model-progress", () => window.__progress++);
         });
         await page.goto(URL, { waitUntil: "load" });
-        await page.waitForFunction(() => [...document.querySelectorAll("garden-mesh-model")].every(m => m.mesh), null);
+        await page.waitForFunction(() => [...document.querySelectorAll("garden-mesh-model:not([load-distance])")].every(m => m.mesh), null);
         await page.waitForTimeout(500);
 
         const bounds = id => page.evaluate(id => {
@@ -83,6 +83,20 @@ const near = (a, b, tol = 0.02) => a && b.every((v, i) => Math.abs(a[i] - v) <= 
                 near(b.min.slice(1, 2), [0], 0.02) && near(b.max.slice(1, 2), [1.2], 0.02), JSON.stringify(b));
         }
         check("no requests to Babylon's CDN", cdn.length == 0, cdn.join(" "));
+                // load-distance: nothing fetched while the camera is far away...
+        await page.waitForTimeout(500);
+        check("a far model with load-distance hasn't loaded", await page.evaluate(() => !document.getElementById("far").mesh));
+        // ...and it loads once the camera comes close.
+        await page.evaluate(() => {
+            const cam = document.querySelector("garden-scene").scene.activeCamera;
+            cam.setPosition ? cam.setPosition(new cam.position.constructor(0, 2, 33)) : cam.position.set(0, 2, 33);
+        });
+        await page.waitForFunction(() => document.getElementById("far").mesh, null, { timeout: 5000 }).catch(() => {});
+        check("it loads when the camera comes within range", await page.evaluate(() => !!document.getElementById("far").mesh));
+        await page.evaluate(() => {
+            const cam = document.querySelector("garden-scene").scene.activeCamera;
+            cam.setPosition ? cam.setPosition(new cam.position.constructor(0, 2, -9)) : cam.position.set(0, 2, -9);
+        });
                 check("progress events fired", await page.evaluate(() => window.__progress) > 0);
 
         // A real click on the model's (child) mesh opens its <garden-info>,

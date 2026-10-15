@@ -25,6 +25,9 @@
             <garden-mesh-model id="draco" src="../assets/block-draco.glb" height="1.2" position="-1.5 0 -2.5"></garden-mesh-model>
             <garden-mesh-model id="meshopt" src="../assets/block-meshopt.glb" height="1.2" position="1.5 0 -2.5"></garden-mesh-model>
 
+            <!-- Far away, and only loaded once the camera comes within 10 m. -->
+            <garden-mesh-model id="far" src="../assets/block.gltf" height="2" position="0 0 40" load-distance="10"></garden-mesh-model>
+
             <garden-ground width="12" height="10" colour="grey"></garden-ground>
         </garden-scene>
     </body>

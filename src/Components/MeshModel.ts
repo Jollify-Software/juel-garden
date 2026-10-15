@@ -1,4 +1,4 @@
-import { AnimationGroup, Mesh, SceneLoader, Vector3 } from "babylonjs";
+import { AnimationGroup, Mesh, Nullable, Observer, Scene, SceneLoader, Vector3 } from "babylonjs";
 // Registers the glTF/GLB, OBJ and STL plugins with SceneLoader (side effect).
 // Without it only Babylon's own .babylon format loads.
 import "babylonjs-loaders";
@@ -29,8 +29,12 @@ import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
  * - `animation`: a glTF animation group to loop (by name), or `"none"` to stop
  *   the loader's auto-play.
  *
+ * - `load-distance`: don't load until the camera comes within this many
+ *   metres of the model's `position` -- for big scans in a large venue, so
+ *   the visitor only downloads what they walk up to.
  * - `loading-screen`: `"false"` to skip Babylon's loading screen, which
- *   otherwise covers the canvas while any model is loading.
+ *   otherwise covers the canvas while any model is loading. A model with
+ *   `load-distance` loads quietly unless this is `"true"`.
  *
  * Fires `garden-model-progress` (detail: `{ loaded, total }`, bytes; `total`
  * is 0 when the server doesn't say), `garden-model-load` (detail:
@@ -55,11 +59,14 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     @property({ type: Number }) fit: number;
     @property() base: string;
     @property() animation: string;
+    @property({ type: Number, attribute: "load-distance" }) loadDistance: number;
 
     animationGroups: AnimationGroup[] = [];
     /** Models still loading, across the page: the loading screen shows while this is above 0. */
     private static loading = 0;
     private loadedKey: string;
+    private nearObserver: Nullable<Observer<Scene>>;
+    private nearScene: Scene;
 
     /** Resolves once the model has loaded (or failed). */
     loaded: Promise<void>;
@@ -74,7 +81,33 @@ export class GardenMeshModel extends GardenSkeletonMesh {
             return;
         }
         this.loadedKey = key;
-        this.loaded = this.load();
+        this.loaded = this.loadDistance > 0 ? this.whenNear().then(() => this.load()) : this.load();
+    }
+
+    /** Resolves once the active camera is within `load-distance` of the model. */
+    private whenNear(): Promise<void> {
+        let scene = this.nearScene = this.getScene();
+        if (this.nearObserver) scene.onBeforeRenderObservable.remove(this.nearObserver);
+        return new Promise(resolve => {
+            let frame = 0;
+            this.nearObserver = scene.onBeforeRenderObservable.add(() => {
+                if (frame++ % 15) return; // a few checks a second is plenty
+                let camera = scene.activeCamera;
+                if (!camera) return;
+                let at = this.position ?? Vector3.Zero();
+                if (Vector3.Distance(camera.globalPosition, at) > this.loadDistance) return;
+                scene.onBeforeRenderObservable.remove(this.nearObserver);
+                this.nearObserver = null;
+                resolve();
+            });
+        });
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        // getScene() walks parentElement, which is gone by now.
+        if (this.nearObserver) this.nearScene?.onBeforeRenderObservable.remove(this.nearObserver);
+        this.nearObserver = null;
     }
 
     private async load() {
@@ -82,7 +115,8 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         let [root, file] = this.src ? splitUrl(this.src) : [this.root ?? "", this.filename];
         if (!file) return;
         let names = !this.meshNames || this.meshNames == "*" ? "" : this.meshNames;
-        let screen = this.getAttribute("loading-screen") != "false";
+        let screenAttr = this.getAttribute("loading-screen");
+        let screen = this.loadDistance > 0 ? screenAttr == "true" : screenAttr != "false";
         let engine = scene.getEngine();
         if (screen && GardenMeshModel.loading++ == 0)
             engine.displayLoadingUI();
