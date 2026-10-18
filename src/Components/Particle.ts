@@ -20,11 +20,15 @@ import { Utility } from "../Utility";
  * and for a custom system: `url`, `capacity`, `emitter`, `minemitbox`/
  * `maxemitbox`, `colour1`/`colour2`/`colourdead`, `minsize`/`maxsize`,
  * `minlifetime`/`maxlifetime`, `emitrate`, `direction1`/`direction2`,
- * `minemitpower`/`maxemitpower`, `updatespeed`, `gravity`, `billboard`
+ * `minemitpower`/`maxemitpower`, `minangularspeed`/`maxangularspeed`,
+ * `updatespeed`, `gravity`, `billboard`
  * (`"all"` (default)|`"y"`|`"stretched"` -- stretched draws each particle as
  * a streak along its own current velocity instead of a flat sprite, e.g. for
  * stars rushing past a moving viewpoint: fast-moving particles read as long
- * comet-like lines rather than dots).
+ * comet-like lines rather than dots). Any attribute left unset keeps Babylon's
+ * own default for that property (e.g. angular speed 0), rather than NaN.
+ * `capacity` has no Babylon default (the constructor needs one, and without it
+ * the system grows without limit), so an unset one is {@link DefaultCapacity}.
  *
  * @example
  * ```html
@@ -66,6 +70,9 @@ export class GardenParticle extends GardenElement {
     @property({ converter: Vector3Convert.fromString }) direction2: Vector3;
     @property({ converter: Vector3Convert.fromString }) gravity: Vector3;
 
+    /** The particle limit of a custom system whose `capacity` is unset or not a positive number. */
+    static DefaultCapacity = 2000;
+
     particleSystem: ParticleSystem;
     isPlaying: boolean = false;
 
@@ -87,48 +94,63 @@ export class GardenParticle extends GardenElement {
                 set.start();
             });
         } else {
-        this.particleSystem = new ParticleSystem("particles", this.capacity, scene);
+        this.particleSystem = new ParticleSystem("particles",
+            this.capacity > 0 ? this.capacity : GardenParticle.DefaultCapacity, scene);
         this.particleSystem.particleTexture = new Texture(this.url, scene);
 
-        this.particleSystem.emitter = this.emitter; // the point at the top of the fountain
-        this.particleSystem.minEmitBox = this.minEmitBox; // minimum box dimensions
-this.particleSystem.maxEmitBox = this.maxEmitBox; // maximum box dimensions
+        // Only the attributes the element sets: an unset one is `undefined`, and assigning
+        // that would replace Babylon's default with NaN (e.g. no min/max-angular-speed made
+        // every particle's angle NaN after its first update, so only newborns were drawn).
+        const ps = this.particleSystem;
+        const set = <K extends keyof ParticleSystem>(key: K, value: ParticleSystem[K]) => {
+            if (value !== undefined && value !== null && !(typeof value == "number" && isNaN(value)))
+                ps[key] = value;
+        };
+        set("emitter", this.emitter); // the point at the top of the fountain
+        set("minEmitBox", this.minEmitBox); // minimum box dimensions
+        set("maxEmitBox", this.maxEmitBox); // maximum box dimensions
 
-this.particleSystem.color1 = this.colour1;
-this.particleSystem.color2 = this.colour2;
-this.particleSystem.colorDead = this.colourDead;
-this.particleSystem.blendMode = ParticleSystem.BLENDMODE_ONEONE;
+        set("color1", this.colour1);
+        set("color2", this.colour2);
+        set("colorDead", this.colourDead);
+        ps.blendMode = ParticleSystem.BLENDMODE_ONEONE;
 
-this.particleSystem.minSize = this.minSize;
-this.particleSystem.maxSize = this.maxSize;
-this.particleSystem.minLifeTime = this.minLifeTime;
-this.particleSystem.maxLifeTime = this.maxLifeTime;
+        set("minSize", this.minSize);
+        set("maxSize", this.maxSize);
+        set("minLifeTime", this.minLifeTime);
+        set("maxLifeTime", this.maxLifeTime);
 
-this.particleSystem.emitRate = this.emitRate;
+        set("emitRate", this.emitRate);
 
-this.particleSystem.direction1 = this.direction1;
-this.particleSystem.direction2 = this.direction2;
-this.particleSystem.minEmitPower = this.minEmitPower;
-this.particleSystem.maxEmitPower = this.maxEmitPower;
-this.particleSystem.updateSpeed = this.updateSpeed;
-this.particleSystem.minAngularSpeed = this.minAngularSpeed;
-this.particleSystem.maxAngularSpeed = this.maxAngularSpeed;
+        set("direction1", this.direction1);
+        set("direction2", this.direction2);
+        set("minEmitPower", this.minEmitPower);
+        set("maxEmitPower", this.maxEmitPower);
+        set("updateSpeed", this.updateSpeed);
+        set("minAngularSpeed", this.minAngularSpeed);
+        set("maxAngularSpeed", this.maxAngularSpeed);
 
-this.particleSystem.gravity = this.gravity;
+        set("gravity", this.gravity);
 
 if (this.billboard)
     this.particleSystem.billboardMode = StaticConvert.particleBillboardMode(this.billboard);
+
+        // play() can arrive before this first build (the parent GardenMesh's setTimeout(0)
+        // auto-play races the child's own update): start the system it asked for now.
+        if (this.isPlaying)
+            this.particleSystem.start();
         }
     }
 
+    /** Starts the system; if it isn't built yet, it starts as soon as it is. */
     play() {
-        this.particleSystem.start();
         this.isPlaying = true;
+        this.particleSystem?.start();
     }
 
     stop() {
-        this.particleSystem.stop();
         this.isPlaying = false;
+        this.particleSystem?.stop();
     }
 
     toggle() {

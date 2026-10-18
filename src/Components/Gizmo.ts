@@ -16,6 +16,10 @@ import { GardenMesh } from "../GardenMesh";
  * Attributes: `elements` (space-separated selectors of the meshes/nodes to
  * attach), `thickness`, `gizmos`.
  *
+ * The elements may appear anywhere in the document (before or after this
+ * element): it waits for the document to finish parsing and for each of them
+ * to be built. A selector that matches no garden element logs a warning.
+ *
  * @category Components
  */
 @customElement("garden-gizmo")
@@ -26,12 +30,20 @@ export class GardenGizmo extends GardenElement {
 
     manager: GizmoManager;
 
-    updated() {
+    async updated() {
+        // The elements may come later in the markup than this one, so they may not be
+        // parsed (or built) yet: wait for the document, then for each of them.
+        await GardenElement.whenDocumentReady();
         let meshes: Mesh[] = []
         let nodes: Node[] = [];
         if (this.elements) {
             for (let sel of this.elements) {
                 let el = document.querySelector(sel) as GardenElement;
+                if (!(el instanceof GardenElement)) {
+                    console.warn(`garden-gizmo: no garden element matches "${sel}"`);
+                    continue;
+                }
+                await el.whenReady;
                 if ('mesh' in el) {
                     meshes.push((<GardenMesh>el).mesh);
                 } else {

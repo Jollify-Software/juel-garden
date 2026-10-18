@@ -100,16 +100,21 @@ export class GardenRoof extends GardenMesh {
         if (parent instanceof GardenRoom) {
             let room = parent;
             await room.whenReady;
+            // A polygon room's footprint is its `points`, which needn't be centred
+            // on the room: centre the roof on their bounds (the outline is then
+            // relative to that centre, as in the structure case).
+            let b = room.localBounds();
+            let cx = (b.minX + b.maxX) / 2, cz = (b.minZ + b.maxZ) / 2;
             container = {
                 node: room.getNode(),
-                width: room.width,
-                depth: room.depth,
+                width: b.maxX - b.minX,
+                depth: b.maxZ - b.minZ,
                 height: room.height,
                 thickness: this.thickness ?? room.thickness,
-                centerX: 0,
-                centerZ: 0,
+                centerX: cx,
+                centerZ: cz,
                 outline: this.clipping && room.wallLoop
-                    ? room.wallLoop.map(p => new Vector2(p.x, p.z))
+                    ? room.wallLoop.map(p => new Vector2(p.x - cx, p.z - cz))
                     : undefined
             };
         } else if (parent instanceof GardenStructure) {
@@ -248,7 +253,8 @@ export class GardenRoof extends GardenMesh {
     /**
      * Size and centre the roof over every <garden-room> sibling under the same
      * <garden-structure>, instead of a single room, so one dome can cover several rooms
-     * at once. Reads the rooms' declared position/width/depth attributes directly rather
+     * at once. Reads the rooms' declared position and footprint (width/depth, or a polygon
+     * room's points -- {@link GardenRoom.localBounds}) directly rather
      * than their built meshes -- those are available as soon as the document has parsed,
      * so there's no readiness dependency between the roof and its room siblings (which
      * matters: <garden-structure> itself waits on its room/stair children, so waiting on
@@ -266,10 +272,11 @@ export class GardenRoof extends GardenMesh {
         let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, maxHeight = 0;
         for (let room of rooms) {
             let pos = room.position ?? Vector3.Zero();
-            minX = Math.min(minX, pos.x - room.width / 2);
-            maxX = Math.max(maxX, pos.x + room.width / 2);
-            minZ = Math.min(minZ, pos.z - room.depth / 2);
-            maxZ = Math.max(maxZ, pos.z + room.depth / 2);
+            let b = room.localBounds();
+            minX = Math.min(minX, pos.x + b.minX);
+            maxX = Math.max(maxX, pos.x + b.maxX);
+            minZ = Math.min(minZ, pos.z + b.minZ);
+            maxZ = Math.max(maxZ, pos.z + b.maxZ);
             maxHeight = Math.max(maxHeight, room.height);
         }
 

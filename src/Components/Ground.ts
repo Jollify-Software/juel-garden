@@ -1,5 +1,6 @@
-import { Color3, MeshBuilder, StandardMaterial } from "babylonjs";
+import { Color3, Mesh, MeshBuilder, StandardMaterial } from "babylonjs";
 import { customElement } from "lit/decorators";
+import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { OptionsBuilder } from "../Options/OptionsBuilder";
 
@@ -32,19 +33,30 @@ export class GardenGround extends GardenMesh {
             MeshBuilder.CreateGround(this.id ?? "ground", options, scene)
         );
 
-        // A bare <garden-ground> should read as grass, not Babylon's default grey.
-        // A `colour` attribute is applied synchronously by setMesh() above; a
-        // <garden-material> child is applied async (see GardenMesh.modifyMesh), so
-        // check the element for one directly rather than the mesh's material.
-        if (!this.hasAttribute("colour")
-            && !this.querySelector(":scope > garden-material")
-            && this.mesh.material == null) {
-            let mat = new StandardMaterial("ground", scene);
-            mat.diffuseColor = Color3.FromHexString(GardenGround.DEFAULT_COLOUR);
-            mat.specularColor = Color3.Black();
-            this.mesh.material = mat;
-        }
+        this.applyDefaultMaterial(this.mesh);
 
         super.updated();
+    }
+
+    /**
+     * A bare `<garden-ground>` should read as grass, not Babylon's default grey.
+     * A `colour` attribute is applied synchronously by setMesh(); a
+     * `<garden-material>` child is applied async (see GardenMesh.modifyMesh), so
+     * check the element for one directly rather than the mesh's material. In the
+     * initial markup this element upgrades on its opening tag, before the parser
+     * has reached its children, so the check waits for the document first (the
+     * render loop doesn't start until then either, so nothing shows grey).
+     */
+    private async applyDefaultMaterial(mesh: Mesh) {
+        await GardenElement.whenDocumentReady();
+        if (this.mesh != mesh
+            || this.hasAttribute("colour")
+            || this.querySelector(":scope > garden-material")
+            || mesh.material != null)
+            return;
+        let mat = new StandardMaterial("ground", this.getScene());
+        mat.diffuseColor = Color3.FromHexString(GardenGround.DEFAULT_COLOUR);
+        mat.specularColor = Color3.Black();
+        mesh.material = mat;
     }
 }

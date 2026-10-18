@@ -52,9 +52,11 @@ export function buildMesh(scene: Scene, verts: number[][], faces: number[][], uv
             normals.push(n.y);
             normals.push(n.z);
 
-            var uvIn = uvsIn[i];
-            for (var k = 0; k < 2; ++k)
-                uvs.push(uvIn[k]);
+            // uvsIn[i] holds one [u, v] pair per corner of face i. (This used to push
+            // the pairs themselves -- arrays, so every uv came out NaN and a texture
+            // on stairs showed as its average colour.)
+            var uvIn = uvsIn[i]?.[j] ?? [0, 0];
+            uvs.push(uvIn[0], uvIn[1]);
         }
 
         indices.push(indexPtr);

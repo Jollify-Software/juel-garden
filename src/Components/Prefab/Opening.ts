@@ -12,7 +12,8 @@ import { GardenRoom } from "./Room";
  * see {@link GardenStructure}).
  *
  * Attributes: `between` (selector of the mesh(es) to cut into, see
- * {@link resolveElements}), `type` (`"square"`, the only type today),
+ * {@link resolveElements}), `type` (`"square"`, the only type today; any
+ * other value warns and cuts nothing),
  * `width`, `height` (default room wall height minus 1), `depth` (default
  * double wall thickness), `position`.
  *
@@ -39,6 +40,11 @@ export class GardenDoorway extends GardenMesh {
 
     @property() type: string;
     @property() between: string;
+    /**
+     * Currently has no effect. It once raised the cutter (0.2 instead of 0.01)
+     * to leave a step at the threshold, but commit 4f7f43b replaced that with
+     * the fixed offset now in {@link updated}, and nothing has read it since.
+     */
     @property({ type: Boolean }) step: boolean;
     @property({ type: Number }) width: number;
     @property({ type: Number }) height: number;
@@ -75,7 +81,8 @@ export class GardenDoorway extends GardenMesh {
                     break;
 
                 default:
-                    break;
+                    console.warn(`<garden-opening> has unrecognized type "${this.type}"; nothing is cut.`);
+                    return;
             }
             if (this.position) {
                 this.mesh.position = this.position.add(

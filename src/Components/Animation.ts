@@ -13,11 +13,13 @@ import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
  * called directly via `play()`/`stop()`.
  *
  * Attributes: `target` (id of the element to animate, defaults to the parent
- * mesh), `property` (the mesh property path to animate, e.g. `"position"`),
+ * mesh; an id that matches nothing logs a warning and plays nothing),
+ * `property` (the mesh property path to animate, e.g. `"position"`),
  * `event` (`"load"` for auto-play), `type` (`"float"|"vector3"|"color3"|...|"skeleton"`),
  * `from`/`to` (frame numbers, or animation range for `type="skeleton"`),
  * `loop`, `loopmode` (`"constant"|"cycle"|"relative"`), `keyframes`
- * (`"frame value, frame value, ..."`), `speed`.
+ * (`"frame value, frame value, ..."`), `speed` (frames per second for a keyframe
+ * animation, default 30; the speed ratio for `type="skeleton"`, default 1).
  *
  * @example
  * ```html
@@ -43,16 +45,18 @@ export class GardenAnimation extends GardenElement {
     @property() keyframes: string;
     @property({ type: Number }) speed: number;
 
+    /** Frames per second for a keyframe animation whose `speed` is unset (Babylon has no default: it would be NaN). */
+    static readonly DefaultFramesPerSecond = 30;
+
     // Built once and reused -- play() can be called repeatedly (e.g. by a
     // <garden-button> toggling it on/off), and re-pushing a fresh Animation onto
     // mesh.animations on every call would leave older ones still running underneath.
     private animation: Animation;
 
-    play(el: GardenMesh): Animatable {
-        let targetEl = el;
-        if (this.target) {
-            targetEl = document.getElementById(this.target) as GardenMesh;
-        }
+    play(el: GardenMesh): Animatable | null {
+        let targetEl = this.resolveTarget(el);
+        if (!targetEl)
+            return null;
         let target: any;
         let scene = this.getScene();
         switch (this.type) {
@@ -61,7 +65,7 @@ export class GardenAnimation extends GardenElement {
                 return scene.beginAnimation(target, this.from, this.to, this.loop, this.speed);
             default:
                 if (!this.animation) {
-                    this.animation = new Animation("animation", this.property, this.speed,
+                    this.animation = new Animation("animation", this.property, this.speed ?? GardenAnimation.DefaultFramesPerSecond,
                         StaticConvert.animationType(this.type), this.loopmode);
                     this.animation.setKeys(ObjectConverter.keyframeRay(this.keyframes));
                 }
@@ -74,12 +78,34 @@ export class GardenAnimation extends GardenElement {
         }
     }
 
+    /**
+     * `play()` once the target has finished building. The event="load" auto-play uses this:
+     * a target declared later in the markup (e.g. a `garden-room`, which builds
+     * asynchronously) may have no mesh yet when its animation's owner is built.
+     */
+    async playWhenReady(el: GardenMesh): Promise<Animatable | null> {
+        let targetEl = this.resolveTarget(el);
+        if (!targetEl)
+            return null;
+        await targetEl.whenReady;
+        return this.play(el);
+    }
+
     stop(el: GardenMesh) {
-        let targetEl = el;
-        if (this.target) {
-            targetEl = document.getElementById(this.target) as GardenMesh;
-        }
+        let targetEl = this.resolveTarget(el);
+        if (!targetEl)
+            return;
         let target = this.type === "skeleton" ? (<GardenSkeletonMesh>targetEl).skeleton : targetEl.mesh;
         this.getScene().stopAnimation(target);
+    }
+
+    /** The element named by `target`, or `el` when unset; null (with a warning) if no element has that id. */
+    private resolveTarget(el: GardenMesh): GardenMesh | null {
+        if (!this.target)
+            return el;
+        let targetEl = document.getElementById(this.target) as GardenMesh;
+        if (!targetEl)
+            console.warn(`<garden-animation target="${this.target}"> did not match any element.`);
+        return targetEl;
     }
 }

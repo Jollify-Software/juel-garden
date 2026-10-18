@@ -1,6 +1,6 @@
 // Browser test of rotundas and glass: round (examples/Structures/rotunda.html) and oval
 // (examples/Structures/oval-rotunda.html, type="rotunda" with an explicit
-// depth). Run after a build: npm run dev && npm run test:rotunda
+// depth), plus a curved-slot room joining a box room (curved-wall.html). Run after a build: npm run dev && npm run test:rotunda
 // Same harness as link.js.
 const fs = require("fs");
 const path = require("path");
@@ -69,6 +69,16 @@ const cast = (page, from, dir) => page.evaluate(([from, dir]) => {
         check("the doorway is cut: a ray east goes through to the wing", east > 19, String(east));
         await page.screenshot({ path: path.join(process.argv[2] || __dirname, "oval-rotunda.png") });
         check("no errors (oval)", errors.length == 0, errors.join(" | "));
+        await page.close();
+
+        // A curved-slot room (gallery, curved north wall) joins the box annex on its straight
+        // east side through tryCurvedRoomJoin, not the bounding box (curved-wall.html).
+        ({ page, errors } = await open(browser, "curved-wall.html"));
+        const toAnnex = await cast(page, [0, 1.2, 0], [1, 0, 0]);
+        check("curved-slot room: a ray east goes through the doorway into the annex", toAnnex > 20, String(toAnnex));
+        const apse = await cast(page, [0, 1.2, 3], [0, 0, 1]);
+        check("...and a ray north stops at the curved wall (no doorway there)", apse > 9 && apse < 13.5, String(apse));
+        check("no errors (curved-wall)", errors.length == 0, errors.join(" | "));
         await page.close();
 
         // <garden-material opacity>: a glass roof over a court.

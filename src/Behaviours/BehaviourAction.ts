@@ -1,6 +1,7 @@
 import { ActionManager, Scene } from "babylonjs";
 import { Mesh } from "babylonjs/Meshes/mesh";
 import { ActionInfo } from "../ActionInfo";
+import type { GardenAction } from "../Components/Action";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { GardenElement } from "../GardenElement";
 import { Utility } from "../Utility";
@@ -41,9 +42,10 @@ function applyAction(action: ActionInfo, mesh: Mesh, scene: Scene) {
 }
 
 /**
- * Attaches one or more previously-declared `<garden-action>` (see
+ * Attaches one or more scene-level `<garden-action>`s (see
  * {@link GardenAction}) to this mesh, by id -- `action="myAction"` or
- * `action="a b c"` for several at once.
+ * `action="a b c"` for several at once. The actions may come before or after
+ * the mesh in the markup: this waits until every one has registered.
  *
  * @example
  * ```html
@@ -56,7 +58,13 @@ function applyAction(action: ActionInfo, mesh: Mesh, scene: Scene) {
  * @category Behaviours
  */
 export function BehaviourAction(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
-    setTimeout(() => {
+    setTimeout(async () => {
+        // <garden-action>s register on the scene only after the document has parsed
+        // (GardenAction.updated), whether they come before or after this mesh in the
+        // markup: wait for all of them before looking the ids up.
+        await GardenElement.whenDocumentReady();
+        await Promise.all(Array.from(document.querySelectorAll("garden-action"),
+            a => (<GardenAction>a).whenRegistered));
         let sceneEl = (<GardenElement>el).getSceneEl();
         if (sceneEl.actions) {
             let at = el.getAttribute('action');

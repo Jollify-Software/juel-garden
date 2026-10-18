@@ -1,5 +1,6 @@
 import { Scene, StandardMaterial, Texture } from "babylonjs";
 import { HtmlTexture } from "../HtmlTexture";
+import type { GardenMesh } from "../GardenMesh";
 import { ISetter } from "../ISetter";
 
 /**
@@ -9,9 +10,11 @@ import { ISetter } from "../ISetter";
  *
  * @category Modifiers
  */
-export var ModifyTextureSetter = (prefix: string = "diffuse"): ISetter => {
+export var ModifyTextureSetter = (prefix: string = "diffuse", attribute?: string): ISetter => {
     return function (el: HTMLElement, attr: Attr[]) {
-        let at = prefix == "diffuse" ? "texture" : `${prefix}-texture`;
+        // `attribute` names the one this setter is registered for when it isn't the
+        // default (`diffuse-texture` is a diffuse setter, but not the `texture` attribute).
+        let at = attribute ?? (prefix == "diffuse" ? "texture" : `${prefix}-texture`);
         let value = attr.find(x => x.name == at).value;
         let scene: Scene = (<any>el).getScene();
         let material: StandardMaterial;
@@ -22,7 +25,7 @@ export var ModifyTextureSetter = (prefix: string = "diffuse"): ISetter => {
                 (<any>el).setMaterial(material);
             }
             if (value == "html") {
-                let htmlTexture = new HtmlTexture(el);
+                let htmlTexture = new HtmlTexture(<GardenMesh><unknown>el);
                 material[`${prefix}Texture`] = htmlTexture.texture;
             } else {
                 material[`${prefix}Texture`] = new Texture(value, scene);

@@ -17,7 +17,7 @@ import { GardenScene } from "./Scene";
  *
  * Attributes: `mode` (`"vr"|"ar"`, default `"vr"`), `floor` (selector of
  * teleport-target meshes, defaults to every `<garden-ground>`), `teleportation`
- * (boolean, default `true`).
+ * (default on; `teleportation="false"` turns it off).
  *
  * Arriving from another page that was in VR -- through a `<garden-link>` --
  * re-enters VR straight away where the browser supports WebXR navigation
@@ -35,7 +35,10 @@ import { GardenScene } from "./Scene";
 export class GardenWebXR extends GardenElement {
     @property() mode: string;
     @property() floor: string;
-    @property({ type: Boolean }) teleportation: boolean;
+    // Default-on toggle: any value other than the string "false" turns it on. (A plain
+    // Boolean property reads any present attribute, teleportation="false" included, as
+    // true, so it could never be turned off from markup.) Same idea as GardenRoof's `clip`.
+    @property({ converter: (value: string) => value !== "false" }) teleportation: boolean;
 
     xr: WebXRDefaultExperience;
 

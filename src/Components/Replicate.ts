@@ -15,6 +15,10 @@ import { GardenMesh } from "../GardenMesh";
  * `"0: 1 0 1, 0: 3 0 1"` -- each entry's name is the index into `instances`),
  * `rotations` (keyed rotation list, same convention).
  *
+ * The sources may appear anywhere in the document (before or after this
+ * element): it waits for the document to finish parsing and for each source
+ * mesh to be built. An id that names no element logs a warning.
+ *
  * @category Components
  */
 @customElement("garden-replicate")
@@ -24,17 +28,23 @@ export class GardenReplicate extends GardenElement {
     @property() positions: string;
     @property() rotations: string;
 
-    updated() {
+    async updated() {
+        // The source elements may come later in the markup than this one, so they may
+        // not be parsed (or built) yet: wait for the document, then for each of them.
+        await GardenElement.whenDocumentReady();
         let els: GardenMesh[] = [];
         for (var id of this.instances) {
-            els.push(
-                document.getElementById(id) as GardenMesh
-            );
+            let el = document.getElementById(id) as GardenMesh;
+            if (!el) {
+                console.warn(`garden-replicate: no element with id "${id}"`);
+                return;
+            }
+            els.push(el);
         }
         let posRay = Vector3Convert.keyedArray(this.positions)
         let rotRay = Vector3Convert.keyedRotationArray(this.rotations);
         Promise.all(
-            els.map(x => x.updateComplete)
+            els.map(x => x.whenReady)
         ).then(() => {
             let meshes = els.map(x => x.mesh);
             for (var i = 0; i < posRay.length; i++) {

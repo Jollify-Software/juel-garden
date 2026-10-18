@@ -1,0 +1,58 @@
+<html>
+
+<head>
+    <meta charset="utf-8"/>
+    <script src="../../dist/juel-garden.js"></script>
+</head>
+
+<body>
+    <garden-scene gravity="0 -0.4 0" collisions>
+        <!-- type="polygon": a room whose footprint is any simple polygon. `points`
+             is "x z, x z, ..." in the room's own space and traces the walls'
+             outer face; the floor fills it and one wall runs along every edge.
+             Camera outside, above, looking down into the three rooms. -->
+        <garden-camera type="free" collisions position="0 22 -30"></garden-camera>
+        <garden-light></garden-light>
+        <garden-webxr></garden-webxr>
+
+        <!-- An L: a 12 x 8 rectangle with its north-east 6 x 4 quarter missing. -->
+        <garden-room id="ell" type="polygon" position="-15 0 0" height="4" collisions
+            points="-6 -4, 6 -4, 6 0, 0 0, 0 4, -6 4"></garden-room>
+
+        <!-- A U, open to the north; its own floor and wall materials. -->
+        <garden-room id="you" type="polygon" height="3" collisions
+            points="-6 -5, 6 -5, 6 5, 2 5, 2 -1, -2 -1, -2 5, -6 5">
+            <garden-material slot="floor" colour="#6f6a5f"></garden-material>
+            <garden-material slot="wall" colour="#c9b79a"></garden-material>
+        </garden-room>
+
+        <!-- A pentagon, given anticlockwise: the winding doesn't matter. -->
+        <garden-room id="pent" type="polygon" position="15 0 0" height="5" collisions
+            floor-color="#7b8a6a" points="0 6, -5 2, -3 -5, 3 -5, 5 2"></garden-room>
+
+        <!-- A hand-placed doorway into the pentagon's south wall. -->
+        <garden-opening between="#pent" position="15 1.2 -5" width="2" height="2.4" depth="1"></garden-opening>
+
+        <!-- Inside a <garden-structure>, a polygon room joins its neighbours
+             like a curved room does: the box annex shares the L's east edge
+             along its south arm, and a doorway is cut through both walls. -->
+        <garden-structure collisions>
+            <garden-room id="ell2" type="polygon" position="-6 0 -20" height="4" collisions
+                points="-6 -4, 6 -4, 6 0, 0 0, 0 4, -6 4"></garden-room>
+            <garden-room id="annex" position="4 0 -22" width="8" depth="4" height="4" collisions></garden-room>
+        </garden-structure>
+
+        <!-- Two triangles sharing a diagonal edge: the join follows the wall
+             loop, not the bounding box, so a slanted shared wall gets its doorway too. -->
+        <garden-structure collisions>
+            <garden-room id="tri1" type="polygon" position="20 0 -24" height="4" collisions
+                points="0 0, 8 0, 0 8"></garden-room>
+            <garden-room id="tri2" type="polygon" position="20 0 -24" height="4" collisions
+                points="8 0, 8 8, 0 8"></garden-room>
+        </garden-structure>
+
+        <garden-ground width="80" height="60" position="0 -0.1 0" collisions></garden-ground>
+    </garden-scene>
+</body>
+
+</html>

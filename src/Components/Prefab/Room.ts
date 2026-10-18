@@ -3,7 +3,7 @@ import { customElement, property } from "lit/decorators";
 import earcut from "earcut";
 import { GardenMesh } from "../../GardenMesh";
 import { GardenMaterial } from "../Material";
-import { createWall } from "../../Utils/Mesh/createWall";
+import { createPolygonWall, createWall } from "../../Utils/Mesh/createWall";
 import type { GardenWall } from "./Wall";
 
 // Example ColorConverter (should be imported or defined elsewhere)
@@ -31,6 +31,24 @@ export const ColorConverter = {
     }
 };
 
+/**
+ * Parses a polygon room's `points`: comma-separated `x z` pairs (an `x y z`
+ * triple is also accepted, as `<garden-wall points>` uses, with `y` ignored).
+ * Entries that don't parse to two finite numbers are dropped.
+ */
+export const PolygonPointsConverter = {
+    fromAttribute(value: string): Vector3[] {
+        if (!value) return [];
+        return value.split(",")
+            .map(entry => entry.trim().split(/\s+/).map(parseFloat))
+            .filter(n => n.length >= 2 && n.every(v => isFinite(v)))
+            .map(n => n.length >= 3 ? new Vector3(n[0], 0, n[2]) : new Vector3(n[0], 0, n[1]));
+    },
+    toAttribute(value: Vector3[]): string {
+        return (value ?? []).map(p => `${p.x} ${p.z}`).join(", ");
+    }
+};
+
 type WallSide = "north" | "east" | "south" | "west";
 const WALL_SIDES: WallSide[] = ["north", "east", "south", "west"];
 
@@ -46,16 +64,20 @@ const WALL_SIDES: WallSide[] = ["north", "east", "south", "west"];
  * wall's `curve` attribute -- for an apsidal end, a bow front, or (all four
  * curved) a rounded room. `type="rotunda"` is the shortcut for a fully circular
  * (or, with an explicit `depth`, oval)
- * room: a round floor and one swept wall.
+ * room: a round floor and one swept wall. `type="polygon"` takes the room's
+ * footprint from `points` instead -- any simple polygon, concave too (an L, a
+ * U) -- with a floor of that shape and one wall swept along every edge.
  *
  * When any side is curved, the floor is generated from the actual wall loop
  * (triangulated with `earcut`) rather than the `width` x `depth` slab.
  *
  * Attributes: `width`, `height`, `depth`, `thickness`, `type` (`"rect"` default,
- * or `"rotunda"`), `floor-color`/`north-color`/`east-color`/`south-color`/
+ * `"rotunda"`, or `"polygon"`), `points` (polygon only: `"x z, x z, ..."`, at
+ * least three corners in room-local space, tracing the walls' *outer* face as
+ * `width`/`depth` do for a box room; `width`/`depth` are then ignored), `floor-color`/`north-color`/`east-color`/`south-color`/
  * `west-color` (each may instead be overridden by a `<garden-material
  * slot="floor"|"north"|"east"|"south"|"west">` child -- a room with curved wall
- * slots, or `type="rotunda"`, has one wall material instead: `slot="wall"` --
+ * slots, `type="rotunda"` or `type="polygon"`, has one wall material instead: `slot="wall"` --
  * which takes full precedence), `debug-colors` (swap the neutral
  * default palette for the per-face black/green/red/blue/yellow one, to tell the
  * faces apart while positioning).
@@ -69,6 +91,8 @@ const WALL_SIDES: WallSide[] = ["north", "east", "south", "west"];
  * </garden-room>
  *
  * <garden-room type="rotunda" width="12" height="7"></garden-room>
+ *
+ * <garden-room type="polygon" points="-6 -4, 6 -4, 6 0, 0 0, 0 4, -6 4"></garden-room>
  * ```
  *
  * @category Components - Prefabs
@@ -111,6 +135,8 @@ export class GardenRoom extends GardenMesh {
     @property({ type: Number }) depth: number;
     @property({ type: Number }) thickness: number;
     @property() type = "rect";
+    /** `type="polygon"` only: the footprint's corners -- see {@link PolygonPointsConverter}. */
+    @property({ converter: PolygonPointsConverter }) points: Vector3[] = [];
 
     @property({ type: Boolean, attribute: "debug-colors" }) debugColors = false;
 
@@ -134,7 +160,8 @@ export class GardenRoom extends GardenMesh {
 
     /**
      * The room's wall-outline centreline in local space (open ring, no repeated
-     * closing point), set by {@link buildWithWallSlots} / {@link buildRotunda}.
+     * closing point), set by {@link buildWithWallSlots} / {@link buildRotunda} /
+     * {@link buildPolygon}.
      * `<garden-structure>` reads it to auto-join a curved room to a neighbour,
      * since such a room's bounding box bulges past its real wall line. Left
      * undefined for a plain box room (the box test handles those).
@@ -177,11 +204,17 @@ export class GardenRoom extends GardenMesh {
             };
 
             const slots = this.getWallSlots();
-            this.twoSlotModel = this.type === "rotunda" || Object.keys(slots).length > 0;
+            const outline = this.type === "polygon" ? GardenRoom.distinctCorners(this.points) : [];
+            const polygon = outline.length >= 3;
+            if (this.type === "polygon" && !polygon)
+                console.warn(`garden-room type="polygon" needs at least three points; building a box instead`, this);
+            this.twoSlotModel = this.type === "rotunda" || polygon || Object.keys(slots).length > 0;
 
             let roomMesh: Mesh;
             if (this.type === "rotunda")
                 roomMesh = this.buildRotunda(scene, colors);
+            else if (polygon)
+                roomMesh = this.buildPolygon(scene, colors, outline);
             else if (this.twoSlotModel)
                 roomMesh = this.buildWithWallSlots(scene, colors, slots);
             else
@@ -358,6 +391,95 @@ export class GardenRoom extends GardenMesh {
 
         // [floor, wall] -- rotunda's own two-slot order (see applyMaterialSlots).
         return Mesh.MergeMeshes([floor, wall], true, true, undefined, false, true)!;
+    }
+
+    /**
+     * A room of any footprint (`type="polygon"`): `points` traces the outer face
+     * and the inner face is that outline pulled in by the thickness (each edge
+     * offset inward, neighbours joined at their mitre), built as one mitred
+     * solid by {@link createPolygonWall}. The floor fills the outer outline.
+     * {@link wallLoop} is the centreline, half a thickness in.
+     * Two-slot materials, `[floor, wall]` (see {@link twoSlotModel}).
+     */
+    private buildPolygon(scene: Scene, colors: Record<string, Color3>, corners: Vector3[]): Mesh {
+        let outline = GardenRoom.clockwise(corners);
+        this.wallLoop = GardenRoom.insetPolygon(outline, this.thickness / 2);
+
+        // `sink` overlaps the wall base into the floor slab -- see buildWithWallSlots.
+        let inner = GardenRoom.insetPolygon(outline, this.thickness);
+        let wall = createPolygonWall("wall", outline, inner, this.height, scene, this.thickness * 2);
+        wall.material = this.matte("mat-wall", colors.north, scene, true);
+
+        let floor = this.buildFloorPolygon(scene, outline);
+        floor.material = this.matte("mat-floor", colors.floor, scene);
+
+        // [floor, wall] -- see twoSlotModel / applyMaterialSlots.
+        return Mesh.MergeMeshes([floor, wall], true, true, undefined, false, true)!;
+    }
+
+    /**
+     * The footprint's bounds in room-local x/z, read from the attributes (so it's
+     * available before the room is built): `points`' bounding box for a polygon
+     * room, which ignores `width`/`depth` and needn't be centred on `position`;
+     * otherwise +/- `width`/2 by +/- `depth`/2 (a round rotunda's depth being its
+     * width). `<garden-roof>` sizes itself by it.
+     */
+    localBounds(): { minX: number, maxX: number, minZ: number, maxZ: number } {
+        let corners = this.type === "polygon" ? GardenRoom.distinctCorners(this.points ?? []) : [];
+        if (corners.length >= 3)
+            return {
+                minX: Math.min(...corners.map(p => p.x)), maxX: Math.max(...corners.map(p => p.x)),
+                minZ: Math.min(...corners.map(p => p.z)), maxZ: Math.max(...corners.map(p => p.z))
+            };
+        // A rotunda without an explicit `depth` is round (see buildRotunda), not
+        // width x the box default depth.
+        let depth = this.type === "rotunda" && !this.hasAttribute("depth") ? this.width : this.depth;
+        return { minX: -this.width / 2, maxX: this.width / 2, minZ: -depth / 2, maxZ: depth / 2 };
+    }
+
+    /**
+     * A ring's corners with repeats dropped -- a point equal to the next one,
+     * including a closing point that repeats the first -- so `points` that close
+     * their own loop, or list a corner twice, count only their real corners.
+     */
+    static distinctCorners(ring: Vector3[]): Vector3[] {
+        return ring.filter((p, i, all) => !p.equalsWithEpsilon(all[(i + 1) % all.length], 1e-4));
+    }
+
+    /**
+     * The same ring wound clockwise seen from above (negative signed area in
+     * x,z) -- the order the other builders use, so the floor faces up and
+     * "inward" is always to the right of each edge.
+     */
+    static clockwise(ring: Vector3[]): Vector3[] {
+        let area = 0;
+        for (let i = 0; i < ring.length; i++) {
+            let a = ring[i], b = ring[(i + 1) % ring.length];
+            area += a.x * b.z - b.x * a.z;
+        }
+        return area > 0 ? ring.slice().reverse() : ring.slice();
+    }
+
+    /**
+     * Offsets a clockwise ring inward by `d`: each edge moves along its inward
+     * normal and each corner lands where its two moved edges meet. A very sharp
+     * spike would send that point far away, so the mitre is capped at 4 x `d`.
+     */
+    static insetPolygon(ring: Vector3[], d: number): Vector3[] {
+        let n = ring.length;
+        let normal = (a: Vector3, b: Vector3) => {
+            let dx = b.x - a.x, dz = b.z - a.z, len = Math.hypot(dx, dz) || 1;
+            return { x: dz / len, z: -dx / len }; // right of a->b: inside, for a clockwise ring
+        };
+        return ring.map((p, i) => {
+            let n1 = normal(ring[(i - 1 + n) % n], p);
+            let n2 = normal(p, ring[(i + 1) % n]);
+            let k = d / Math.max(1 + n1.x * n2.x + n1.z * n2.z, 1e-6);
+            let mx = (n1.x + n2.x) * k, mz = (n1.z + n2.z) * k;
+            let len = Math.hypot(mx, mz);
+            if (len > d * 4) { mx *= d * 4 / len; mz *= d * 4 / len; }
+            return new Vector3(p.x + mx, p.y, p.z + mz);
+        });
     }
 
     /** Flat floor filling a wall loop, triangulated with earcut; top face at y = 0. */

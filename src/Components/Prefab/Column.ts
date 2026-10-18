@@ -9,7 +9,8 @@ import { GardenMesh } from "../../GardenMesh";
  * Useful as a support/decoration, e.g. with a `<garden-particle effect="fire">`
  * child as a torch.
  *
- * Attributes: `height`, `type` (`"round"`, the only type today), plus the
+ * Attributes: `height` (default 2), `type` (`"round"`, the only type today; any other
+ * value warns and builds nothing), plus the
  * common {@link GardenMesh} set (`diameter` comes from the shared
  * `OptionsBuilder`).
  *
@@ -42,9 +43,11 @@ export class GardenColumn extends GardenMesh {
                 break;
         
             default:
-                break;
+                console.warn(`<garden-column> has unrecognized type "${this.type}"; nothing is built.`);
+                return;
         }
-        mesh.position = new Vector3(0, this.height/2, 0);
+        // An unset `height` is CreateCylinder's default, 2.
+        mesh.position = new Vector3(0, (this.height ?? 2)/2, 0);
         this.setMesh(mesh);
     }
 }

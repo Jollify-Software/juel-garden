@@ -18,7 +18,7 @@ import { GardenScene } from "./Scene";
  *
  * Attributes: `type` (`"beforeRender"|"set"|"increment"|"interpolate"`),
  * `trigger` (`"enter"|"exit"|"frame"|"pointerOut"|"pointerOver"|"pick"|"leftPick"`),
- * `target`, `increment`, `parameter`, `property`, `value`, `duration`
+ * `target`, `increment` (added to `i` each frame for `type="beforeRender"`, default 0), `parameter`, `property`, `value`, `duration`
  * (`type="interpolate"`-specific, milliseconds), `stop` (`type="interpolate"`-specific,
  * `"true"` to stop the mesh's other running animations when this one starts).
  *
@@ -35,6 +35,14 @@ export class GardenAction extends GardenElement {
     @property() value: string;
     @property({ type: Number }) duration: number;
     @property() stop: string;
+
+    private resolveRegistered: () => void;
+    /**
+     * Resolves once this action has been built and registered (on the scene's
+     * `actions`, or on its parent mesh). That happens only after the document has
+     * parsed, so a mesh's `action="id"` ({@link BehaviourAction}) waits on it.
+     */
+    readonly whenRegistered = new Promise<void>(resolve => this.resolveRegistered = resolve);
 
     constructor() {
         super();
@@ -81,7 +89,7 @@ export class GardenAction extends GardenElement {
                                 break;
                         }
                         el.update();
-                        i += this.increment;
+                        i += this.increment ?? 0;
                     });
                     break;
 
@@ -147,6 +155,7 @@ export class GardenAction extends GardenElement {
                 let sceneEl = owner as GardenScene;
                 sceneEl.actions[this.id] = action;
             }
+            this.resolveRegistered();
         });
     }
 

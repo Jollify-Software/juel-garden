@@ -90,6 +90,39 @@ want to route it themselves. See
 [examples/Navigation/shopping-centre.html](examples/Navigation/shopping-centre.html);
 `npm run test:link` drives it in Chrome.
 
+## Rooms
+
+`<garden-room>` is a floor plus walls, merged into one mesh. Its `type` picks the footprint:
+
+| Attribute | Applies to | Default | Meaning |
+|---|---|---|---|
+| `type` | all | `rect` | `rect`: a `width` x `depth` box; `rotunda`: round, or oval with an explicit `depth`; `polygon`: any simple polygon from `points` |
+| `width`, `depth` | `rect`, `rotunda` | 8, 16 (a `rotunda` without `depth` is round: `depth` = `width`) | outer size in metres (ignored by `polygon`) |
+| `points` | `polygon` | none | the corners, `"x z, x z, ..."` (at least three; `x y z` also accepted, `y` ignored), in the room's own space (relative to `position`), tracing the walls' **outer** face. Concave shapes (an L, a U) work; either winding. A repeated corner (or a closing point equal to the first) is dropped; fewer than three distinct corners warns and builds a box. A `<garden-roof>` child (or a structure's roof) sizes to the points' bounds, and a flat one is trimmed to the outline unless `clip="false"`. |
+| `height`, `thickness` | all | 6, 0.2 | wall height and wall/floor thickness |
+| `floor-color`, `north-color`, `east-color`, `south-color`, `west-color` | all | floor `#9c968c`, walls `#e0dcd3` | surface colours; a `rotunda`, a `polygon` room or one with `<garden-wall slot>` sides has one wall colour, `north-color` |
+| `debug-colors` | all | off | the per-face black/green/red/blue/yellow palette |
+
+A `<garden-material slot="floor">` child overrides the floor; `slot="north"` (and
+east/south/west) a box room's walls, or `slot="wall"` the single wall of a rotunda,
+polygon or curved-side room. A polygon room's walls are mitred, so they keep their
+full thickness into every corner.
+
+Inside a `<garden-structure>`, a polygon room joins its neighbours the way a curved
+room does: along its actual wall line, not its bounding box, so a shared edge gets a
+doorway at any angle (a diagonal wall between two triangles works) and against a box
+room too. A hand-placed `<garden-opening>` is an axis-aligned box, so it cuts cleanly
+only through an edge that runs along x or z; for a slanted edge, rely on the
+structure's join. (Every structure doorway, box or polygon, starts 0.1 m below
+floor level and notches the top of the floor slab: an existing quirk, not new.)
+
+```html
+<garden-room type="polygon" height="4" points="-6 -4, 6 -4, 6 0, 0 0, 0 4, -6 4"></garden-room>
+```
+
+See [examples/Structures/polygon-room.html](examples/Structures/polygon-room.html);
+`npm run test:polygon` checks it in Chrome.
+
 # Related projects
 
 ## Parterre

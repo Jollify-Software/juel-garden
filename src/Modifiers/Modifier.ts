@@ -21,9 +21,9 @@ export module Modifier {
         'colour': ModifyColourSetter(),
         'spec-colour': ModifyColourSetter("spec"),
         'emissive-colour': ModifyColourSetter("emissive"),
-        'diffuse-colour': ModifyColourSetter(),
+        'diffuse-colour': ModifyColourSetter("diffuse", "diffuse-colour"),
         'texture': ModifyTextureSetter(),
-        'diffuse-texture': ModifyTextureSetter(),
+        'diffuse-texture': ModifyTextureSetter("diffuse", "diffuse-texture"),
         'texture-uscale': ModifyFloatSetter('texture-uscale', 'mat.diffuseTexture-uScale'),
         'texture-vscale': ModifyFloatSetter('texture-vscale', 'mat.diffuseTexture-vScale'),
 

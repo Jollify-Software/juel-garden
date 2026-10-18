@@ -1,4 +1,4 @@
-import { CSG, Mesh, MeshBuilder, Vector3 } from "babylonjs";
+import { CSG, Matrix, Mesh, MeshBuilder, Vector3 } from "babylonjs";
 import { customElement, property } from "lit/decorators";
 import { GardenElement } from "../../GardenElement";
 import { GardenMesh } from "../../GardenMesh";
@@ -217,7 +217,7 @@ export class GardenStructure extends GardenElement {
         return true;
     }
 
-    private cutFloor(room: GardenRoom, floorY: number, overlapX: AxisOverlap, overlapZ: AxisOverlap) {
+    private cutFloor(room: GardenRoom, floorY: number, overlapX: Pick<AxisOverlap, "lo" | "hi">, overlapZ: Pick<AxisOverlap, "lo" | "hi">) {
         let scene = this.getScene();
         let width = overlapX.hi - overlapX.lo;
         let depth = overlapZ.hi - overlapZ.lo;
@@ -311,7 +311,7 @@ export class GardenStructure extends GardenElement {
      * its wall actually is.
      *
      * Fires when at least one of the pair is a `GardenRoom` carrying a stored
-     * `wallLoop` (built by buildWithWallSlots / buildRotunda -- a plain box room
+     * `wallLoop` (built by buildWithWallSlots / buildRotunda / buildPolygon -- a plain box room
      * has none and falls through to the box test). Walks that loop in world
      * space; a run of loop points sitting in the thin shell around the other
      * room's outline (its own `wallLoop` if it has one, else its box) is a
@@ -336,9 +336,16 @@ export class GardenStructure extends GardenElement {
         if (Math.max(aBox.minimumWorld.y, bBox.minimumWorld.y) >= Math.min(aBox.maximumWorld.y, bBox.maximumWorld.y) - this.tolerance)
             return true;
 
-        let loop = curved.wallLoop!.map(p => Vector3.TransformCoordinates(p, curved.mesh.getWorldMatrix()));
+        // wallLoop is an open ring: close it here, or the last corner -> first
+        // corner side (a slot room's west wall, a polygon room's last edge) is
+        // never walked, and never joins.
+        let closed = (ring: Vector3[], world: Matrix) => {
+            let pts = ring.map(p => Vector3.TransformCoordinates(p, world));
+            return pts.concat([pts[0].clone()]);
+        };
+        let loop = closed(curved.wallLoop!, curved.mesh.getWorldMatrix());
         let otherLoop = (other instanceof GardenRoom && other.wallLoop)
-            ? other.wallLoop.map(p => Vector3.TransformCoordinates(p, other.mesh.getWorldMatrix()))
+            ? closed(other.wallLoop, other.mesh.getWorldMatrix())
             : null;
 
         let shell = this.tolerance * 4;

@@ -10,7 +10,8 @@ import { GardenScene } from "./Scene";
  * A scene light -- a Babylon `HemisphericLight` (`type="hemi"`, the default,
  * ambient sky/ground light) or `PointLight` (`type="point"`).
  *
- * Attributes: `type` (`"hemi"|"point"`, default `"hemi"`), `position`
+ * Attributes: `type` (`"hemi"|"point"`, default `"hemi"`; any other value
+ * warns and builds no light), `position`
  * (defaults to `0 1 0`), `diffuse` (colour, see {@link Color3Convert}).
  *
  * @example
@@ -43,6 +44,9 @@ export class GardenLight extends GardenElement {
             case "point":
                 this.light = new PointLight("light", this.position, scene);
                 break;
+            default:
+                console.warn(`<garden-light> has unrecognized type "${this.type}"; no light is built.`);
+                return;
         }
         let opt = this.buildOptions();
         this.light = Object.assign(this.light, opt);

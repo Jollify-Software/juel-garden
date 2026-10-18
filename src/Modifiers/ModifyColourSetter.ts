@@ -10,9 +10,11 @@ import { ISetter } from "../ISetter";
  *
  * @category Modifiers
  */
-export var ModifyColourSetter = (prefix: string = "diffuse"): ISetter => {
+export var ModifyColourSetter = (prefix: string = "diffuse", attribute?: string): ISetter => {
     return function (el: HTMLElement, attr: Attr[], options: object) {
-        let at = prefix == "diffuse" ? "colour" : `${prefix}-colour`;
+        // `attribute` names the one this setter is registered for when it isn't the
+        // default (`diffuse-colour` is a diffuse setter, but not the `colour` attribute).
+        let at = attribute ?? (prefix == "diffuse" ? "colour" : `${prefix}-colour`);
         let value = attr.find(x => x.name == at).value;
         let colour: Color3 = null;
         if (value.startsWith('#')) {
@@ -32,7 +34,9 @@ export var ModifyColourSetter = (prefix: string = "diffuse"): ISetter => {
                     material = new StandardMaterial('material', scene);
                     (<any>el).setMaterial(material);
                 }
-                material[`${prefix}Color`] = colour;
+                // StandardMaterial calls it `specularColor`, not `specColor`: a plain
+                // `${prefix}Color` set a property nothing reads, so `spec-colour` did nothing.
+                material[prefix == "spec" ? "specularColor" : `${prefix}Color`] = colour;
             }
         }
     }

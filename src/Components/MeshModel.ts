@@ -71,7 +71,7 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     /** Resolves once the model has loaded (or failed). */
     loaded: Promise<void>;
 
-    updated(changed: Map<string, unknown>) {
+    updated(changed?: Map<string, unknown>) {
         let key = [this.src, this.root, this.filename, this.meshNames,
             this.height, this.fit, this.base, this.animation].join("|");
         if (key == this.loadedKey) {

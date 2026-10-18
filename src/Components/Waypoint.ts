@@ -13,7 +13,9 @@ import { GardenMesh } from "../GardenMesh";
  *
  * Attributes: `waypoints` (a selector resolving the tour stops, see
  * {@link resolveElements}), `offset` (a `Vector3` added to every stop's
- * position, e.g. eye height), `speed`.
+ * position, e.g. eye height; none if unset), `speed` (the fly-to
+ * animation's speed ratio: 1, the default, takes about 3.3 s, 2 twice as
+ * fast).
  *
  * @category Components
  */
@@ -82,20 +84,23 @@ export class GardenWaypoint extends GardenElement {
         this.lookAtOrigin();
         let scene = this.getScene();
         let camera = (<Camera>(<any>this.parentElement).camera);
+        // Unset `offset` means no offset, as in setPosition.
+        let offset = this.offset ?? Vector3.Zero();
         let anime = new Animation("anime", "position", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE, false);
         anime.setKeys([
             {
                 frame: 0,
-                value: this.waypoints[this.index].getPosition().add(this.offset)
+                value: this.waypoints[this.index].getPosition().add(offset)
             },
             {
                 frame: 100,
-                value: position.add(this.offset)
+                value: position.add(offset)
             }
         ]);
         camera.animations = [];
         camera.animations.push(anime);
-        scene.beginAnimation(camera, 0, 100, false, 1.0, onComplete);
+        let speedRatio = this.speed > 0 ? this.speed : 1.0;
+        scene.beginAnimation(camera, 0, 100, false, speedRatio, onComplete);
     }
 
     setPosition(pos: Vector3) {

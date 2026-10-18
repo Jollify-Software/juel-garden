@@ -1,4 +1,4 @@
-import { Curve3, Mesh, MeshBuilder, Scene, Vector3 } from "babylonjs";
+import { Curve3, Mesh, MeshBuilder, Scene, Vector3, VertexData } from "babylonjs";
 
 /**
  * Sample a circular arc between two points that lie in the XZ plane.
@@ -124,4 +124,80 @@ export function createWall(
         path,
         cap: Mesh.CAP_ALL
     }, scene);
+}
+
+/**
+ * Build the walls of a polygonal room as one closed, mitred solid: `outer` is the
+ * footprint's outer face (a ring, no repeated closing point) and `inner` the same
+ * ring pulled in by the wall thickness, corner for corner. Each edge gets four flat
+ * faces -- outer, inner, top (at `height`) and bottom (at `-sink`) -- and
+ * neighbouring edges meet exactly on the mitre between them, so the wall keeps its
+ * full thickness right into every corner. (A {@link createWall} sweep turns its
+ * cross-section square to the averaged tangent at a corner instead, so a sharp
+ * corner pinches the wall thinner there.)
+ *
+ * Each face carries its own vertices, flat normal and UVs (world units: along the
+ * edge and up for the side faces, plan x/z for top and bottom, so a texture
+ * tiles at the same scale everywhere); any face whose winding comes
+ * out against its intended normal is flipped, so the result is right whichever
+ * way the rings run.
+ *
+ * @category Utilities
+ */
+export function createPolygonWall(
+    name: string,
+    outer: Vector3[],
+    inner: Vector3[],
+    height: number,
+    scene: Scene,
+    sink = 0
+): Mesh {
+    const positions: number[] = [];
+    const indices: number[] = [];
+    const normals: number[] = [];
+    const uvs: number[] = [];
+    // `side` UVs run along the edge from `a` and up; otherwise plan x/z.
+    const quad = (a: Vector3, b: Vector3, c: Vector3, d: Vector3, n: Vector3, side: boolean) => {
+        const base = positions.length / 3;
+        for (const p of [a, b, c, d]) {
+            positions.push(p.x, p.y, p.z);
+            normals.push(n.x, n.y, n.z);
+            if (side)
+                uvs.push(Math.hypot(p.x - a.x, p.z - a.z), p.y);
+            else
+                uvs.push(p.x, p.z);
+        }
+        // Babylon's own convention for which winding faces which way: compare the
+        // face normal it would compute with the one we mean, and flip to match.
+        const geometric = Vector3.Cross(c.subtract(b), a.subtract(b));
+        if (Vector3.Dot(geometric, n) <= 0)
+            indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+        else
+            indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
+    };
+
+    const n = outer.length;
+    const lo = -sink;
+    for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        const o0 = outer[i], o1 = outer[j], i0 = inner[i], i1 = inner[j];
+        const at = (p: Vector3, y: number) => new Vector3(p.x, y, p.z);
+        // Outward: from the inner ring's edge midpoint toward the outer one's.
+        const out = o0.add(o1).subtract(i0.add(i1));
+        out.y = 0;
+        out.normalize();
+        quad(at(o0, lo), at(o1, lo), at(o1, height), at(o0, height), out, true);
+        quad(at(i1, lo), at(i0, lo), at(i0, height), at(i1, height), out.negate(), true);
+        quad(at(o0, height), at(o1, height), at(i1, height), at(i0, height), Vector3.Up(), false);
+        quad(at(i0, lo), at(i1, lo), at(o1, lo), at(o0, lo), Vector3.Down(), false);
+    }
+
+    const mesh = new Mesh(name, scene);
+    const data = new VertexData();
+    data.positions = positions;
+    data.indices = indices;
+    data.normals = normals;
+    data.uvs = uvs;
+    data.applyToMesh(mesh);
+    return mesh;
 }

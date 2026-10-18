@@ -334,6 +334,11 @@ export abstract class GardenMesh extends GardenElement {
 
 
             setTimeout(async () => {
+                // A mesh in the initial markup upgrades on its opening tag, so while the
+                // document is still loading its children may not be parsed yet: a
+                // setTimeout(0) alone sometimes found none, and an event="load"
+                // <garden-particle> (starship's plumes) never started.
+                await GardenElement.whenDocumentReady();
                 let scene = this.getScene();
                 let animations: GardenAnimation[] = [];
                 let particles: GardenParticle[] = [];
@@ -365,7 +370,7 @@ export abstract class GardenMesh extends GardenElement {
                     // event="load" auto-plays, anything else (e.g. unset, for a
                     // <garden-button target="..."> to trigger) waits to be played on demand.
                     if (animation.event === "load")
-                        animation.play(this);
+                        animation.playWhenReady(this);
                 }
 
                 for (var p of particles) {
