@@ -35,7 +35,8 @@
     "test:sound": "node tests/sound.js",
     "test:walk": "node tests/walk.js",
     "test:follow": "node tests/follow.js",
-    "test:named-animations": "node tests/named-animations.js"
+    "test:named-animations": "node tests/named-animations.js",
+    "test:near": "node tests/near.js"
   },
   "repository": {
     "type": "git",

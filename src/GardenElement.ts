@@ -5,6 +5,7 @@ import { GardenScene } from "./Components/Scene";
 import { Vector3Convert } from "./Converters/Vector3Convert";
 import { OptionsBuilder } from "./Options/OptionsBuilder";
 import { resolveElements } from "./Utils/resolveElements";
+import { BehaviourNear } from "./Behaviours/BehaviourNear";
 
 /**
  * Base class every Juel Garden custom element extends, directly or via
@@ -143,6 +144,9 @@ export class GardenElement extends LitElement {
             this.node.rotation = this.rotation;
         if (this.scale)
             this.node.scaling = this.scale;
+        // A plain <garden-element near="..."> is a proximity point (meshes get it through Behaviours).
+        if (this.hasAttribute("near"))
+            BehaviourNear(this, this.node);
     }
 
     update() {

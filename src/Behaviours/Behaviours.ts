@@ -5,6 +5,7 @@ import { BehaviourAction } from "./BehaviourAction";
 import { BehaviourDrive } from "./BehaviourDrive";
 import { BehaviourFlee } from "./BehaviourFlee";
 import { BehaviourFollow } from "./BehaviourFollow";
+import { BehaviourNear } from "./BehaviourNear";
 import { BehaviourOrbit } from "./BehaviourOrbit";
 import { BehaviourSuspension } from "./BehaviourSuspension";
 import { BehaviourTerrain } from "./BehaviourTerrain";
@@ -22,7 +23,8 @@ import { BehaviourWander } from "./BehaviourWander";
  *   `position`/`rotation`, so these run against a `GardenMesh`'s `Mesh`
  *   *or* one instance of a `<garden-sprite>` group (via
  *   {@link SpriteBehaviourTarget}), through {@link applyToTarget}.
- * - `meshOnly` -- `follow-wait` (see {@link BehaviourWait}), `orbit` (real
+ * - `meshOnly` -- `follow-wait` (see {@link BehaviourWait}), `near` (see
+ *   {@link BehaviourNear}), `orbit` (real
  *   scene-graph `.parent` reparenting) and `action` (a Babylon
  *   `ActionManager`) -- none has a sprite
  *   equivalent, so these stay real-`Mesh`-only, wired only from
@@ -52,6 +54,7 @@ export module Behaviours {
     var meshOnly = {
         // First: it sets `waiting`, which track/wander/follow read this same frame.
         'follow-wait': BehaviourWait,
+        'near': BehaviourNear,
         'orbit': BehaviourOrbit,
         'action': BehaviourAction,
     }
