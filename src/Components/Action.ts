@@ -1,7 +1,10 @@
-import { ActionManager, IAction, IncrementValueAction, InterpolateValueAction, SetValueAction } from "babylonjs";
-import { TargetCamera } from "babylonjs/Cameras/targetCamera";
-import { Mesh } from "babylonjs/Meshes/mesh";
-import { customElement, property } from "lit/decorators";
+import { ActionManager } from "@babylonjs/core/Actions/actionManager";
+import { IAction } from "@babylonjs/core/Actions/action";
+import { IncrementValueAction, SetValueAction } from "@babylonjs/core/Actions/directActions";
+import { InterpolateValueAction } from "@babylonjs/core/Actions/interpolateValueAction";
+import { TargetCamera } from "@babylonjs/core/Cameras/targetCamera";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { customElement, property } from "lit/decorators.js";
 import { ActionInfo } from "../ActionInfo";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";

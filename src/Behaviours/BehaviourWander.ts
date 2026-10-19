@@ -1,4 +1,4 @@
-import { Vector3 } from "babylonjs";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { IBehaviourTarget } from "../IBehaviourTarget";
@@ -86,6 +86,8 @@ export function BehaviourWander(el: GardenElement, target: IBehaviourTarget, att
     }
 
     scene.onBeforeRenderObservable.add(() => {
+        if ((<any>el).waiting) // held by `follow-wait` or a game
+            return;
         let dt = Math.min(engine.getDeltaTime(), 50) / 1000;
         let pos = target.position;
 

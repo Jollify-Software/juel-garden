@@ -1,4 +1,5 @@
-import { Tools, Vector3, Vector4 } from "babylonjs";
+import { Tools } from "@babylonjs/core/Misc/tools";
+import { Vector3, Vector4 } from "@babylonjs/core/Maths/math.vector";
 import { NameValue } from "../NameValue";
 import { ShapeFunctions } from "../ShapeFunctions";
 

@@ -1,4 +1,4 @@
-import { Color3 } from "babylonjs";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
 
 /**
  * Parses a colour attribute value as `"r g b"` (0..1 each) or a small set of

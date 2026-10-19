@@ -1,0 +1,61 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <script src="../../dist/juel-garden.js"></script>
+        <style>
+            #hud { position: absolute; top: 12px; left: 12px; z-index: 1; font: 15px sans-serif; color: white;
+                   text-shadow: 0 1px 2px black; }
+        </style>
+    </head>
+    <body>
+        <div id="hud">WASD / arrows or a gamepad to walk, Shift to run, E to wave, drag to look round. <span id="speed"></span></div>
+
+        <garden-scene>
+            <!--
+              WALK
+
+              A walking player on a height-map desert. `walk` moves the robot
+              relative to the camera (push "up" and it walks away from you) and
+              turns it to face the way it's going; `terrain` keeps it on the
+              dunes. On a touch screen a thumb pad appears bottom left.
+
+              The camera is `free-look`: it stays at its own angle round the
+              robot instead of swinging behind it on every turn, so "up" keeps
+              meaning "away from the camera". Drag to look round.
+
+              The robot is Quaternius's CC0 RobotExpressive (see
+              examples/assets/characters/LICENCES.md). `anim-idle`,
+              `anim-walk` and `anim-run` pick its animation from how fast it
+              is going, cross-fading between them; press E to wave (a
+              one-shot `play("Wave", { loop: false })`).
+            -->
+            <garden-camera type="follow" target="#player" free-look radius="7" height-offset="3.5" look-offset="1.2"
+                camera-stiffness="20" camera-damping="7"></garden-camera>
+            <garden-light diffuse="1 0.92 0.8"></garden-light>
+
+            <garden-height-map id="dunes" url="../assets/dunes.png" width="120" height="120" subdivisions="90"
+                minheight="0" maxheight="6" colour="#d9b77a"></garden-height-map>
+
+            <garden-mesh-model id="player" src="../assets/characters/RobotExpressive.glb" height="1.8"
+                anim-idle="Idle" anim-walk="Walking" anim-run="Running" anim-walk-speed="1.8" anim-run-speed="5"
+                position="0 3 -20" loading-screen="false"
+                walk walk-speed="2.2" walk-run-speed="5.5" terrain="#dunes"></garden-mesh-model>
+
+            <!-- Some rocks to walk round. -->
+            <garden-sphere diameter="2" position="3 1 -12" colour="#8a6f4e" terrain="#dunes" terrain-offset="0.3"></garden-sphere>
+            <garden-sphere diameter="3" position="-5 1 -4" colour="#7b6146" terrain="#dunes" terrain-offset="0.5"></garden-sphere>
+            <garden-sphere diameter="1.5" position="1 1 4" colour="#957a57" terrain="#dunes" terrain-offset="0.2"></garden-sphere>
+        </garden-scene>
+
+        <script>
+            // element.walker exposes the walk's state, e.g. for picking an animation.
+            const player = document.getElementById("player"), hud = document.getElementById("speed");
+            setInterval(() => {
+                const w = player.walker;
+                if (w) hud.textContent = `${w.speed.toFixed(1)} m/s${w.running ? " (running)" : ""}`;
+            }, 200);
+            addEventListener("keydown", e => { if (e.key == "e") player.play("Wave", { loop: false, blend: 0.15 }); });
+        </script>
+    </body>
+</html>

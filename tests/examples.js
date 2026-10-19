@@ -2,6 +2,9 @@
 // waits for the scene to render 30 frames, and fails on page errors or console errors.
 // Failed loads of remote assets (no network) are ignored; a missing local file is not.
 // Run after a build: npm run test:examples [filter]. Same harness as rotunda.js.
+// --lean serves dist/juel-garden.lean.js (npm run build:lean: the library as an app
+// bundling it from npm gets it, without all of Babylon) in place of the global
+// bundle, to catch a Babylon side-effect import missing from src/SideEffects.ts.
 const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright-core");
@@ -24,7 +27,8 @@ function check(name, ok, info = "") {
 }
 
 (async () => {
-    const filter = process.argv[2] || "";
+    const lean = process.argv.includes("--lean");
+    const filter = process.argv.slice(2).find(a => !a.startsWith("--")) || "";
     const files = pages(path.join(ROOT, "examples")).map(f => path.relative(ROOT, f).split(path.sep).join("/"))
         .filter(f => f.includes(filter)).sort();
     const browser = await chromium.launch({ executablePath: CHROME, headless: true,
@@ -37,7 +41,9 @@ function check(name, ok, info = "") {
             page.on("console", m => { if (m.type() == "error" && !REMOTE_NOISE.test(m.text())) errors.push(m.text()); });
             page.on("requestfailed", r => { if (r.url().startsWith(ORIGIN)) errors.push("failed: " + r.url()); });
             await page.route(ORIGIN + "/**", route => {
-                const f = path.join(ROOT, decodeURIComponent(new globalThis.URL(route.request().url()).pathname));
+                let f = path.join(ROOT, decodeURIComponent(new globalThis.URL(route.request().url()).pathname));
+                if (lean && f == path.join(ROOT, "dist", "juel-garden.js"))
+                    f = path.join(ROOT, "dist", "juel-garden.lean.js");
                 if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory())
                     return route.fulfill({ status: 404, body: "" });
                 route.fulfill({ status: 200, body: fs.readFileSync(f), contentType: TYPES[path.extname(f).toLowerCase()] || "application/octet-stream" });

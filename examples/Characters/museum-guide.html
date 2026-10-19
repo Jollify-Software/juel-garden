@@ -1,0 +1,72 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <script src="../../dist/juel-garden.js"></script>
+        <style>
+            #hud { position: absolute; top: 12px; left: 12px; z-index: 1; font: 15px sans-serif; color: white;
+                   text-shadow: 0 1px 3px black; }
+        </style>
+    </head>
+    <body>
+        <div id="hud">Walk with WASD / arrows, drag to look. The guide shows you round; the exhibits talk when you walk up.
+            <b id="status"></b></div>
+
+        <garden-scene collisions>
+            <!--
+              A MUSEUM GUIDE
+
+              You are the camera (first person). The guide walks a loop
+              through the three galleries (`track`) and waits whenever you are
+              more than 9 m away (`follow-wait="camera"`), calling you over
+              (<garden-sound play-on="garden-wait">). The star
+              (<garden-marker>) shows where the guide is when you lose them.
+
+              Each exhibit has near="camera": walk up and its card opens and
+              it starts to talk (a tone here, standing in for a recording);
+              walk away and both stop. No code beyond the two lines that open
+              and close the cards.
+            -->
+            <garden-camera type="free" collisions position="0 1.7 -6"></garden-camera>
+            <garden-light intensity="0.9"></garden-light>
+
+            <garden-structure>
+                <garden-room id="room-west" position="-16 0 0" width="16" depth="16" height="5" collisions colour="#efe9dc"></garden-room>
+                <garden-room id="room-center" position="0 0 0" width="16" depth="16" height="5" collisions colour="#efe9dc"></garden-room>
+                <garden-room id="room-east" position="16 0 0" width="16" depth="16" height="5" collisions colour="#efe9dc"></garden-room>
+            </garden-structure>
+
+            <garden-line points="0 0 -3, -4 0 0, -16 0 -2, -18 0 3, -12 0 3, -4 0 2, 4 0 2, 14 0 3, 18 0 -2, 12 0 -3, 4 0 -3, 0 0 -3">
+                <garden-mesh-model id="guide" src="../assets/characters/RobotExpressive.glb" height="1.8" loading-screen="false"
+                    track track-smooth="10" track-step="0.018" follow-wait="camera" follow-wait-distance="9"
+                    anim-idle="Idle" anim-walk="Walking" anim-walk-speed="1.2">
+                    <garden-sound url="../assets/call.wav" play-on="garden-wait" ref-distance="4"></garden-sound>
+                </garden-mesh-model>
+            </garden-line>
+
+            <!-- Exhibits: a plinth and a "painting" in each gallery. -->
+            <garden-box class="exhibit" position="-16 0.6 5.5" width="1" height="1.2" depth="1" colour="#7a5c3e" near="camera" near-distance="3">
+                <garden-sound url="../assets/tone.wav" loop volume="0.3" ref-distance="2" play-on="garden-near" stop-on="garden-far"></garden-sound>
+                <garden-info title="The Bronze Head"><garden-text>Cast about 1500 BC.</garden-text></garden-info>
+            </garden-box>
+            <garden-plane class="exhibit" position="0 2.4 7.75" width="2.4" height="1.6" colour="#3b5998" sideorientation="double" near="camera" near-distance="4">
+                <garden-sound url="../assets/tone.wav" loop volume="0.3" ref-distance="2" play-on="garden-near" stop-on="garden-far"></garden-sound>
+                <garden-info title="Blue Study"><garden-text>Oil on canvas, 1911.</garden-text></garden-info>
+            </garden-plane>
+            <garden-box class="exhibit" position="16 0.6 5.5" width="1" height="1.2" depth="1" colour="#8e7f3b" near="camera" near-distance="3">
+                <garden-sound url="../assets/tone.wav" loop volume="0.3" ref-distance="2" play-on="garden-near" stop-on="garden-far"></garden-sound>
+                <garden-info title="The Gold Torc"><garden-text>Worn round the neck.</garden-text></garden-info>
+            </garden-box>
+
+            <garden-marker target="#guide" icon="★" label="Guide" hide-within="5"></garden-marker>
+        </garden-scene>
+
+        <script>
+            document.addEventListener("garden-near", e => e.target.querySelector("garden-info")?.show());
+            document.addEventListener("garden-far", e => e.target.querySelector("garden-info")?.hide());
+            const guide = document.getElementById("guide"), status = document.getElementById("status");
+            guide.addEventListener("garden-wait", () => status.textContent = "The guide is waiting for you.");
+            guide.addEventListener("garden-resume", () => status.textContent = "");
+        </script>
+    </body>
+</html>

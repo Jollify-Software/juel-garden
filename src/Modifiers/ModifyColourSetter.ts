@@ -1,4 +1,8 @@
-import { Color3, Material, Scene, StandardMaterial, Vector3 } from "babylonjs";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { Material } from "@babylonjs/core/Materials/material";
+import { Scene } from "@babylonjs/core/scene";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { ISetter } from "../ISetter";
 

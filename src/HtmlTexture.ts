@@ -1,4 +1,4 @@
-import { DynamicTexture } from "babylonjs";
+import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture";
 import html2canvas from "html2canvas";
 import { GardenElement } from "./GardenElement";
 import { GardenMesh } from "./GardenMesh";

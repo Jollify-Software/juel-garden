@@ -1,4 +1,4 @@
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { GardenAnimation } from "../Animation";
 import { GardenMesh } from "../../GardenMesh";
 import { GardenControl } from "./Control";

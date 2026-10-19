@@ -1,33 +1,39 @@
-import { Mesh } from "babylonjs";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { GardenElement } from "../GardenElement";
 import { IBehaviourTarget } from "../IBehaviourTarget";
 import { BehaviourAction } from "./BehaviourAction";
 import { BehaviourDrive } from "./BehaviourDrive";
 import { BehaviourFlee } from "./BehaviourFlee";
+import { BehaviourFollow } from "./BehaviourFollow";
+import { BehaviourNear } from "./BehaviourNear";
 import { BehaviourOrbit } from "./BehaviourOrbit";
 import { BehaviourSuspension } from "./BehaviourSuspension";
 import { BehaviourTerrain } from "./BehaviourTerrain";
 import { BehaviourTrack } from "./BehaviourTrack";
+import { BehaviourWait } from "./BehaviourWait";
+import { BehaviourWalk } from "./BehaviourWalk";
 import { BehaviourWander } from "./BehaviourWander";
 
 /**
  * Wires up any behaviour attribute present on an element's tag. Split into
  * two groups:
  *
- * - `generic` -- `track`/`drive`/`suspension`/`wander`/`flee-target`/
+ * - `generic` -- `track`/`drive`/`walk`/`follow`/`suspension`/`wander`/`flee-target`/
  *   `terrain` -- each needs nothing more than {@link IBehaviourTarget}'s
  *   `position`/`rotation`, so these run against a `GardenMesh`'s `Mesh`
  *   *or* one instance of a `<garden-sprite>` group (via
  *   {@link SpriteBehaviourTarget}), through {@link applyToTarget}.
- * - `meshOnly` -- `orbit` (real scene-graph `.parent` reparenting) and
- *   `action` (a Babylon `ActionManager`) -- neither has a sprite
+ * - `meshOnly` -- `follow-wait` (see {@link BehaviourWait}), `near` (see
+ *   {@link BehaviourNear}), `orbit` (real
+ *   scene-graph `.parent` reparenting) and `action` (a Babylon
+ *   `ActionManager`) -- none has a sprite
  *   equivalent, so these stay real-`Mesh`-only, wired only from
  *   {@link applyBehaviours} (which `GardenMesh.modifyMesh` calls).
  *
- * `drive` must come before `suspension` in `generic`: Babylon fires
+ * `drive` and `walk` must come before `suspension`/`terrain` in `generic`: Babylon fires
  * `onBeforeRenderObservable` callbacks in registration order, and
- * suspension needs this frame's drive-updated position/heading, not last
- * frame's.
+ * suspension and terrain need this frame's moved position/heading, not
+ * last frame's.
  *
  * See each behaviour's own doc comment for its specific attributes.
  *
@@ -37,6 +43,8 @@ export module Behaviours {
     var generic = {
         'track': BehaviourTrack,
         'drive': BehaviourDrive,
+        'walk': BehaviourWalk,
+        'follow': BehaviourFollow,
         'suspension': BehaviourSuspension,
         'wander': BehaviourWander,
         'flee-target': BehaviourFlee,
@@ -44,6 +52,9 @@ export module Behaviours {
     }
 
     var meshOnly = {
+        // First: it sets `waiting`, which track/wander/follow read this same frame.
+        'follow-wait': BehaviourWait,
+        'near': BehaviourNear,
         'orbit': BehaviourOrbit,
         'action': BehaviourAction,
     }

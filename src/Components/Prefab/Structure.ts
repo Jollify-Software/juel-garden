@@ -1,5 +1,8 @@
-import { CSG, Matrix, Mesh, MeshBuilder, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { CSG } from "@babylonjs/core/Meshes/csg";
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../../GardenElement";
 import { GardenMesh } from "../../GardenMesh";
 import { GardenRoom } from "./Room";

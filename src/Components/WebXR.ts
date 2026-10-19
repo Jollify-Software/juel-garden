@@ -1,5 +1,6 @@
-import { AbstractMesh, WebXRDefaultExperience } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
+import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { GardenScene } from "./Scene";

@@ -1,7 +1,14 @@
-import { Material, Mesh, PhysicsAggregate, PhysicsEventType, PhysicsMotionType, PhysicsShapeType, PointerEventTypes, Scene, TransformNode, Vector3 } from "babylonjs";
-import { CSG } from "babylonjs";
-import { MeshBuilder } from "babylonjs";
-import { property } from "lit/decorators";
+import { Material } from "@babylonjs/core/Materials/material";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { PhysicsAggregate } from "@babylonjs/core/Physics/v2/physicsAggregate";
+import { PhysicsEventType, PhysicsMotionType, PhysicsShapeType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
+import { PointerEventTypes } from "@babylonjs/core/Events/pointerEvents";
+import { Scene } from "@babylonjs/core/scene";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { CSG } from "@babylonjs/core/Meshes/csg";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { property } from "lit/decorators.js";
 import { Behaviours } from "./Behaviours/Behaviours";
 import { GardenAnimation } from "./Components/Animation";
 import { GardenParticle } from "./Components/Particle";

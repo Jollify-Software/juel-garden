@@ -1,4 +1,11 @@
-import { CSG, Material, Mesh, MeshBuilder, PolygonMeshBuilder, Scene, Vector2, Vector3, VertexBuffer } from "babylonjs";
+import { CSG } from "@babylonjs/core/Meshes/csg";
+import { Material } from "@babylonjs/core/Materials/material";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { PolygonMeshBuilder } from "@babylonjs/core/Meshes/polygonMesh";
+import { Scene } from "@babylonjs/core/scene";
+import { Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { VertexBuffer } from "@babylonjs/core/Buffers/buffer";
 import earcut from "earcut";
 
 /** Where a dome texture's own centre point sits, in the texture's own 0..1 UV space. */

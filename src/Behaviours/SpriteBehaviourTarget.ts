@@ -1,4 +1,6 @@
-import { Scene, Sprite, Vector3 } from "babylonjs";
+import { Scene } from "@babylonjs/core/scene";
+import { Sprite } from "@babylonjs/core/Sprites/sprite";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { IBehaviourTarget } from "../IBehaviourTarget";
 
 /**

@@ -1,5 +1,14 @@
-import { AbstractMesh, ActionManager, Color3, DynamicTexture, ExecuteCodeAction, Mesh, MeshBuilder, StandardMaterial, Texture, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import { ActionManager } from "@babylonjs/core/Actions/actionManager";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture";
+import { ExecuteCodeAction } from "@babylonjs/core/Actions/directActions";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { customElement, property } from "lit/decorators.js";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";

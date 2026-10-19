@@ -1,4 +1,5 @@
-import { Tools, Vector2 } from "babylonjs";
+import { Tools } from "@babylonjs/core/Misc/tools";
+import { Vector2 } from "@babylonjs/core/Maths/math.vector";
 
 /** Parses `"x y"` (literal or `(Math...)` expressions) into a `Vector2`. @category Converters */
 export module Vector2Convert {

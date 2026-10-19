@@ -1,6 +1,9 @@
-import { HavokPlugin, PhysicsBody, PhysicsEventType, Vector3 } from "babylonjs";
+import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
+import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
+import { PhysicsEventType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import HavokPhysics from "@babylonjs/havok";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 

@@ -1,4 +1,9 @@
-import { Animation, ArcRotateCamera, EasingFunction, Scene, SineEase, TargetCamera, Vector3 } from "babylonjs";
+import { Animation } from "@babylonjs/core/Animations/animation";
+import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
+import { EasingFunction, SineEase } from "@babylonjs/core/Animations/easing";
+import { Scene } from "@babylonjs/core/scene";
+import { TargetCamera } from "@babylonjs/core/Cameras/targetCamera";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Vector3Convert } from "./Converters/Vector3Convert";
 import { GardenElement } from "./GardenElement";
 

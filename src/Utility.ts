@@ -1,6 +1,8 @@
 import { GardenScene } from "./Components/Scene";
 import { toJSON } from 'cssjson';
-import { Mesh, Tools, TransformNode } from "babylonjs";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Tools } from "@babylonjs/core/Misc/tools";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { GardenElement } from "./GardenElement";
 
 /**

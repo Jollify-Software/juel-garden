@@ -1,4 +1,4 @@
-import { IAnimationKey } from "babylonjs";
+import { IAnimationKey } from "@babylonjs/core/Animations/animationKey";
 
 /**
  * Parses `<garden-animation keyframes="...">`'s `"frame value, frame value, ..."`

@@ -1,11 +1,20 @@
-import { AnimationGroup, Mesh, Nullable, Observer, Scene, SceneLoader, Vector3 } from "babylonjs";
+import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Nullable } from "@babylonjs/core/types";
+import { Observer } from "@babylonjs/core/Misc/observable";
+import { Scene } from "@babylonjs/core/scene";
+import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 // Registers the glTF/GLB, OBJ and STL plugins with SceneLoader (side effect).
 // Without it only Babylon's own .babylon format loads.
-import "babylonjs-loaders";
+import "@babylonjs/loaders/glTF";
+import "@babylonjs/loaders/OBJ";
+import "@babylonjs/loaders/STL";
 // Compressed glTF (Draco, meshopt) decodes with copies next to the bundle, not Babylon's CDN.
 import "../Decoders";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
+import { AnimationMixer, PlayOptions, driveByMotion } from "../AnimationMixer";
 
 /**
  * Imports an external 3D model file (glTF/GLB -- Draco- or meshopt-compressed
@@ -26,8 +35,13 @@ import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
  * - `fit`: alternatively, scales so the largest dimension is this size.
  * - `base`: `"ground"` (default when `height`/`fit` is set) moves the model
  *   so it stands on its own `position`, centred; `"none"` keeps the file's origin.
- * - `animation`: a glTF animation group to loop (by name), or `"none"` to stop
- *   the loader's auto-play.
+ * - `animation` (or `play`): a glTF animation group to loop (by name, any
+ *   case), or `"none"` to stop the loader's auto-play.
+ * - `anim-idle`, `anim-walk`, `anim-run`: animations picked by how fast the
+ *   model moves (a `walk`, `follow`, `track` or `wander`, or anything moving
+ *   it), cross-fading between them and speeding walk/run to match.
+ *   `anim-walk-speed`/`anim-run-speed` are the speeds (units/second) the
+ *   walk and run clips were made for, default `1.5` and `4`.
  *
  * - `load-distance`: don't load until the camera comes within this many
  *   metres of the model's `position` -- for big scans in a large venue, so
@@ -35,6 +49,11 @@ import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
  * - `loading-screen`: `"false"` to skip Babylon's loading screen, which
  *   otherwise covers the canvas while any model is loading. A model with
  *   `load-distance` loads quietly unless this is `"true"`.
+ *
+ * Script API: {@link play}`(name, { blend, loop, speed })` cross-fades to a
+ * named animation (`loop: false` plays it once, then goes back to the
+ * motion animation and fires `garden-animation-end`), {@link stopAnimation},
+ * {@link animationNames}, and the underlying {@link mixer}.
  *
  * Fires `garden-model-progress` (detail: `{ loaded, total }`, bytes; `total`
  * is 0 when the server doesn't say), `garden-model-load` (detail:
@@ -62,6 +81,8 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     @property({ type: Number, attribute: "load-distance" }) loadDistance: number;
 
     animationGroups: AnimationGroup[] = [];
+    private _mixer: AnimationMixer;
+    private motionObserver: Nullable<Observer<Scene>>;
     /** Models still loading, across the page: the loading screen shows while this is above 0. */
     private static loading = 0;
     private loadedKey: string;
@@ -81,7 +102,11 @@ export class GardenMeshModel extends GardenSkeletonMesh {
             return;
         }
         this.loadedKey = key;
-        this.loaded = this.loadDistance > 0 ? this.whenNear().then(() => this.load()) : this.load();
+        // whenReady waits for the model, so a follow camera or a `walk` targeting it
+        // finds its mesh (with load-distance, not until the camera comes near).
+        this.beginBuild();
+        this.loaded = (this.loadDistance > 0 ? this.whenNear().then(() => this.load()) : this.load())
+            .finally(() => this.endBuild());
     }
 
     /** Resolves once the active camera is within `load-distance` of the model. */
@@ -103,8 +128,32 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         });
     }
 
+    /** Plays the model's named animations with cross-fades. Created on first use (or by `animation`/`anim-*`), which stops the loader's auto-play. */
+    get mixer(): AnimationMixer {
+        if (!this._mixer && this.animationGroups.length)
+            this._mixer = new AnimationMixer(this.getScene(), this.animationGroups, this);
+        return this._mixer;
+    }
+
+    /** The model's animation names. */
+    get animationNames(): string[] {
+        return this.animationGroups.map(g => g.name);
+    }
+
+    /** Cross-fades to the animation `name` (any case). False if the model has no such animation. */
+    play(name: string, options?: PlayOptions): boolean {
+        return this.mixer?.play(name, options) ?? false;
+    }
+
+    /** Stops the animations, fading out over `blend` seconds (default 0.25). */
+    stopAnimation(blend?: number) {
+        this.mixer?.stop(blend);
+    }
+
     disconnectedCallback() {
         super.disconnectedCallback();
+        if (this.motionObserver) this.nearScene?.onBeforeRenderObservable.remove(this.motionObserver);
+        this.motionObserver = null;
         // getScene() walks parentElement, which is gone by now.
         if (this.nearObserver) this.nearScene?.onBeforeRenderObservable.remove(this.nearObserver);
         this.nearObserver = null;
@@ -139,6 +188,10 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         }
 
         for (let group of this.animationGroups) group.dispose();
+        this._mixer?.dispose();
+        this._mixer = null;
+        if (this.motionObserver) scene.onBeforeRenderObservable.remove(this.motionObserver);
+        this.motionObserver = null;
         this.animationGroups = result.animationGroups;
 
         let holder = new Mesh(this.id || "garden-mesh-model", scene);
@@ -161,19 +214,31 @@ export class GardenMeshModel extends GardenSkeletonMesh {
             }
         }
 
-        if (this.animation == "none") {
+        let first = this.animation ?? this.getAttribute("play");
+        if (first == "none") {
             for (let group of this.animationGroups) group.stop();
-        } else if (this.animation) {
-            for (let group of this.animationGroups) group.stop();
-            let group = this.animationGroups.find(g => g.name == this.animation);
-            if (group) group.start(true);
-            else console.warn(`<garden-mesh-model> has no animation "${this.animation}"; it has: ${this.animationGroups.map(g => g.name).join(", ")}`);
+        } else if (first) {
+            this.mixer?.play(first, { blend: 0 });
         }
 
         if (result.skeletons.length > 0)
             this.skeleton = result.skeletons[0];
         this.setMesh(holder);
         this.update();
+
+        let anim = (name: string) => this.getAttribute("anim-" + name);
+        if (this.mixer && (anim("idle") || anim("walk") || anim("run"))) {
+            this.nearScene = scene;
+            let num = (name: string, fallback: number) => this.hasAttribute(name) ? Number(this.getAttribute(name)) : fallback;
+            this.motionObserver = driveByMotion(this.mixer, scene, holder, {
+                idle: anim("idle"), walk: anim("walk"), run: anim("run"),
+                walkSpeed: num("anim-walk-speed", 1.5), runSpeed: num("anim-run-speed", 4),
+                speedOf: () => {
+                    let walker = (<any>this).walker, follower = (<any>this).follower;
+                    return walker?.enabled ? walker.speed : follower?.enabled ? follower.speed : undefined;
+                },
+            });
+        }
 
         this.dispatchEvent(new CustomEvent("garden-model-load", {
             bubbles: true, detail: { meshes: result.meshes, animationGroups: this.animationGroups }

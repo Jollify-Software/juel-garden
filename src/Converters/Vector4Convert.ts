@@ -1,4 +1,4 @@
-import { Vector4 } from "babylonjs";
+import { Vector4 } from "@babylonjs/core/Maths/math.vector";
 
 /** Parses a comma-separated list of `"x y z w"` into `Vector4[]`, used for `faceuv`. @category Converters */
 export module Vector4Convert {

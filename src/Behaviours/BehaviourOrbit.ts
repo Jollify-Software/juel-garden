@@ -1,4 +1,8 @@
-import { Camera, Matrix, Mesh, Space, TransformNode, Vector3 } from "babylonjs";
+import { Camera } from "@babylonjs/core/Cameras/camera";
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Space } from "@babylonjs/core/Maths/math.axis";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { GardenMesh } from "../GardenMesh";
 
 function worldPositionOf(obj: TransformNode | Camera): Vector3 {

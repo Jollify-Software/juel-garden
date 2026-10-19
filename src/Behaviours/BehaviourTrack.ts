@@ -1,4 +1,6 @@
-import { Axis, Curve3, Path3D, Vector3 } from "babylonjs";
+import { Axis } from "@babylonjs/core/Maths/math.axis";
+import { Curve3, Path3D } from "@babylonjs/core/Maths/math.path";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { IBehaviourTarget } from "../IBehaviourTarget";
@@ -19,7 +21,8 @@ import { IBehaviourTarget } from "../IBehaviourTarget";
  * curve instead of snapping at corners; omit for straight rail segments),
  * `track-bank` (present to roll "up" into the path's curve instead of
  * staying world-Y-up), `track-step` (distance moved per frame, default
- * `0.05`).
+ * `0.05`). Pauses while `element.waiting` is true (see
+ * {@link BehaviourWait}).
  *
  * @example
  * ```html
@@ -62,8 +65,7 @@ export function BehaviourTrack(el: GardenElement, target: IBehaviourTarget, attr
     let bank = el.hasAttribute("track-bank");
     let distance = 0;
 
-    scene.onBeforeRenderObservable.add(() => {
-        distance = (distance + step) % length;
+    let place = () => {
         let t = distance / length;
 
         let forward = path.getTangentAt(t, true);
@@ -79,5 +81,16 @@ export function BehaviourTrack(el: GardenElement, target: IBehaviourTarget, attr
 
         target.position = path.getPointAt(t);
         target.rotation = Vector3.RotationFromAxis(right, trueUp, forward);
+    };
+    // Start on the path, not wherever the mesh was declared -- even if
+    // `follow-wait` holds it before its first step.
+    place();
+
+    scene.onBeforeRenderObservable.add(() => {
+        // Held by `follow-wait` (or a game): stay put, facing wherever it turned.
+        if ((<any>el).waiting)
+            return;
+        distance = (distance + step) % length;
+        place();
     });
 }

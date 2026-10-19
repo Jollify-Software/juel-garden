@@ -1,5 +1,5 @@
-import { CSG } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { CSG } from "@babylonjs/core/Meshes/csg";
+import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 

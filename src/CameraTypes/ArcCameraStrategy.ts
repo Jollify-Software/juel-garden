@@ -1,4 +1,5 @@
-import { ArcRotateCamera, Vector3 } from "babylonjs";
+import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 
 /**

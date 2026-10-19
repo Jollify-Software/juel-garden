@@ -1,0 +1,56 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <script src="../../dist/juel-garden.js"></script>
+        <style>
+            #hud { position: absolute; top: 12px; left: 12px; z-index: 1; font: 15px sans-serif; color: white;
+                   text-shadow: 0 1px 2px black; }
+        </style>
+    </head>
+    <body>
+        <div id="hud">Walk round with WASD / arrows (drag to look). Walk up to an exhibit.</div>
+
+        <garden-scene collisions>
+            <!--
+              EXHIBITS THAT NOTICE YOU
+
+              Each plinth has near="camera": walk within 3 m and it fires
+              `garden-near`, walk away past 3.6 m (near-hysteresis 1.2) and it
+              fires `garden-far`. With no code at all, the
+              <garden-sound play-on="garden-near" stop-on="garden-far">
+              inside it plays while you stand there, and its <garden-info>
+              card opens (the two lines of script at the bottom). The sound
+              is spatial: it comes from the plinth.
+
+              near="#player" works the same for a walking character instead
+              of the camera.
+            -->
+            <garden-camera type="free" position="0 1.6 -9" collisions></garden-camera>
+            <garden-light></garden-light>
+            <garden-ground width="24" height="24" colour="#c9c1b3" collisions></garden-ground>
+
+            <garden-box class="plinth" position="-5 0.6 0" width="1" height="1.2" depth="1" colour="#7a5c3e"
+                near="camera" near-distance="3" collisions>
+                <garden-sound url="../assets/tone.wav" loop volume="0.4" ref-distance="2" play-on="garden-near" stop-on="garden-far"></garden-sound>
+                <garden-info title="The Bronze Head"><garden-text>Cast about 1500 BC.</garden-text></garden-info>
+            </garden-box>
+            <garden-box class="plinth" position="0 0.6 3" width="1" height="1.2" depth="1" colour="#5d6d7e"
+                near="camera" near-distance="3" collisions>
+                <garden-sound url="../assets/tone.wav" loop volume="0.4" ref-distance="2" play-on="garden-near" stop-on="garden-far"></garden-sound>
+                <garden-info title="The Silver Cup"><garden-text>Found in a field in 1938.</garden-text></garden-info>
+            </garden-box>
+            <garden-box class="plinth" position="5 0.6 0" width="1" height="1.2" depth="1" colour="#8e7f3b"
+                near="camera" near-distance="3" collisions>
+                <garden-sound url="../assets/tone.wav" loop volume="0.4" ref-distance="2" play-on="garden-near" stop-on="garden-far"></garden-sound>
+                <garden-info title="The Gold Torc"><garden-text>Worn round the neck.</garden-text></garden-info>
+            </garden-box>
+        </garden-scene>
+
+        <script>
+            // Open each card while you are near its plinth.
+            document.addEventListener("garden-near", e => e.target.querySelector("garden-info")?.show());
+            document.addEventListener("garden-far", e => e.target.querySelector("garden-info")?.hide());
+        </script>
+    </body>
+</html>

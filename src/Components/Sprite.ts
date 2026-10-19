@@ -1,5 +1,7 @@
-import { Sprite, SpriteManager, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { Sprite } from "@babylonjs/core/Sprites/sprite";
+import { SpriteManager } from "@babylonjs/core/Sprites/spriteManager";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { customElement, property } from "lit/decorators.js";
 import { Behaviours } from "../Behaviours/Behaviours";
 import { SpriteBehaviourTarget } from "../Behaviours/SpriteBehaviourTarget";
 import { GardenElement } from "../GardenElement";

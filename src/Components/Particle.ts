@@ -1,17 +1,30 @@
-import { Color4, ParticleHelper, ParticleSystem, Texture, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { Color4 } from "@babylonjs/core/Maths/math.color";
+import { ParticleHelper } from "@babylonjs/core/Particles/particleHelper";
+import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { customElement, property } from "lit/decorators.js";
 import { Colour4Convert } from "../Converters/Colour4Convert";
 import { StaticConvert } from "../Converters/StaticConvert";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { Utility } from "../Utility";
+import { Weather } from "./Weather";
 
 /**
  * A particle system, either one of Babylon's built-in preset effects
  * (`effect`, via `ParticleHelper`) or a fully custom one (the `url`/`colour1`/
  * etc. attributes below). Emits from the parent mesh's position when nested
  * inside one.
+ *
+ * **Weather:** `preset="rain"`, `"snow"`, `"sand"` or `"dust-devil"` -- tuned
+ * systems that need no image and play at once (see {@link Weather}). Rain,
+ * snow and sand fall or blow round the camera; a dust devil spins on its
+ * parent mesh, so it travels when the mesh does (`track`, `wander`).
+ * `wind` (`"x y z"`, units/second) blows sand and leans rain and snow;
+ * `size` scales the particles; `density` (0 = none, 1 = normal, 2 = a storm)
+ * can be set from code at any time, e.g. ramped up as a storm builds.
  *
  * Attributes: `effect` (a Babylon `ParticleHelper` preset name, e.g. `"fire"`
  * -- when set, the custom attributes below are ignored), `event`
@@ -35,6 +48,8 @@ import { Utility } from "../Utility";
  * <garden-column position="-4 -5 -22" diameter="1" height="6">
  *   <garden-particle effect="fire"></garden-particle>
  * </garden-column>
+ * <garden-particle preset="sand" wind="8 0 3" density="0.5"></garden-particle>
+ * <garden-sphere diameter="0.1" wander wander-radius="20"><garden-particle preset="dust-devil"></garden-particle></garden-sphere>
  * ```
  *
  * @category Components
@@ -76,8 +91,26 @@ export class GardenParticle extends GardenElement {
     particleSystem: ParticleSystem;
     isPlaying: boolean = false;
 
+    private weather: Weather.WeatherSystem;
+    private _density: number;
+
+    /** How much weather, for a `preset`: 0 none, 1 the preset's normal amount, more for a storm. */
+    get density(): number {
+        return this._density ?? (this.hasAttribute("density") ? Number(this.getAttribute("density")) : 1);
+    }
+    set density(value: number) {
+        this._density = Math.max(0, value);
+        if (this.weather)
+            this.weather.system.emitRate = this.weather.baseRate * this._density;
+    }
+
     updated() {
         let scene = this.getScene();
+        let preset = this.getAttribute("preset");
+        if (preset) {
+            this.buildWeather(preset);
+            return;
+        }
         if (this.effect) {
             ParticleHelper.CreateAsync(this.effect, scene).then((set) => {
                 if ('mesh' in this.parentElement) {
@@ -140,6 +173,40 @@ if (this.billboard)
         if (this.isPlaying)
             this.particleSystem.start();
         }
+    }
+
+    private async buildWeather(preset: string) {
+        if (!Weather.Presets.includes(preset)) {
+            console.warn(`<garden-particle preset="${preset}"> is not one of ${Weather.Presets.join(", ")}.`);
+            return;
+        }
+        this.beginBuild();
+        await GardenElement.whenDocumentReady();
+        let parent = this.parentElement as GardenElement;
+        let anchor = null;
+        if (parent && parent.localName != "garden-scene" && typeof parent.getNode == "function") {
+            await parent.whenReady;
+            anchor = parent.getNode();
+        }
+        this.weather?.dispose();
+        let size = this.getAttribute("size");
+        this.weather = Weather.create(preset, this.getScene(), anchor, {
+            wind: Vector3Convert.fromString(this.getAttribute("wind")),
+            colour: this.colour1,
+            size: size ? Number(size) : undefined,
+        });
+        this.particleSystem = this.weather.system;
+        this.density = this.density;
+        // Weather plays at once unless told to wait.
+        if ((this.event ?? "load") == "load" || this.isPlaying)
+            this.play();
+        this.endBuild();
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.weather?.dispose();
+        this.weather = null;
     }
 
     /** Starts the system; if it isn't built yet, it starts as soon as it is. */

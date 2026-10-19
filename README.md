@@ -50,7 +50,7 @@ My favourite example is the [temple example](https://jollify.app/doc/temple.html
         <garden-particle effect="fire"></garden-particle>
     </garden-column>
     <garden-stairs id="s1" position="0 -5 -32" height="5" depth="20" collisions>
-        <garden-sound loop="true" autoplay="true" maxdistance="20"
+        <garden-sound loop autoplay maxdistance="20"
             url="https://upload.wikimedia.org/wikipedia/commons...Epitaph_of_Seikilos.ogg">
         </garden-sound>
     </garden-stairs>
@@ -122,6 +122,82 @@ floor level and notches the top of the floor slab: an existing quirk, not new.)
 
 See [examples/Structures/polygon-room.html](examples/Structures/polygon-room.html);
 `npm run test:polygon` checks it in Chrome.
+
+## Characters, guides and weather
+
+Building blocks for a third-person "follow the guide" game, and for museums
+and walk-throughs with guides and talking exhibits (the plan is
+[DESIGN-characters-and-guides.md](DESIGN-characters-and-guides.md); examples in
+[examples/Characters/](examples/Characters/)):
+
+```html
+<garden-scene fog-density="0.01">
+    <garden-camera type="follow" target="#player" free-look radius="7" height-offset="3.5"></garden-camera>
+    <garden-sky colour="#d89a6a" colour-to="#1b2140" duration="120"></garden-sky>
+    <garden-height-map id="dunes" url="dunes.png" width="120" height="120" maxheight="6"></garden-height-map>
+
+    <!-- A walking player: WASD / gamepad / touch thumb pad, relative to the camera. -->
+    <garden-mesh-model id="player" src="robot.glb" height="1.8" walk terrain="#dunes"
+        anim-idle="Idle" anim-walk="Walking" anim-run="Running"></garden-mesh-model>
+
+    <!-- A guide on a path who waits (and turns round) when you fall 10 m behind. -->
+    <garden-line points="0 0 0, 0 0 40, 30 0 40">
+        <garden-mesh-model id="guide" src="robot.glb" track follow-wait="#player" follow-wait-distance="10"
+            anim-idle="Idle" anim-walk="Walking">
+            <garden-light pool="6" position="0 3 0" diffuse="1 0.8 0.5"></garden-light>
+            <garden-sound url="voice.mp3" loop ref-distance="3"></garden-sound>
+        </garden-mesh-model>
+    </garden-line>
+
+    <!-- Animals that trail the guide, keeping apart. -->
+    <garden-mesh-model src="fox.glb" follow="#guide" follow-spacing="1.5" anim-walk="Walk"></garden-mesh-model>
+
+    <garden-marker target="#guide" icon="★" from="#player" hide-within="5" show-distance></garden-marker>
+    <garden-particle preset="sand" wind="7 0 2" density="0.5"></garden-particle>
+    <garden-lightning interval="8 20"><garden-sound url="thunder.wav"></garden-sound></garden-lightning>
+</garden-scene>
+```
+
+| Piece | What it does |
+|---|---|
+| `walk` | A walking player, camera-relative; Havok's character controller with `<garden-physics>`, else `terrain` or `collisions`. `element.walker` |
+| `follow`, `follow-wait` | Followers that keep apart; a leader that stops for stragglers (`garden-wait` / `garden-resume`) |
+| `play()`, `anim-*` | Named GLB animations with cross-fades; idle/walk/run picked by speed; one-shots fire `garden-animation-end` |
+| `near` | `garden-near` / `garden-far` when something (or `camera`) comes close |
+| `<garden-light pool>` | Lights carried by meshes; a pool of light on the ground; live `intensity`/`range`; `shadows` |
+| Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
+| `<garden-marker>` | An icon over a target, or an edge-of-screen arrow to it |
+| `<garden-sound>` | Spatial audio on Babylon's audio engine: `play()`/`stop()`, `play-on="garden-near"`, cones, roll-off |
+
+The test characters are Quaternius's CC0 RobotExpressive and the Khronos Fox
+(see [examples/assets/characters/LICENCES.md](examples/assets/characters/LICENCES.md)).
+
+# Building and using it
+
+`npm run dev` builds `dist/juel-garden.js` (with esbuild), the global bundle
+for a plain `<script>` tag: every element, plus all of Babylon as
+`window.BABYLON`. `npm run build` minifies it. Havok's WASM and the
+Draco/meshopt decoders are copied next to it.
+
+In an app with a bundler, install the package (a git dependency works:
+`npm install github:Jollify-Software/juel-garden`; `prepare` builds it) and
+import it:
+
+```js
+import "juel-garden";                       // registers the <garden-*> elements
+import { GardenMeshModel } from "juel-garden"; // and the classes, with types
+```
+
+That is the ES-module build (`npm run build:lib` → `lib/`), with
+`@babylonjs/core` imported per module, so the bundler leaves out the parts of
+Babylon juel-garden doesn't use (about 4.4 MB minified, against 7.5 MB for the
+global bundle). Copy `HavokPhysics.wasm` and `decoders/` next to your page, or
+point `<garden-physics wasm="...">` at it.
+
+`npm run test:examples` opens every example in Chrome; `npm run test:lean`
+does the same against the npm build, which catches a Babylon side-effect
+import missing from `src/SideEffects.ts`. Each feature has its own
+`npm run test:*`.
 
 # Related projects
 

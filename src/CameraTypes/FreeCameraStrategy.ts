@@ -1,4 +1,6 @@
-import { FreeCamera, Vector3, VirtualJoysticksCamera } from "babylonjs";
+import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { VirtualJoysticksCamera } from "@babylonjs/core/Cameras/virtualJoysticksCamera";
 import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 
 /**

@@ -407,3 +407,35 @@ mesh at build time, not "whatever the user just picked". Making that work
 needs a real scene-level pick dispatcher, which combine/state/condition
 also depend on -- still genuine feature work, not a quick fix, now with a
 confirmed root cause instead of a guess.
+
+## Characters, guides and weather (added 2026-10-19, built 2026-10-19)
+
+Plan: `DESIGN-characters-and-guides.md`. Built on branch `characters`, one
+commit per PR, each with an example in `examples/Characters/` and a test.
+
+- [x] Babylon 7.29 -> 8.56.2, esbuild instead of Parcel (it segfaulted).
+- [x] **PR 1 `walk`** (`npm run test:walk`), follow camera `free-look`.
+- [x] **PR 2 `follow`, `follow-wait`** (`test:follow`); `follow-wait="camera"`.
+- [x] **PR 3 named animations** (`test:named-animations`).
+- [x] **PR 4 `near`** (`test:near`).
+- [x] **PR 5 carried lights** (`test:lights`).
+- [x] **PR 6 weather** (`test:weather`).
+- [x] **PR 7 `<garden-marker>`** (`test:marker`).
+- [x] **PR 8 spatial audio** (`test:sound`): done with the Babylon 8 move,
+  since the legacy `Sound` broke there.
+- [x] **PR 9 packaging**: `@babylonjs/core` per-module imports, `lib/` ES
+  build + types, `prepare`; `npm run test:lean`.
+- [x] Final examples: `guide.html`, `museum-guide.html`.
+- [x] Open questions answered (in the design).
+
+Left over:
+- [ ] `<garden-marker>` in a WebXR headset (a floating arrow in front of the
+  viewer); it is a DOM overlay, so it isn't drawn in VR.
+- [ ] `follow` with Havok's character controller (followers use `terrain` or
+  `collisions` only); `walk`'s controller could be shared.
+- [ ] Most elements still build once: `GardenElement.update()` skips Lit's
+  own `update()`, so later property changes don't re-run `updated()`.
+  `liveUpdate()` opts an element in (light, sound, marker); worth doing
+  element by element.
+- [ ] Babylon 9 is out (2026-03-26); this moved to 8.56.2 as decided.
+- [ ] Grotto equivalents: parked.

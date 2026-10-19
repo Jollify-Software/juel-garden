@@ -1,8 +1,8 @@
-import { GizmoManager, Mesh } from "babylonjs";
-import { AbstractMesh } from "babylonjs/Meshes/abstractMesh";
-import { Node } from "babylonjs/node";
-import bind from "bind-decorator";
-import { customElement, property } from "lit/decorators";
+import { GizmoManager } from "@babylonjs/core/Gizmos/gizmoManager";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import { Node } from "@babylonjs/core/node";
+import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 
@@ -167,8 +167,8 @@ export class GardenGizmo extends GardenElement {
         this.dispatchEvent(evt);
     }
 
-    @bind
-    positionDragEnd(e) {
+    // The drag-end handlers are arrow functions: passed to Babylon observables as callbacks, they must keep `this`.
+    positionDragEnd = (e) => {
         this.ondragEnd();
         let evt = new CustomEvent("position-dragend", {
             detail: this.manager.attachableMeshes.map((x: AbstractMesh) => {
@@ -181,8 +181,7 @@ export class GardenGizmo extends GardenElement {
         this.dispatchEvent(evt);
     }
 
-    @bind
-    rotationDragEnd(e) {
+    rotationDragEnd = (e) => {
         this.ondragEnd();
         let evt = new CustomEvent("rotation-dragend", {
             detail: this.manager.attachableMeshes.map((x: AbstractMesh) => {
@@ -195,8 +194,7 @@ export class GardenGizmo extends GardenElement {
         this.dispatchEvent(evt);
     }
 
-    @bind
-    scaleDragEnd(e) {
+    scaleDragEnd = (e) => {
         this.ondragEnd();
         let evt = new CustomEvent("scale-dragend", {
             detail: this.manager.attachableMeshes.map((x: AbstractMesh) => {

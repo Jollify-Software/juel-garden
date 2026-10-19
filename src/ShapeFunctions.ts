@@ -1,5 +1,5 @@
-import { Vector3, Vector4 } from "babylonjs";
-import { Tools } from "babylonjs";
+import { Vector3, Vector4 } from "@babylonjs/core/Maths/math.vector";
+import { Tools } from "@babylonjs/core/Misc/tools";
 import { Utility } from "./Utility";
 
 /**

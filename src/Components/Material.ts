@@ -1,5 +1,6 @@
-import { Color3, StandardMaterial } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { customElement, property } from "lit/decorators.js";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenTexture } from "./Texture";

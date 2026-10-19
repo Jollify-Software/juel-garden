@@ -1,5 +1,6 @@
-import { Animatable, Animation } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { Animatable } from "@babylonjs/core/Animations/animatable.core";
+import { Animation } from "@babylonjs/core/Animations/animation";
+import { customElement, property } from "lit/decorators.js";
 import { ObjectConverter } from "../Converters/ObjectConverter";
 import { StaticConvert } from "../Converters/StaticConvert";
 import { GardenElement } from "../GardenElement";
@@ -69,11 +70,14 @@ export class GardenAnimation extends GardenElement {
                         StaticConvert.animationType(this.type), this.loopmode);
                     this.animation.setKeys(ObjectConverter.keyframeRay(this.keyframes));
                 }
-                if (!targetEl.mesh.animations)
-                    targetEl.mesh.animations = []
-                if (targetEl.mesh.animations.indexOf(this.animation) < 0)
-                    targetEl.mesh.animations.push(this.animation);
-                target = targetEl.mesh;
+                // A light (or anything else with an animationTarget) animates that instead of a mesh.
+                target = (<any>targetEl).animationTarget ?? targetEl.mesh;
+                if (!target)
+                    return null;
+                if (!target.animations)
+                    target.animations = []
+                if (target.animations.indexOf(this.animation) < 0)
+                    target.animations.push(this.animation);
                 return scene.beginAnimation(target, this.from, this.to, this.loop);
         }
     }
@@ -95,7 +99,7 @@ export class GardenAnimation extends GardenElement {
         let targetEl = this.resolveTarget(el);
         if (!targetEl)
             return;
-        let target = this.type === "skeleton" ? (<GardenSkeletonMesh>targetEl).skeleton : targetEl.mesh;
+        let target = this.type === "skeleton" ? (<GardenSkeletonMesh>targetEl).skeleton : (<any>targetEl).animationTarget ?? targetEl.mesh;
         this.getScene().stopAnimation(target);
     }
 
