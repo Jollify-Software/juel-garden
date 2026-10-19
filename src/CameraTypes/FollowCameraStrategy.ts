@@ -36,6 +36,11 @@ import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
  * up toward the horizon -- useful at a small `radius`, where aiming exactly
  * at the target otherwise reads as looking almost straight down over it.
  *
+ * `free-look` keeps the camera at its own angle round the target instead of
+ * swinging behind it on every turn -- what a walking player wants (see
+ * {@link BehaviourWalk}), whose controls are relative to the camera. Drag to
+ * look round (sideways turns, up and down raises or lowers the camera).
+ *
  * @category Camera Types
  */
 export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
@@ -48,6 +53,7 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
         cameraStiffness: number;
         cameraDamping: number;
         chaseTarget: AbstractMesh;
+        freeLook: boolean;
     };
     state.radius = 4;
     state.heightOffset = 2;
@@ -67,6 +73,9 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
     state.cameraStiffness = 40;
     state.cameraDamping = 8;
     state.chaseTarget = null;
+    state.freeLook = false;
+    // free-look: the camera's own angle round the target, set on the first frame.
+    let orbitAngle: number = null;
 
     // UniversalCamera ships with its own keyboard/mouse-look inputs, which
     // GardenCamera's generic attachControl() call would otherwise wire up --
@@ -77,6 +86,22 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
 
     let engine = scene.getEngine();
     let velocity = Vector3.Zero();
+
+    let canvas = engine.getRenderingCanvas();
+    let drag: { id: number, x: number, y: number } = null;
+    canvas?.addEventListener("pointerdown", e => {
+        if (state.freeLook && !drag) drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    });
+    canvas?.addEventListener("pointermove", e => {
+        if (!drag || e.pointerId != drag.id || orbitAngle == null) return;
+        orbitAngle += (e.clientX - drag.x) * 0.006;
+        state.heightOffset = Math.max(0.3, Math.min(state.radius * 2, state.heightOffset + (e.clientY - drag.y) * 0.02));
+        drag.x = e.clientX;
+        drag.y = e.clientY;
+    });
+    let endDrag = (e: PointerEvent) => { if (drag?.id == e.pointerId) drag = null; };
+    canvas?.addEventListener("pointerup", endDrag);
+    canvas?.addEventListener("pointercancel", endDrag);
 
     scene.onBeforeRenderObservable.add(() => {
         let target = state.chaseTarget;
@@ -92,6 +117,8 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
         // particular geometry happens to be modelled.
         let heading = (<any>target).drivingHeading ?? target.rotation.y;
         let angle = heading + Tools.ToRadians(state.rotationOffset);
+        if (state.freeLook)
+            angle = orbitAngle ??= angle;
 
         let idealPosition = new Vector3(
             targetPosition.x + Math.sin(angle) * state.radius,

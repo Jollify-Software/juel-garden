@@ -32,7 +32,8 @@
     "test:unknown-type": "node tests/unknown-type.js",
     "test:unset-numbers": "node tests/unset-numbers.js",
     "test:webxr": "node tests/webxr.js",
-    "test:sound": "node tests/sound.js"
+    "test:sound": "node tests/sound.js",
+    "test:walk": "node tests/walk.js"
   },
   "repository": {
     "type": "git",

@@ -5,7 +5,8 @@
 //   const { run } = require("./harness");
 //   run("<garden-scene>...</garden-scene>", async ({ page, check, errors }) => { ... });
 //
-// `html` is the body; the page loads /dist/juel-garden.js. Never return a Babylon object
+// `html` is the body (or null with `url` set to a repo page); the page loads
+// /dist/juel-garden.js. `open(html)` loads a second inline page in the same tab. Never return a Babylon object
 // from page.evaluate() (Playwright tries to serialise it and stalls).
 const fs = require("fs");
 const path = require("path");
@@ -35,19 +36,24 @@ function run(html, body, { url = "/test.html", viewport = { width: 1000, height:
                     return route.fulfill({ status: 404, body: "" });
                 route.fulfill({ status: 200, body: fs.readFileSync(f), contentType: TYPES[path.extname(f).toLowerCase()] || "application/octet-stream" });
             });
-            if (html != null)
-                await page.route(ORIGIN + url, route => route.fulfill({ status: 200, contentType: "text/html",
-                    body: `<!DOCTYPE html><html><head><meta charset="utf-8"><script src="/dist/juel-garden.js"></script></head><body>${html}</body></html>` }));
             const errors = [];
             page.on("pageerror", e => errors.push("pageerror: " + e.message));
             page.on("console", m => { if (m.type() == "error" && !/Failed to load resource/.test(m.text())) errors.push(m.text()); });
-            await page.goto(ORIGIN + url, { waitUntil: "load" });
-            await page.waitForFunction(() => document.querySelector("garden-scene")?.scene?.getFrameId() > 10, null, { timeout: 30000 });
+            // Opens another inline page (or a repo file when html is null) in the same tab.
+            let pages = 0;
+            const open = async (html, at = `/test-${++pages}.html`) => {
+                if (html != null)
+                    await page.route(ORIGIN + at, route => route.fulfill({ status: 200, contentType: "text/html",
+                        body: `<!DOCTYPE html><html><head><meta charset="utf-8"><script src="/dist/juel-garden.js"></script></head><body>${html}</body></html>` }));
+                await page.goto(ORIGIN + at, { waitUntil: "load" });
+                await page.waitForFunction(() => document.querySelector("garden-scene")?.scene?.getFrameId() > 10, null, { timeout: 30000 });
+            };
+            await open(html, url);
             const frames = n => page.evaluate(n => new Promise(r => {
                 const s = document.querySelector("garden-scene").scene, end = s.getFrameId() + n;
                 const o = s.onAfterRenderObservable.add(() => { if (s.getFrameId() >= end) { s.onAfterRenderObservable.remove(o); r(); } });
             }), n);
-            await body({ page, check, errors, frames });
+            await body({ page, check, errors, frames, open });
             check("no page errors", errors.length == 0, errors.join(" | "));
         } finally {
             await browser.close();

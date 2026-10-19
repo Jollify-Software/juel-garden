@@ -20,7 +20,7 @@ import { GardenScene } from "./Scene";
  * Attributes: `type`, `position`, `speed`, `target` (an element selector, for
  * `type="follow"` or any type exposing `chaseTarget`), `radius`,
  * `height-offset`, `rotation-offset`, `look-offset`, `camera-stiffness`,
- * `camera-damping` (the last five are `type="follow"`-specific), `ellipsoid`/`touch`
+ * `camera-damping`, `free-look` (the last six are `type="follow"`-specific), `ellipsoid`/`touch`
  * (`type="free"`-specific).
  *
  * @example
@@ -78,6 +78,8 @@ export class GardenCamera extends GardenElement {
 
         let opt = this.buildOptions();
         this.camera = Object.assign(this.camera, opt);
+        if ("freeLook" in this.camera)
+            (<any>this.camera).freeLook = this.hasAttribute("free-look");
 
         this.camera.attachControl(sceneEl.canvas, true);
 

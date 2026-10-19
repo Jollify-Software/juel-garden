@@ -81,7 +81,11 @@ export class GardenMeshModel extends GardenSkeletonMesh {
             return;
         }
         this.loadedKey = key;
-        this.loaded = this.loadDistance > 0 ? this.whenNear().then(() => this.load()) : this.load();
+        // whenReady waits for the model, so a follow camera or a `walk` targeting it
+        // finds its mesh (with load-distance, not until the camera comes near).
+        this.beginBuild();
+        this.loaded = (this.loadDistance > 0 ? this.whenNear().then(() => this.load()) : this.load())
+            .finally(() => this.endBuild());
     }
 
     /** Resolves once the active camera is within `load-distance` of the model. */

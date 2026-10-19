@@ -8,6 +8,7 @@ import { BehaviourOrbit } from "./BehaviourOrbit";
 import { BehaviourSuspension } from "./BehaviourSuspension";
 import { BehaviourTerrain } from "./BehaviourTerrain";
 import { BehaviourTrack } from "./BehaviourTrack";
+import { BehaviourWalk } from "./BehaviourWalk";
 import { BehaviourWander } from "./BehaviourWander";
 
 /**
@@ -24,10 +25,10 @@ import { BehaviourWander } from "./BehaviourWander";
  *   equivalent, so these stay real-`Mesh`-only, wired only from
  *   {@link applyBehaviours} (which `GardenMesh.modifyMesh` calls).
  *
- * `drive` must come before `suspension` in `generic`: Babylon fires
+ * `drive` and `walk` must come before `suspension`/`terrain` in `generic`: Babylon fires
  * `onBeforeRenderObservable` callbacks in registration order, and
- * suspension needs this frame's drive-updated position/heading, not last
- * frame's.
+ * suspension and terrain need this frame's moved position/heading, not
+ * last frame's.
  *
  * See each behaviour's own doc comment for its specific attributes.
  *
@@ -37,6 +38,7 @@ export module Behaviours {
     var generic = {
         'track': BehaviourTrack,
         'drive': BehaviourDrive,
+        'walk': BehaviourWalk,
         'suspension': BehaviourSuspension,
         'wander': BehaviourWander,
         'flee-target': BehaviourFlee,
