@@ -63,11 +63,7 @@ export function BehaviourTrack(el: GardenElement, target: IBehaviourTarget, attr
     let bank = el.hasAttribute("track-bank");
     let distance = 0;
 
-    scene.onBeforeRenderObservable.add(() => {
-        // Held by `follow-wait` (or a game): stay put, facing wherever it turned.
-        if ((<any>el).waiting)
-            return;
-        distance = (distance + step) % length;
+    let place = () => {
         let t = distance / length;
 
         let forward = path.getTangentAt(t, true);
@@ -83,5 +79,16 @@ export function BehaviourTrack(el: GardenElement, target: IBehaviourTarget, attr
 
         target.position = path.getPointAt(t);
         target.rotation = Vector3.RotationFromAxis(right, trueUp, forward);
+    };
+    // Start on the path, not wherever the mesh was declared -- even if
+    // `follow-wait` holds it before its first step.
+    place();
+
+    scene.onBeforeRenderObservable.add(() => {
+        // Held by `follow-wait` (or a game): stay put, facing wherever it turned.
+        if ((<any>el).waiting)
+            return;
+        distance = (distance + step) % length;
+        place();
     });
 }

@@ -9,7 +9,7 @@
         </style>
     </head>
     <body>
-        <div id="hud">WASD / arrows or a gamepad to walk, Shift to run, drag to look round. <span id="speed"></span></div>
+        <div id="hud">WASD / arrows or a gamepad to walk, Shift to run, E to wave, drag to look round. <span id="speed"></span></div>
 
         <garden-scene>
             <!--
@@ -25,8 +25,10 @@
               meaning "away from the camera". Drag to look round.
 
               The robot is Quaternius's CC0 RobotExpressive (see
-              examples/assets/characters/LICENCES.md); `animation="Walking"`
-              just loops one clip for now.
+              examples/assets/characters/LICENCES.md). `anim-idle`,
+              `anim-walk` and `anim-run` pick its animation from how fast it
+              is going, cross-fading between them; press E to wave (a
+              one-shot `play("Wave", { loop: false })`).
             -->
             <garden-camera type="follow" target="#player" free-look radius="7" height-offset="3.5" look-offset="1.2"
                 camera-stiffness="20" camera-damping="7"></garden-camera>
@@ -36,7 +38,8 @@
                 minheight="0" maxheight="6" colour="#d9b77a"></garden-height-map>
 
             <garden-mesh-model id="player" src="../assets/characters/RobotExpressive.glb" height="1.8"
-                animation="Idle" position="0 3 -20" loading-screen="false"
+                anim-idle="Idle" anim-walk="Walking" anim-run="Running" anim-walk-speed="1.8" anim-run-speed="5"
+                position="0 3 -20" loading-screen="false"
                 walk walk-speed="2.2" walk-run-speed="5.5" terrain="#dunes"></garden-mesh-model>
 
             <!-- Some rocks to walk round. -->
@@ -52,6 +55,7 @@
                 const w = player.walker;
                 if (w) hud.textContent = `${w.speed.toFixed(1)} m/s${w.running ? " (running)" : ""}`;
             }, 200);
+            addEventListener("keydown", e => { if (e.key == "e") player.play("Wave", { loop: false, blend: 0.15 }); });
         </script>
     </body>
 </html>

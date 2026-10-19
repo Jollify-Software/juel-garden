@@ -34,7 +34,8 @@
     "test:webxr": "node tests/webxr.js",
     "test:sound": "node tests/sound.js",
     "test:walk": "node tests/walk.js",
-    "test:follow": "node tests/follow.js"
+    "test:follow": "node tests/follow.js",
+    "test:named-animations": "node tests/named-animations.js"
   },
   "repository": {
     "type": "git",
