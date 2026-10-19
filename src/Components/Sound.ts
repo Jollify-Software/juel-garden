@@ -62,6 +62,10 @@ export class GardenSound extends GardenElement {
         return (this.sound?.activeInstancesCount ?? 0) > 0;
     }
 
+    update(changed?: Map<PropertyKey, unknown>) {
+        this.liveUpdate(changed);
+    }
+
     updated() {
         // Changing loop/volume shouldn't reload the file.
         if (this.sound) {

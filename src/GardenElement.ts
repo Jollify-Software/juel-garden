@@ -1,5 +1,5 @@
 import { Scene, TransformNode, Vector3 } from "babylonjs";
-import { LitElement } from "lit";
+import { LitElement, ReactiveElement } from "lit";
 import {customElement, property} from 'lit/decorators.js';
 import { GardenScene } from "./Components/Scene";
 import { Vector3Convert } from "./Converters/Vector3Convert";
@@ -159,6 +159,17 @@ export class GardenElement extends LitElement {
             this.node.rotation = this.rotation;
         if (this.scale)
             this.node.scaling = this.scale;
+    }
+
+    /**
+     * {@link update} here doesn't call Lit's own `update()`, so Lit thinks the
+     * first update never finished and ignores later property changes -- most
+     * elements build once from their markup. An element whose `updated()`
+     * handles later changes (a light's `intensity` set from code) calls this
+     * from its own `update()` instead, so each change runs `updated()` again.
+     */
+    protected liveUpdate(changed?: Map<PropertyKey, unknown>) {
+        (<any>ReactiveElement.prototype).update.call(this, changed);
     }
 
     buildOptions(): object {
