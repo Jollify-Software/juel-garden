@@ -1,5 +1,5 @@
 import { Animatable, Animation } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { ObjectConverter } from "../Converters/ObjectConverter";
 import { StaticConvert } from "../Converters/StaticConvert";
 import { GardenElement } from "../GardenElement";

@@ -2,7 +2,7 @@ import { GizmoManager, Mesh } from "babylonjs";
 import { AbstractMesh } from "babylonjs/Meshes/abstractMesh";
 import { Node } from "babylonjs/node";
 import bind from "bind-decorator";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 

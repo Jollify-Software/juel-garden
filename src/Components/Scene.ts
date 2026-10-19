@@ -1,6 +1,6 @@
-import { Engine, IAction, Mesh, Scene, Tools, Vector3 } from "babylonjs";
+import { AudioEngineV2, CreateAudioEngineAsync, Engine, IAction, Mesh, Scene, Tools, Vector3 } from "babylonjs";
 import { LitElement } from "lit";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { ActionInfo } from "../ActionInfo";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
@@ -50,6 +50,7 @@ export class GardenScene extends LitElement {
     selectedElement: GardenMesh;
 
     private _renderLoopActive = false;
+    private _audioEngine: Promise<AudioEngineV2>;
 
     getScene() {
         return this.scene;
@@ -61,6 +62,37 @@ export class GardenScene extends LitElement {
 
     createRenderRoot() {
         return this;
+    }
+
+    /**
+     * The scene's audio engine (Babylon's `AudioEngineV2`), created the first
+     * time a `<garden-sound>` asks for it, so a silent scene never opens an
+     * `AudioContext`. Its listener rides on the active camera. Browsers only
+     * allow audio after the user has interacted with the page: the first
+     * pointer, touch or key press anywhere unlocks it, and a sound that
+     * started before then is heard from that moment.
+     */
+    audioEngine(): Promise<AudioEngineV2> {
+        if (!this._audioEngine) {
+            this._audioEngine = (async () => {
+                let audio = await CreateAudioEngineAsync({ disableDefaultUI: true, resumeOnInteraction: true });
+                let attachListener = () => {
+                    if (this.scene?.activeCamera)
+                        audio.listener.attach(this.scene.activeCamera);
+                };
+                attachListener();
+                this.scene?.onActiveCameraChanged.add(attachListener);
+                let unlock = () => {
+                    audio.unlockAsync().catch(() => {});
+                    for (let type of ["pointerdown", "touchend", "keydown"])
+                        window.removeEventListener(type, unlock, true);
+                };
+                for (let type of ["pointerdown", "touchend", "keydown"])
+                    window.addEventListener(type, unlock, true);
+                return audio;
+            })();
+        }
+        return this._audioEngine;
     }
 
     firstUpdated() {
@@ -168,6 +200,10 @@ export class GardenScene extends LitElement {
             this.engine.stopRenderLoop();
             this.engine.dispose();
             this._renderLoopActive = false;
+        }
+        if (this._audioEngine) {
+            this._audioEngine.then(audio => audio.dispose()).catch(() => {});
+            this._audioEngine = null;
         }
     }
 

@@ -1,5 +1,5 @@
 import { Sprite, SpriteManager, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { Behaviours } from "../Behaviours/Behaviours";
 import { SpriteBehaviourTarget } from "../Behaviours/SpriteBehaviourTarget";
 import { GardenElement } from "../GardenElement";

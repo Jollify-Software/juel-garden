@@ -1,5 +1,5 @@
 import { Camera, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { CameraTypeStrategies } from "../CameraTypes/CameraTypeStrategies";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";

@@ -4,7 +4,7 @@ import { AnimationGroup, Mesh, Nullable, Observer, Scene, SceneLoader, Vector3 }
 import "babylonjs-loaders";
 // Compressed glTF (Draco, meshopt) decodes with copies next to the bundle, not Babylon's CDN.
 import "../Decoders";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 
 /**

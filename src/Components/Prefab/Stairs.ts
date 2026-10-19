@@ -5,7 +5,7 @@ import { ShapeFunctions } from "../../ShapeFunctions";
 import { VertexData } from "babylonjs";
 import { Utility } from "../../Utility";
 import { StairsFunctions, StepType } from "../../ShapeFunctions/Stairs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 
 /**
  * A flight of stairs, straight or curved, generated procedurally (see

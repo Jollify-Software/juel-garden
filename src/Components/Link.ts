@@ -1,5 +1,5 @@
 import { AbstractMesh, ActionManager, Color3, DynamicTexture, ExecuteCodeAction, Mesh, MeshBuilder, StandardMaterial, Texture, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";

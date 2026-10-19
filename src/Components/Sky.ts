@@ -1,5 +1,5 @@
 import { MeshBuilder, StandardMaterial, CubeTexture, Texture, Color3, Tools } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { GardenMesh } from "../GardenMesh";
 
 /**

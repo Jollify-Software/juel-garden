@@ -1,5 +1,5 @@
 import { Color3, StandardMaterial, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { Vector3Convert } from "../../Converters/Vector3Convert";
 import { GardenMesh } from "../../GardenMesh";
 import { arcPoints, createWall } from "../../Utils/Mesh/createWall";

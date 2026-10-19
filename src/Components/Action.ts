@@ -1,7 +1,7 @@
 import { ActionManager, IAction, IncrementValueAction, InterpolateValueAction, SetValueAction } from "babylonjs";
 import { TargetCamera } from "babylonjs/Cameras/targetCamera";
 import { Mesh } from "babylonjs/Meshes/mesh";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { ActionInfo } from "../ActionInfo";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";

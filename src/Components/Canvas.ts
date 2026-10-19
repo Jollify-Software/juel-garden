@@ -1,5 +1,5 @@
 import { DynamicTexture, Mesh, MeshBuilder, StandardMaterial, Vector2 } from 'babylonjs';
-import { customElement, property } from 'lit/decorators';
+import { customElement, property } from 'lit/decorators.js';
 import { Vector2Convert } from '../Converters/Vector2Convert';
 import { GardenMesh } from "../GardenMesh";
 

@@ -407,3 +407,32 @@ mesh at build time, not "whatever the user just picked". Making that work
 needs a real scene-level pick dispatcher, which combine/state/condition
 also depend on -- still genuine feature work, not a quick fix, now with a
 confirmed root cause instead of a guess.
+
+## Characters, guides and weather (added 2026-10-19)
+
+Plan: `DESIGN-characters-and-guides.md`. For a third-person "follow the
+guide" game and for museums with NPCs. Each item gets an example and a test.
+
+- [ ] **PR 1 `walk`**: a walking player, camera-relative, keyboard/gamepad/
+  touch joystick, Havok character controller (or `terrain`), exposes `speed`.
+- [ ] **PR 2 `follow`**: follow a leader at a distance/offset, spacing between
+  followers, `follow-wait` (the leader stops and turns when the player falls
+  behind; `garden-wait` / `garden-resume`).
+- [ ] **PR 3 named animations**: GLB animation groups by name, `play(name,
+  {blend})`, idle/walk/run chosen from movement speed, one-shots return.
+- [ ] **PR 4 proximity events**: `near="#id" near-distance` fires
+  `garden-near` / `garden-far`, with hysteresis.
+- [ ] **PR 5 carried lights**: `<garden-light>` parented to its mesh,
+  animatable `range`/`intensity`, a ground-pool option.
+- [ ] **PR 6 weather**: particle presets (rain, sand, dust devil),
+  `<garden-lightning>`, animatable scene fog, sky over time.
+- [ ] **PR 7 `<garden-marker>`**: icon over a target, edge-of-screen arrow
+  when it's off screen; target settable from code.
+- [ ] **PR 8 spatial audio**: `play()`/`stop()` on `<garden-sound>`, spatial
+  attributes, `play-on="garden-near"`, mobile unlock; Babylon 8 audio engine?
+- [ ] **PR 9 packaging**: ES-module npm build on `@babylonjs/core`, maybe
+  Babylon 8, keep the global bundle too; fixes the Windows Parcel crash and
+  the 6.3 MB vendored copy games use now.
+- [ ] Final example `examples/Characters/guide.html`, plus a museum guide.
+- [ ] Decide the open questions in the design (PR 9 first? Babylon 8? test
+  characters and licences? Grotto equivalents?).

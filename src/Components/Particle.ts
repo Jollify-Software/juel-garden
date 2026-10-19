@@ -1,5 +1,5 @@
 import { Color4, ParticleHelper, ParticleSystem, Texture, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { Colour4Convert } from "../Converters/Colour4Convert";
 import { StaticConvert } from "../Converters/StaticConvert";
 import { Vector3Convert } from "../Converters/Vector3Convert";

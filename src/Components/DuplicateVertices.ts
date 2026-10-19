@@ -1,5 +1,5 @@
 import { Mesh, VertexBuffer } from "babylonjs";
-import { customElement } from "lit/decorators";
+import { customElement } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 

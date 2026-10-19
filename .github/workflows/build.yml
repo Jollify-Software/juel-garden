@@ -23,11 +23,8 @@ jobs:
       - name: Install
         run: npm ci
 
-      # `npm run build` uses cmd's `del`; call Parcel directly instead.
       - name: Build
         run: |
-          npx parcel build juel-garden.ts --no-source-maps
-          npm run copy-wasm
-          npm run copy-decoders
+          npm run build
           test -s dist/decoders/draco_decoder_gltf.wasm
           test -s dist/juel-garden.js

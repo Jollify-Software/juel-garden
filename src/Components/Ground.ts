@@ -1,5 +1,5 @@
 import { Color3, Mesh, MeshBuilder, StandardMaterial } from "babylonjs";
-import { customElement } from "lit/decorators";
+import { customElement } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { OptionsBuilder } from "../Options/OptionsBuilder";

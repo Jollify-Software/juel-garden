@@ -1,6 +1,6 @@
 import { PointLight, HemisphericLight, Vector3 } from "babylonjs";
 import { LitElement } from "lit";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";

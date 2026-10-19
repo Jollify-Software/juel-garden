@@ -1,5 +1,5 @@
 import { Color3, HemisphericLight, Mesh, MeshBuilder, PolygonMeshBuilder, StandardMaterial, Texture, TransformNode, Vector2, Vector3 } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import earcut from "earcut";
 import { GardenMaterial } from "../Material";
 import { GardenMesh } from "../../GardenMesh";

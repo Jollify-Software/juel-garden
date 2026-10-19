@@ -1,6 +1,6 @@
 import { Vector3 } from "babylonjs";
 import { Mesh, MeshBuilder } from "babylonjs";
-import { customElement, property } from "lit/decorators";
+import { customElement, property } from "lit/decorators.js";
 import { GardenMesh } from "../../GardenMesh";
 
 /**

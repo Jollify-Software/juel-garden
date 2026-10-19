@@ -1,5 +1,5 @@
 import { Mesh } from "babylonjs";
-import { customElement } from "lit/decorators";
+import { customElement } from "lit/decorators.js";
 import { GardenMesh } from "../../GardenMesh";
 
 /**
