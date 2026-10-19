@@ -1,7 +1,9 @@
 # Design: characters, guides, weather and spatial audio
 
-Status: **planned (2026-10-19), nothing built.** The checklist is in `TODO.md`
-("Characters, guides and weather").
+Status: **built (2026-10-19)**, on branch `characters`, one commit per PR;
+what is left over is in `TODO.md` ("Characters, guides and weather").
+PR 8 (spatial audio) was done first, with the Babylon 8 upgrade, because
+the legacy `Sound` stopped working there.
 
 ## Why
 

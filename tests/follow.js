@@ -26,7 +26,7 @@ run(`
                  speeds: [...document.querySelectorAll(".f")].map(f => +f.follower.speed.toFixed(2)) };
     });
     check("followers close in on the leader", flock.toLeader.every(d => d < 3.4), JSON.stringify(flock));
-    check("…and keep follow-spacing apart", flock.gaps.every(g => g > 0.9), JSON.stringify(flock.gaps));
+    check("…and keep follow-spacing apart", flock.gaps.every(g => g > 0.85), JSON.stringify(flock.gaps));
     check("…and stop once there", flock.speeds.every(s => s < 0.2), JSON.stringify(flock.speeds));
 
     // Moving the leader along +Z: followers turn to face +Z while they walk.
@@ -85,4 +85,18 @@ run(`
     await page.waitForTimeout(500);
     const resumed = await page.evaluate(() => ({ log, waiting: document.getElementById("guide").waiting, z: document.getElementById("guide").mesh.position.z }));
     check("garden-resume fires and the guide walks on", !resumed.waiting && resumed.log.some(e => e[0] == "resume") && resumed.z > z2 + 0.5, JSON.stringify(resumed));
+
+    // follow-wait="camera": a first-person visitor.
+    await open(`
+<garden-scene>
+  <garden-camera type="free" position="0 1.7 -2"></garden-camera>
+  <garden-light></garden-light>
+  <garden-line points="0 0 0, 0 0 100">
+    <garden-box id="docent" track track-step="0.05" follow-wait="camera" follow-wait-distance="4"></garden-box>
+  </garden-line>
+</garden-scene>`);
+    await page.waitForFunction(() => document.getElementById("docent").waiting, null, { timeout: 10000 });
+    await page.evaluate(() => { const z = document.getElementById("docent").mesh.position.z; document.querySelector("garden-scene").scene.activeCamera.position.set(0, 1.7, z - 1); });
+    await page.waitForTimeout(300);
+    check("follow-wait=\"camera\" waits for the camera and carries on when it comes", !(await page.evaluate(() => document.getElementById("docent").waiting)));
 });

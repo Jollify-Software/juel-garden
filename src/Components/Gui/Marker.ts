@@ -19,7 +19,7 @@ import { resolveElements } from "../../Utils/resolveElements";
  * - `label` -- a line of text under the icon (and by the arrow).
  * - `hide-within` -- hidden while `from` is closer than this (metres).
  * - `from` -- whose distance counts for `hide-within` and the shown
- *   distance: an element (the player) or, by default, the camera.
+ *   distance: an element (the player) or the camera (`camera`, the default).
  * - `show-distance` -- adds the distance, e.g. "Guide · 23 m".
  * - `height` -- how far above the target's top the icon floats, default 0.3.
  *
@@ -115,7 +115,7 @@ export class GardenMarker extends GardenElement {
             ? new Vector3((min.x + max.x) / 2, max.y + (this.height ?? 0.3), (min.z + max.z) / 2)
             : node.getAbsolutePosition().add(new Vector3(0, this.height ?? 0.3, 0));
 
-        let fromNode = this.from ? resolveElements<GardenElement>(this.from)[0]?.getNode?.() : null;
+        let fromNode = this.from && this.from != "camera" ? resolveElements<GardenElement>(this.from)[0]?.getNode?.() : null;
         let fromPoint = fromNode?.getAbsolutePosition() ?? camera.globalPosition;
         let distance = Vector3.Distance(fromPoint, node.getAbsolutePosition());
         if (this.hideWithin > 0 && distance < this.hideWithin) {

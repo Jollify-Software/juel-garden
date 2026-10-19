@@ -16,7 +16,8 @@ import { turnYaw } from "../Utils/turnYaw";
  * (both bubble; `detail: { target, distance }`). `element.waiting` is true
  * meanwhile, and a game can set it too to hold the mesh where it is.
  *
- * Attributes: `follow-wait` (a selector), `follow-wait-distance` (default
+ * Attributes: `follow-wait` (a selector, or `camera` for a first-person
+ * visitor), `follow-wait-distance` (default
  * `6`), `follow-wait-turn` (degrees/second, default `270`),
  * `follow-facing-offset` (degrees, as for `follow`).
  *
@@ -44,25 +45,28 @@ export function BehaviourWait(el: GardenElement, mesh: Mesh, attr: Attr[]) {
     let turnRate = Tools.ToRadians(num("follow-wait-turn", 270));
     let facingOffset = Tools.ToRadians(num("follow-facing-offset", 0));
 
+    // follow-wait="camera": a first-person visitor.
     let other: GardenElement = null;
-    (async () => {
-        await GardenElement.whenDocumentReady();
-        [other] = await GardenElement.resolveReady(selector);
-        if (!other)
-            console.warn(`follow-wait="${selector}" did not match any element.`);
-    })().catch(err => console.error("[follow-wait] failed to resolve", selector, err));
+    let byCamera = selector.trim() == "camera";
+    if (!byCamera)
+        (async () => {
+            await GardenElement.whenDocumentReady();
+            [other] = await GardenElement.resolveReady(selector);
+            if (!other)
+                console.warn(`follow-wait="${selector}" did not match any element.`);
+        })().catch(err => console.error("[follow-wait] failed to resolve", selector, err));
 
     // Set by this behaviour, or by a game: either way track/wander/follow pause.
     let waitingHere = false;
     (<any>el).waiting ??= false;
 
     (<any>el)._waitObserver = scene.onBeforeRenderObservable.add(() => {
-        let node = other?.getNode();
-        if (!node || !mesh.isEnabled())
+        let them = byCamera ? scene.activeCamera?.globalPosition : other?.getNode()?.getAbsolutePosition();
+        if (!them || !mesh.isEnabled())
             return;
-        let me = mesh.getAbsolutePosition(), them = node.getAbsolutePosition();
+        let me = mesh.getAbsolutePosition();
         let distance = Math.hypot(them.x - me.x, them.z - me.z);
-        let detail = { target: other, distance };
+        let detail = { target: byCamera ? scene.activeCamera : other, distance };
         if (!waitingHere && distance > limit) {
             waitingHere = (<any>el).waiting = true;
             el.dispatchEvent(new CustomEvent("garden-wait", { bubbles: true, detail }));

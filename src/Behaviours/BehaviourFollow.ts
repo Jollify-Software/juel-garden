@@ -161,7 +161,7 @@ export function BehaviourFollow(el: GardenElement, target: IBehaviourTarget, att
                     let push = (spacing - d) / spacing * maxSpeed;
                     apart.x += dx / d * push;
                     apart.z += dz / d * push;
-                    crowded ||= d < spacing * 0.5;
+                    crowded ||= d < spacing * 0.75;
                 }
             }
 

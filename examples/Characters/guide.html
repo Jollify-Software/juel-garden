@@ -1,0 +1,111 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <script src="../../dist/juel-garden.js"></script>
+        <style>
+            #hud { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1; font: 15px sans-serif; color: white;
+                   text-shadow: 0 1px 3px black; }
+        </style>
+    </head>
+    <body>
+        <div id="hud">Follow the guide across the desert. WASD / arrows or a gamepad (Shift runs), or the thumb pad on a
+            phone; drag to look round. <b id="status"></b></div>
+
+        <garden-scene fog-density="0.012">
+            <!--
+              FOLLOW THE GUIDE
+
+              Everything from DESIGN-characters-and-guides.md together, with
+              almost no script:
+
+              - You walk (`walk`, on the dunes with `terrain`), animated by
+                speed (`anim-idle`/`anim-walk`/`anim-run`).
+              - The guide walks a path (`track`) carrying a pool of light
+                (<garden-light pool>). Drop 12 m behind and it stops, turns to
+                face you and calls (`follow-wait`; the <garden-sound
+                play-on="garden-wait"> needs no code; the script repeats the
+                call while it waits).
+              - Two foxes and two little robots trail the guide (`follow`),
+                keeping apart.
+              - Dusk falls (<garden-sky colour-to>); a dust devil wanders the
+                dunes; lightning flashes now and then, with thunder; after a
+                while a sandstorm closes in (fogTo() and the sand's density,
+                the only real game logic here) and later clears.
+              - The star (<garden-marker>) shows where the guide is, or which
+                way to turn when they are out of sight.
+            -->
+            <garden-camera type="follow" target="#player" free-look radius="7" height-offset="3.2" look-offset="1.2"
+                camera-stiffness="20" camera-damping="7"></garden-camera>
+            <garden-sky colour="#d0906a" colour-to="#1a2040" duration="180"></garden-sky>
+            <garden-light intensity="0.55" diffuse="1 0.85 0.7"></garden-light>
+
+            <garden-height-map id="dunes" url="../assets/dunes.png" width="120" height="120" subdivisions="90"
+                minheight="0" maxheight="6" colour="#d9b77a"></garden-height-map>
+
+            <garden-line points="0 0 -40, 0 0 -20, 6 0 -5, 2 0 10, -8 0 22, -4 0 38, 10 0 45, 30 0 40, 35 0 20, 20 0 0, 25 0 -25, 10 0 -40, 0 0 -40">
+                <garden-mesh-model id="guide" src="../assets/characters/RobotExpressive.glb" height="2" loading-screen="false"
+                    track track-smooth="10" track-step="0.022" terrain="#dunes"
+                    follow-wait="#player" follow-wait-distance="12"
+                    anim-idle="Idle" anim-walk="Walking" anim-walk-speed="1.4">
+                    <garden-light pool="7" position="0 3.2 0" intensity="1.4" diffuse="1 0.8 0.5"></garden-light>
+                    <garden-sound id="call" url="../assets/call.wav" play-on="garden-wait" ref-distance="5" rolloff="0.5"></garden-sound>
+                </garden-mesh-model>
+            </garden-line>
+
+            <garden-mesh-model src="../assets/characters/Fox.glb" height="0.65" loading-screen="false" position="-3 0 -46"
+                follow="#guide" follow-distance="2.5" follow-spacing="1.8" terrain="#dunes"
+                anim-idle="Survey" anim-walk="Walk" anim-run="Run" anim-walk-speed="1" anim-run-speed="3"></garden-mesh-model>
+            <garden-mesh-model src="../assets/characters/Fox.glb" height="0.55" loading-screen="false" position="3 0 -47"
+                follow="#guide" follow-distance="2.5" follow-spacing="1.8" terrain="#dunes"
+                anim-idle="Survey" anim-walk="Walk" anim-run="Run" anim-walk-speed="1" anim-run-speed="3"></garden-mesh-model>
+            <garden-mesh-model src="../assets/characters/RobotExpressive.glb" height="1.1" loading-screen="false" position="-2 0 -49"
+                follow="#guide" follow-offset="-1.6 0 -2.4" follow-spacing="1.8" terrain="#dunes"
+                anim-idle="Idle" anim-walk="Walking" anim-run="Running" anim-walk-speed="1" anim-run-speed="3"></garden-mesh-model>
+            <garden-mesh-model src="../assets/characters/RobotExpressive.glb" height="1.0" loading-screen="false" position="2 0 -49"
+                follow="#guide" follow-offset="1.6 0 -2.6" follow-spacing="1.8" terrain="#dunes"
+                anim-idle="Idle" anim-walk="Walking" anim-run="Running" anim-walk-speed="1" anim-run-speed="3"></garden-mesh-model>
+
+            <garden-mesh-model id="player" src="../assets/characters/RobotExpressive.glb" height="1.3" loading-screen="false"
+                position="0 3 -47" walk walk-speed="2.4" walk-run-speed="5.5" terrain="#dunes"
+                anim-idle="Idle" anim-walk="Walking" anim-run="Running" anim-walk-speed="1.6" anim-run-speed="4.5"></garden-mesh-model>
+
+            <garden-sphere diameter="0.1" position="25 0 0" colour="#d9b77a" wander wander-radius="25" wander-speed="2.5" terrain="#dunes">
+                <garden-particle preset="dust-devil" size="1.3"></garden-particle>
+            </garden-sphere>
+            <garden-particle id="sand" preset="sand" wind="7 0 2" density="0.25"></garden-particle>
+            <garden-lightning interval="12 30" intensity="2">
+                <garden-sound url="../assets/thunder.wav" volume="0.8"></garden-sound>
+            </garden-lightning>
+
+            <garden-marker target="#guide" icon="★" label="Guide" from="#player" hide-within="6" show-distance></garden-marker>
+        </garden-scene>
+
+        <script>
+            const guide = document.getElementById("guide"), call = document.getElementById("call");
+            const status = document.getElementById("status");
+            guide.addEventListener("garden-wait", () => { status.textContent = "The guide is waiting for you."; guide.play("Wave", { loop: false }); });
+            guide.addEventListener("garden-resume", () => status.textContent = "");
+            // Keep calling while waiting.
+            setInterval(() => { if (guide.waiting) call.play(); }, 4000);
+
+            // The storm: builds after a minute, clears a minute later, and again.
+            const scene = document.querySelector("garden-scene"), sand = document.getElementById("sand");
+            function ramp(to, seconds) {
+                const from = sand.density, start = performance.now();
+                const step = () => {
+                    const k = Math.min(1, (performance.now() - start) / (seconds * 1000));
+                    sand.density = from + (to - from) * k;
+                    if (k < 1) requestAnimationFrame(step);
+                };
+                step();
+            }
+            let stormy = false;
+            setInterval(() => {
+                stormy = !stormy;
+                ramp(stormy ? 2.2 : 0.25, 15);
+                scene.fogTo(stormy ? { density: 0.06, colour: "#a88a64" } : { density: 0.012 }, 15);
+            }, 60000);
+        </script>
+    </body>
+</html>
