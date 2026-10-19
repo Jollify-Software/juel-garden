@@ -38,7 +38,8 @@
     "test:named-animations": "node tests/named-animations.js",
     "test:near": "node tests/near.js",
     "test:lights": "node tests/lights.js",
-    "test:weather": "node tests/weather.js"
+    "test:weather": "node tests/weather.js",
+    "test:marker": "node tests/marker.js"
   },
   "repository": {
     "type": "git",

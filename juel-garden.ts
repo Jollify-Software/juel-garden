@@ -35,6 +35,7 @@ import "./src/Components/Physics";
 import "./src/Components/Gui/Info";
 import "./src/Components/Gui/Text";
 import "./src/Components/Gui/Button";
+import "./src/Components/Gui/Marker";
 import "./src/Components/Prefab/House";
 import "./src/Components/Prefab/SemiHouse";
 

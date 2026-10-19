@@ -26,6 +26,10 @@
               ever head for the guide. Everyone's animation follows their
               speed (`anim-idle`/`anim-walk`/`anim-run`), and the guide waves
               when it stops for you.
+
+              The <garden-marker> shows a star over the guide, or an arrow at
+              the edge of the screen when the guide is out of sight, with the
+              distance from you; it hides once you are within 4 m.
             -->
             <garden-camera type="follow" target="#player" free-look radius="9" height-offset="5" look-offset="1"
                 camera-stiffness="20" camera-damping="7"></garden-camera>
@@ -45,6 +49,8 @@
                 position="-16 0 -14" loading-screen="false" follow="#guide" follow-distance="2.5" follow-spacing="1.6"></garden-mesh-model>
             <garden-mesh-model class="fox" src="../assets/characters/Fox.glb" height="0.65" anim-idle="Survey" anim-walk="Walk" anim-run="Run" anim-walk-speed="1" anim-run-speed="3"
                 position="-15 0 -18" loading-screen="false" follow="#guide" follow-offset="-1.6 0 -2.5" follow-spacing="1.6"></garden-mesh-model>
+
+            <garden-marker target="#guide" icon="★" label="Guide" from="#player" hide-within="4" show-distance></garden-marker>
 
             <garden-cylinder id="player" diameter="0.6" height="1.3" position="-14 0.65 -20" colour="#3c78d8"
                 walk walk-speed="2.5" walk-run-speed="6"></garden-cylinder>
