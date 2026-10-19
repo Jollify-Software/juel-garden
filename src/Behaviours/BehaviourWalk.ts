@@ -2,6 +2,7 @@ import { AbstractMesh, Axis, CharacterSupportedState, Mesh, Observer, PhysicsCha
 import { GardenElement } from "../GardenElement";
 import { IBehaviourTarget } from "../IBehaviourTarget";
 import { GardenPhysics } from "../Components/Physics";
+import { turnYaw } from "../Utils/turnYaw";
 import { WalkInput } from "./WalkInput";
 
 /**
@@ -137,10 +138,7 @@ export function BehaviourWalk(el: GardenElement, target: IBehaviourTarget, attr:
     let turnTowards = (direction: Vector3, dt: number) => {
         if (direction.lengthSquared() < 1e-4)
             return;
-        let wanted = Math.atan2(direction.x, direction.z);
-        let delta = Math.atan2(Math.sin(wanted - walker.heading), Math.cos(wanted - walker.heading));
-        let step = turnRate * dt;
-        walker.heading += Math.abs(delta) <= step ? delta : Math.sign(delta) * step;
+        walker.heading = turnYaw(walker.heading, Math.atan2(direction.x, direction.z), turnRate * dt);
         target.rotation.y = walker.heading + facingOffset;
         // Read by a type="follow" camera, as for `drive`.
         (<any>target).drivingHeading = walker.heading;

@@ -33,7 +33,8 @@
     "test:unset-numbers": "node tests/unset-numbers.js",
     "test:webxr": "node tests/webxr.js",
     "test:sound": "node tests/sound.js",
-    "test:walk": "node tests/walk.js"
+    "test:walk": "node tests/walk.js",
+    "test:follow": "node tests/follow.js"
   },
   "repository": {
     "type": "git",
