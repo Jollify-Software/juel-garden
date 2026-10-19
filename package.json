@@ -37,7 +37,8 @@
     "test:follow": "node tests/follow.js",
     "test:named-animations": "node tests/named-animations.js",
     "test:near": "node tests/near.js",
-    "test:lights": "node tests/lights.js"
+    "test:lights": "node tests/lights.js",
+    "test:weather": "node tests/weather.js"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,85 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <script src="../../dist/juel-garden.js"></script>
+        <style>
+            #hud { position: absolute; top: 12px; left: 12px; z-index: 1; font: 15px sans-serif; color: white;
+                   text-shadow: 0 1px 2px black; }
+            #hud button { font-size: 15px; padding: 4px 12px; }
+        </style>
+    </head>
+    <body>
+        <div id="hud">
+            <button id="storm">Sandstorm</button> <button id="clear">Clear</button>
+            <button id="rain">Rain</button> <button id="snow">Snow</button> <button id="strike">Lightning</button>
+            &nbsp;WASD / arrows to walk.
+        </div>
+
+        <garden-scene fog-density="0.004">
+            <!--
+              WEATHER
+
+              - <garden-sky colour colour-to duration>: the sky fades from dusk
+                to night over two minutes; the fog takes the sky's colour.
+              - <garden-particle preset="sand">: blowing sand round the camera,
+                along `wind`. "Sandstorm" ramps its `density` up and closes the
+                fog in with scene.fogTo(); "Clear" eases both back.
+              - A dust devil: preset="dust-devil" inside a small mesh that
+                `wander`s, so the whirlwind drifts across the dunes.
+              - <garden-lightning interval="8 20">: random flashes that light
+                the scene and the sky, with its <garden-sound> as the thunder
+                (a generated rumble, examples/assets/thunder.wav).
+              - "Rain" / "Snow" add those presets.
+            -->
+            <garden-camera type="follow" target="#player" free-look radius="8" height-offset="3.5" look-offset="1.2"
+                camera-stiffness="20" camera-damping="7"></garden-camera>
+            <garden-sky colour="#d89a6a" colour-to="#1b2140" duration="120"></garden-sky>
+            <garden-light intensity="0.8" diffuse="1 0.85 0.7"></garden-light>
+
+            <garden-height-map id="dunes" url="../assets/dunes.png" width="120" height="120" subdivisions="90"
+                minheight="0" maxheight="6" colour="#d9b77a"></garden-height-map>
+
+            <garden-particle id="sand" preset="sand" wind="7 0 2" density="0.3"></garden-particle>
+
+            <garden-sphere diameter="0.1" position="6 0 -10" colour="#d9b77a"
+                wander wander-radius="14" wander-speed="2.5" terrain="#dunes">
+                <garden-particle preset="dust-devil" size="1.2"></garden-particle>
+            </garden-sphere>
+
+            <garden-lightning id="lightning" interval="8 20" intensity="2.5">
+                <garden-sound url="../assets/thunder.wav" volume="0.8"></garden-sound>
+            </garden-lightning>
+
+            <garden-mesh-model id="player" src="../assets/characters/RobotExpressive.glb" height="1.8" loading-screen="false"
+                position="0 3 -20" walk walk-speed="2.2" walk-run-speed="5.5" terrain="#dunes"
+                anim-idle="Idle" anim-walk="Walking" anim-run="Running" anim-walk-speed="1.8" anim-run-speed="5"></garden-mesh-model>
+        </garden-scene>
+
+        <script>
+            const scene = document.querySelector("garden-scene"), sand = document.getElementById("sand");
+            // Ramp the sand's density alongside the fog.
+            function ramp(to, seconds) {
+                const from = sand.density, start = performance.now();
+                const step = () => {
+                    const k = Math.min(1, (performance.now() - start) / (seconds * 1000));
+                    sand.density = from + (to - from) * k;
+                    if (k < 1) requestAnimationFrame(step);
+                };
+                step();
+            }
+            document.getElementById("storm").onclick = () => { ramp(2.5, 12); scene.fogTo({ density: 0.07, colour: "#b8946a" }, 12); };
+            document.getElementById("clear").onclick = () => { ramp(0.3, 15); scene.fogTo({ density: 0.004 }, 15); };
+            const add = preset => {
+                if (document.getElementById(preset)) return;
+                const p = document.createElement("garden-particle");
+                p.id = preset;
+                p.setAttribute("preset", preset);
+                scene.appendChild(p);
+            };
+            document.getElementById("rain").onclick = () => add("rain");
+            document.getElementById("snow").onclick = () => add("snow");
+            document.getElementById("strike").onclick = () => document.getElementById("lightning").strike();
+        </script>
+    </body>
+</html>

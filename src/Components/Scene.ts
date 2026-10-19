@@ -1,4 +1,4 @@
-import { AudioEngineV2, CreateAudioEngineAsync, Engine, IAction, Mesh, Scene, Tools, Vector3 } from "babylonjs";
+import { AudioEngineV2, Color3, CreateAudioEngineAsync, Engine, IAction, Mesh, Scene, Tools, Vector3 } from "babylonjs";
 import { LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ActionInfo } from "../ActionInfo";
@@ -8,6 +8,8 @@ import { GardenMesh } from "../GardenMesh";
 import { JuelGarden } from "../JuelGarden";
 import { Navigation } from "../Navigation";
 import { Utility } from "../Utility";
+import { tween } from "../Utils/tween";
+import { Color3Convert } from "../Converters/Color3Convert";
 
 // Babylon requests images (textures, etc.) with crossOrigin="anonymous" by default,
 // which Chromium refuses outright for file:// URLs -- "file" isn't a scheme it allows
@@ -25,6 +27,13 @@ Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anon
  * Attributes: `gravity` (a `Vector3`, e.g. `"0 -0.2 0"`), `collisions`
  * (enables `scene.collisionsEnabled`).
  *
+ * **Fog:** `fog-mode` (`exp`, `exp2`, `linear` or `none`; setting
+ * `fog-density` alone picks `exp2`), `fog-density` (e.g. `0.02`; `0.1` is a
+ * thick dust storm), `fog-colour` (default: the `<garden-sky>` colour, else
+ * grey), `fog-start`/`fog-end` (for `linear`). All can change at any time;
+ * {@link fogTo} eases them for a storm that closes in and clears, and a
+ * `<garden-animation property="fogDensity">` inside the scene animates them.
+ *
  * @example
  * ```html
  * <garden-scene>
@@ -40,6 +49,11 @@ Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anon
 @customElement("garden-scene")
 export class GardenScene extends LitElement {
     @property({ converter: Vector3Convert.fromString }) gravity: Vector3;
+    @property({ attribute: "fog-mode" }) fogMode: string;
+    @property({ type: Number, attribute: "fog-density" }) fogDensity: number;
+    @property({ attribute: "fog-colour" }) fogColour: string;
+    @property({ type: Number, attribute: "fog-start" }) fogStart: number;
+    @property({ type: Number, attribute: "fog-end" }) fogEnd: number;
 
     canvas: HTMLCanvasElement;
     engine: Engine;
@@ -51,6 +65,8 @@ export class GardenScene extends LitElement {
 
     private _renderLoopActive = false;
     private _audioEngine: Promise<AudioEngineV2>;
+    /** True once the fog has a colour of its own (`fog-colour`, or fogTo() with a colour): the sky stops colouring it. */
+    fogColourSet = false;
 
     getScene() {
         return this.scene;
@@ -93,6 +109,58 @@ export class GardenScene extends LitElement {
             })();
         }
         return this._audioEngine;
+    }
+
+    /** What a child `<garden-animation>` animates: the Babylon scene (`fogDensity`, `clearColor`, ...). */
+    get animationTarget() {
+        return this.scene;
+    }
+
+    updated() {
+        this.applyFog();
+    }
+
+    private applyFog() {
+        let scene = this.scene;
+        if (!scene) return;
+        let mode = (this.fogMode ?? (this.fogDensity != null || this.fogEnd != null ? (this.fogEnd != null ? "linear" : "exp2") : "none")).toLowerCase();
+        scene.fogMode = mode == "exp" ? Scene.FOGMODE_EXP : mode == "exp2" ? Scene.FOGMODE_EXP2
+            : mode == "linear" ? Scene.FOGMODE_LINEAR : Scene.FOGMODE_NONE;
+        if (this.fogDensity != null) scene.fogDensity = this.fogDensity;
+        if (this.fogStart != null) scene.fogStart = this.fogStart;
+        if (this.fogEnd != null) scene.fogEnd = this.fogEnd;
+        if (this.fogColour)
+            this.fogColourSet = true;
+        if (this.fogColour)
+            scene.fogColor = this.fogColour.startsWith("#") ? Color3.FromHexString(this.fogColour) : Color3Convert.fromString(this.fogColour);
+    }
+
+    /**
+     * Eases the fog to new values over `seconds` -- a dust storm closing in
+     * (`fogTo({ density: 0.08, colour: "#b89a6a" }, 20)`) and clearing
+     * (`fogTo({ density: 0 }, 30)`). Resolves when done.
+     */
+    fogTo(to: { density?: number, colour?: string, start?: number, end?: number }, seconds: number): Promise<void> {
+        let scene = this.scene;
+        if (scene.fogMode == Scene.FOGMODE_NONE) {
+            scene.fogMode = to.end != null ? Scene.FOGMODE_LINEAR : Scene.FOGMODE_EXP2;
+            if (to.end == null) scene.fogDensity = 0;
+        }
+        let from = { density: scene.fogDensity, colour: scene.fogColor.clone(), start: scene.fogStart, end: scene.fogEnd };
+        let colour = to.colour ? (to.colour.startsWith("#") ? Color3.FromHexString(to.colour) : Color3Convert.fromString(to.colour)) : null;
+        if (colour)
+            this.fogColourSet = true;
+        let lerp = (a: number, b: number, k: number) => b == null ? a : a + (b - a) * k;
+        return tween(scene, seconds, k => {
+            scene.fogDensity = lerp(from.density, to.density, k);
+            scene.fogStart = lerp(from.start, to.start, k);
+            scene.fogEnd = lerp(from.end, to.end, k);
+            if (colour) scene.fogColor = Color3.Lerp(from.colour, colour, k);
+        }).then(() => {
+            // Keep the attributes' properties in step, without re-applying mid-way.
+            if (to.density != null) this.fogDensity = to.density;
+            if (to.colour) this.fogColour = to.colour;
+        });
     }
 
     firstUpdated() {
@@ -157,6 +225,10 @@ export class GardenScene extends LitElement {
                     this.engine.resize();
                     // `#id` deep links and back/forward between <garden-link> jumps.
                     Navigation.install(this.scene);
+                    // <garden-animation event="load"> directly inside the scene (fog, sky colour).
+                    for (let child of Array.from(this.children))
+                        if (child.matches("garden-animation") && (<any>child).event == "load")
+                            (<any>child).playWhenReady(this);
                 });
             } catch (err) {
                 console.error("Error during scene setup:", err);
