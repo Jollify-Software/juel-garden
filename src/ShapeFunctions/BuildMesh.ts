@@ -1,4 +1,7 @@
-import { Scene, Mesh, Vector3, VertexData } from "babylonjs";
+import { Scene } from "@babylonjs/core/scene";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
 
 /*
  * Copyright 2021 Stairs Generator (https://www.kitfox.com)

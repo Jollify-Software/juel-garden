@@ -1,4 +1,8 @@
-import { DynamicTexture, Mesh, MeshBuilder, StandardMaterial, Vector2 } from 'babylonjs';
+import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { Vector2 } from "@babylonjs/core/Maths/math.vector";
 import { customElement, property } from 'lit/decorators.js';
 import { Vector2Convert } from '../Converters/Vector2Convert';
 import { GardenMesh } from "../GardenMesh";

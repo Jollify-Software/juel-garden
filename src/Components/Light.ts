@@ -1,4 +1,13 @@
-import { Color3, DirectionalLight, HemisphericLight, Light, PointLight, ShadowGenerator, ShadowLight, SpotLight, Tools, Vector3 } from "babylonjs";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
+import { Light } from "@babylonjs/core/Lights/light";
+import { PointLight } from "@babylonjs/core/Lights/pointLight";
+import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
+import { ShadowLight } from "@babylonjs/core/Lights/shadowLight";
+import { SpotLight } from "@babylonjs/core/Lights/spotLight";
+import { Tools } from "@babylonjs/core/Misc/tools";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { customElement, property } from "lit/decorators.js";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { Vector3Convert } from "../Converters/Vector3Convert";

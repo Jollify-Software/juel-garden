@@ -2,9 +2,32 @@
   "name": "juel-garden",
   "version": "1.0.0",
   "description": "A-Frame inspired custom element library for BabylonJS",
+  "module": "lib/juel-garden.mjs",
+  "types": "lib/types/juel-garden.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/juel-garden.d.ts",
+      "import": "./lib/juel-garden.mjs"
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": true,
+  "files": [
+    "lib",
+    "dist",
+    "src",
+    "juel-garden.ts",
+    "juel-garden.global.ts",
+    "tsconfig.json",
+    "tsconfig.lib.json"
+  ],
   "scripts": {
-    "dev": "esbuild juel-garden.ts --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.js --log-level=warning && npm run copy-wasm && npm run copy-decoders",
-    "build": "esbuild juel-garden.ts --bundle --minify --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.js --log-level=warning && npm run copy-wasm && npm run copy-decoders",
+    "dev": "esbuild juel-garden.global.ts --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.js --log-level=warning && npm run copy-wasm && npm run copy-decoders",
+    "build": "esbuild juel-garden.global.ts --bundle --minify --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.js --log-level=warning && npm run copy-wasm && npm run copy-decoders",
+    "build:lib": "esbuild juel-garden.ts --bundle --format=esm --packages=external --platform=browser --target=es2020 --sourcemap --outfile=lib/juel-garden.mjs --log-level=warning && tsc -p tsconfig.lib.json",
+    "build:lean": "esbuild juel-garden.ts --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.lean.js --log-level=warning",
+    "prepare": "npm run build:lib",
     "examples": "http-server . -o /examples/ -c-1",
     "doc": "typedoc",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -21,6 +44,7 @@
     "test:particles": "node tests/particles.js",
     "test:parterre-stairs": "node tests/parterre-stairs.js",
     "test:examples": "node tests/examples.js",
+    "test:lean": "npm run build:lean && node tests/examples.js --lean",
     "test:boolean": "node tests/boolean.js",
     "test:replicate": "node tests/replicate.js",
     "test:action": "node tests/action.js",
@@ -59,11 +83,10 @@
     "typescript": "5.9"
   },
   "dependencies": {
+    "@babylonjs/core": "^8.56.2",
     "@babylonjs/havok": "^1.3.14",
+    "@babylonjs/loaders": "^8.56.2",
     "@swc/helpers": "^0.5.13",
-    "babylonjs": "^8.56.2",
-    "babylonjs-loaders": "^8.56.2",
-    "bind-decorator": "^1.0.11",
     "cssjson": "^2.1.3",
     "earcut": "^3.0.0",
     "html2canvas": "^1.4.1",

@@ -1,4 +1,4 @@
-import { Scene } from "babylonjs";
+import { Scene } from "@babylonjs/core/scene";
 
 /**
  * A single shared slot for the active Babylon `Scene`. Not populated by

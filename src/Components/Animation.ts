@@ -1,4 +1,5 @@
-import { Animatable, Animation } from "babylonjs";
+import { Animatable } from "@babylonjs/core/Animations/animatable.core";
+import { Animation } from "@babylonjs/core/Animations/animation";
 import { customElement, property } from "lit/decorators.js";
 import { ObjectConverter } from "../Converters/ObjectConverter";
 import { StaticConvert } from "../Converters/StaticConvert";

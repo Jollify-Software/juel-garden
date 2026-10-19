@@ -1,4 +1,4 @@
-import { Scene } from "babylonjs";
+import { Scene } from "@babylonjs/core/scene";
 
 /**
  * Runs `step(k)` every frame for `seconds`, `k` going 0 to 1 (eased in and

@@ -1,4 +1,7 @@
-import { Node, StaticSound, Tools, Vector3 } from "babylonjs";
+import { Node } from "@babylonjs/core/node";
+import { StaticSound } from "@babylonjs/core/AudioV2/abstractAudio/staticSound";
+import { Tools } from "@babylonjs/core/Misc/tools";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
 

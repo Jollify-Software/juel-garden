@@ -1,4 +1,7 @@
-import { Node, Observer, Scene, TransformNode } from "babylonjs";
+import { Node } from "@babylonjs/core/node";
+import { Observer } from "@babylonjs/core/Misc/observable";
+import { Scene } from "@babylonjs/core/scene";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { GardenElement } from "../GardenElement";
 import { resolveElements } from "../Utils/resolveElements";
 

@@ -1,4 +1,4 @@
-import { Vector3 } from "babylonjs";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 
 /**
  * The minimal shape a generic Behaviour (`track`/`drive`/`suspension`/

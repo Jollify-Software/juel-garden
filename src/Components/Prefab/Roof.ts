@@ -1,4 +1,12 @@
-import { Color3, HemisphericLight, Mesh, MeshBuilder, PolygonMeshBuilder, StandardMaterial, Texture, TransformNode, Vector2, Vector3 } from "babylonjs";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { PolygonMeshBuilder } from "@babylonjs/core/Meshes/polygonMesh";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
+import { Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { customElement, property } from "lit/decorators.js";
 import earcut from "earcut";
 import { GardenMaterial } from "../Material";

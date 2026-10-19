@@ -36,7 +36,7 @@ function check(name, ok, info = "") {
 <garden-scene>
   <garden-camera type="arc" position="0 10 -20"></garden-camera>
   <garden-light id="good-light"></garden-light>
-  <garden-light id="bad-light" type="spot"></garden-light>
+  <garden-light id="bad-light" type="laser"></garden-light>
   <garden-column id="good-column" height="3" diameter="0.5" position="0 0 0"></garden-column>
   <garden-column id="bad-column" type="square" height="3" diameter="0.5" position="2 0 0"></garden-column>
 </garden-scene></body></html>` }));
@@ -51,9 +51,9 @@ function check(name, ok, info = "") {
             badColumn: !!document.getElementById("bad-column").mesh,
         }));
         check("a hemi light and a round column still build", got.goodLight && got.goodColumn, JSON.stringify(got));
-        check("type=\"spot\" light built nothing (1 light in the scene)", !got.badLight && got.lights == 1, JSON.stringify(got));
+        check("type=\"laser\" light built nothing (1 light in the scene)", !got.badLight && got.lights == 1, JSON.stringify(got));
         check("type=\"square\" column built nothing", !got.badColumn, JSON.stringify(got));
-        check("both warned", warnings.some(w => w.includes("garden-light") && w.includes("spot")) && warnings.some(w => w.includes("garden-column") && w.includes("square")), JSON.stringify(warnings));
+        check("both warned", warnings.some(w => w.includes("garden-light") && w.includes("laser")) && warnings.some(w => w.includes("garden-column") && w.includes("square")), JSON.stringify(warnings));
         check("no page errors", errors.length == 0, JSON.stringify(errors));
     } finally {
         await browser.close();

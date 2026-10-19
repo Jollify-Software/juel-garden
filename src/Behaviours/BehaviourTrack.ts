@@ -1,4 +1,6 @@
-import { Axis, Curve3, Path3D, Vector3 } from "babylonjs";
+import { Axis } from "@babylonjs/core/Maths/math.axis";
+import { Curve3, Path3D } from "@babylonjs/core/Maths/math.path";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { IBehaviourTarget } from "../IBehaviourTarget";

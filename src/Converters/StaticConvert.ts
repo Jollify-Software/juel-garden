@@ -1,4 +1,6 @@
-import { Animation, Mesh, ParticleSystem } from "babylonjs";
+import { Animation } from "@babylonjs/core/Animations/animation";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
 
 /**
  * Maps a handful of string attribute values onto Babylon's own numeric enum

@@ -1,7 +1,15 @@
-import { AnimationGroup, Mesh, Nullable, Observer, Scene, SceneLoader, Vector3 } from "babylonjs";
+import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Nullable } from "@babylonjs/core/types";
+import { Observer } from "@babylonjs/core/Misc/observable";
+import { Scene } from "@babylonjs/core/scene";
+import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 // Registers the glTF/GLB, OBJ and STL plugins with SceneLoader (side effect).
 // Without it only Babylon's own .babylon format loads.
-import "babylonjs-loaders";
+import "@babylonjs/loaders/glTF";
+import "@babylonjs/loaders/OBJ";
+import "@babylonjs/loaders/STL";
 // Compressed glTF (Draco, meshopt) decodes with copies next to the bundle, not Babylon's CDN.
 import "../Decoders";
 import { customElement, property } from "lit/decorators.js";

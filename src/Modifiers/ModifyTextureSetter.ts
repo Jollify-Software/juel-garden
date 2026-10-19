@@ -1,4 +1,6 @@
-import { Scene, StandardMaterial, Texture } from "babylonjs";
+import { Scene } from "@babylonjs/core/scene";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { HtmlTexture } from "../HtmlTexture";
 import type { GardenMesh } from "../GardenMesh";
 import { ISetter } from "../ISetter";

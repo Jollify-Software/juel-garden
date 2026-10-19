@@ -1,4 +1,9 @@
-import { Curve3, Mesh, MeshBuilder, Scene, Vector3, VertexData } from "babylonjs";
+import { Curve3 } from "@babylonjs/core/Maths/math.path";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Scene } from "@babylonjs/core/scene";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
 
 /**
  * Sample a circular arc between two points that lie in the XZ plane.

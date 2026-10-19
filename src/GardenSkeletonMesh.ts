@@ -1,4 +1,4 @@
-import { Skeleton } from "babylonjs";
+import { Skeleton } from "@babylonjs/core/Bones/skeleton";
 import { GardenMesh } from "./GardenMesh";
 
 /**

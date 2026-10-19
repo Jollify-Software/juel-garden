@@ -1,8 +1,11 @@
-import { Mesh, MeshBuilder, PolygonMeshBuilder, Vector2, Vector3 } from "babylonjs";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { PolygonMeshBuilder } from "@babylonjs/core/Meshes/polygonMesh";
+import { Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { GardenMesh } from "../../GardenMesh";
 import earcut from "earcut";
 import { ShapeFunctions } from "../../ShapeFunctions";
-import { VertexData } from "babylonjs";
+import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
 import { Utility } from "../../Utility";
 import { StairsFunctions, StepType } from "../../ShapeFunctions/Stairs";
 import { customElement, property } from "lit/decorators.js";

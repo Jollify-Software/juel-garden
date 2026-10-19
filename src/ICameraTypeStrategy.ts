@@ -1,4 +1,5 @@
-import { Camera, Scene } from "babylonjs";
+import { Camera } from "@babylonjs/core/Cameras/camera";
+import { Scene } from "@babylonjs/core/scene";
 import type { GardenCamera } from "./Components/Camera";
 
 /**

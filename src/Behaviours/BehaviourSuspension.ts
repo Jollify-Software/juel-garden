@@ -1,4 +1,5 @@
-import { Matrix, Tools, Vector3 } from "babylonjs";
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Tools } from "@babylonjs/core/Misc/tools";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";

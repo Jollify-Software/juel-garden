@@ -1,4 +1,5 @@
-import { DracoCompression, MeshoptCompression } from "babylonjs";
+import { DracoCompression } from "@babylonjs/core/Meshes/Compression/dracoCompression";
+import { MeshoptCompression } from "@babylonjs/core/Meshes/Compression/meshoptCompression";
 
 // Captured while the bundle's own <script> runs -- the only moment
 // document.currentScript points at juel-garden.js (as in Physics.ts).

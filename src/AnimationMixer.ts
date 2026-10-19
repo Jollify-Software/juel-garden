@@ -1,4 +1,7 @@
-import { AnimationGroup, Observer, Scene, TransformNode } from "babylonjs";
+import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup";
+import { Observer } from "@babylonjs/core/Misc/observable";
+import { Scene } from "@babylonjs/core/scene";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 
 /** Options for {@link AnimationMixer.play}. */
 export interface PlayOptions {

@@ -1,4 +1,4 @@
-import { MeshBuilder } from "babylonjs";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { GardenMesh } from "../GardenMesh";
 import earcut from "earcut";
 import { customElement, property } from "lit/decorators.js";

@@ -1,4 +1,5 @@
-import { IAction, Mesh } from "babylonjs";
+import { IAction } from "@babylonjs/core/Actions/action";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 
 /**
  * A registered `<garden-action type="set"|"increment">` waiting to be applied

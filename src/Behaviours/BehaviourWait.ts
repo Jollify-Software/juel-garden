@@ -1,4 +1,7 @@
-import { Mesh, Observer, Scene, Tools } from "babylonjs";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Observer } from "@babylonjs/core/Misc/observable";
+import { Scene } from "@babylonjs/core/scene";
+import { Tools } from "@babylonjs/core/Misc/tools";
 import { GardenElement } from "../GardenElement";
 import { turnYaw } from "../Utils/turnYaw";
 

@@ -1,4 +1,5 @@
-import { GroundMesh, MeshBuilder } from "babylonjs";
+import { GroundMesh } from "@babylonjs/core/Meshes/groundMesh";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { customElement, property } from "lit/decorators.js";
 import { GardenMesh } from "../GardenMesh";
 

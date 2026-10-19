@@ -1,4 +1,4 @@
-import { Mesh } from "babylonjs";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { GardenElement } from "../GardenElement";
 import { IBehaviourTarget } from "../IBehaviourTarget";
 import { BehaviourAction } from "./BehaviourAction";

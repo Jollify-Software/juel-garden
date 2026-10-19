@@ -1,4 +1,4 @@
-import { Vector3 } from "babylonjs";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { ISetter } from "../ISetter";
 

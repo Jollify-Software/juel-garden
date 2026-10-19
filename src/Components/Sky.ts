@@ -1,4 +1,9 @@
-import { MeshBuilder, StandardMaterial, CubeTexture, Texture, Color3, Color4, Tools } from "babylonjs";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { CubeTexture } from "@babylonjs/core/Materials/Textures/cubeTexture";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
+import { Tools } from "@babylonjs/core/Misc/tools";
 import { customElement, property } from "lit/decorators.js";
 import { GardenMesh } from "../GardenMesh";
 import { Color3Convert } from "../Converters/Color3Convert";

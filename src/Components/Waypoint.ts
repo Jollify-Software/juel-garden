@@ -1,4 +1,7 @@
-import { Animation, Camera, PointerEventTypes, Vector3 } from "babylonjs";
+import { Animation } from "@babylonjs/core/Animations/animation";
+import { Camera } from "@babylonjs/core/Cameras/camera";
+import { PointerEventTypes } from "@babylonjs/core/Events/pointerEvents";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { customElement, property } from "lit/decorators.js";
 import { StaticConvert } from "../Converters/StaticConvert";
 import { Vector3Convert } from "../Converters/Vector3Convert";

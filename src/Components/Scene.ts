@@ -1,4 +1,12 @@
-import { AudioEngineV2, Color3, CreateAudioEngineAsync, Engine, IAction, Mesh, Scene, Tools, Vector3 } from "babylonjs";
+import { AudioEngineV2 } from "@babylonjs/core/AudioV2/abstractAudio/audioEngineV2";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { CreateAudioEngineAsync } from "@babylonjs/core/AudioV2/webAudio/webAudioEngine";
+import { Engine } from "@babylonjs/core/Engines/engine";
+import { IAction } from "@babylonjs/core/Actions/action";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Scene } from "@babylonjs/core/scene";
+import { Tools } from "@babylonjs/core/Misc/tools";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ActionInfo } from "../ActionInfo";

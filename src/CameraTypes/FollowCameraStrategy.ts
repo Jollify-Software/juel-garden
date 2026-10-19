@@ -1,4 +1,7 @@
-import { AbstractMesh, Tools, UniversalCamera, Vector3 } from "babylonjs";
+import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import { Tools } from "@babylonjs/core/Misc/tools";
+import { UniversalCamera } from "@babylonjs/core/Cameras/universalCamera";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 
 // Third-person chase camera. `target="#id"` (resolved asynchronously in

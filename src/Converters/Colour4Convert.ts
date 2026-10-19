@@ -1,4 +1,4 @@
-import { Color4 } from "babylonjs";
+import { Color4 } from "@babylonjs/core/Maths/math.color";
 
 /** Parses `"r g b a"` into a `Color4`, for particle system colours. @category Converters */
 export module Colour4Convert {

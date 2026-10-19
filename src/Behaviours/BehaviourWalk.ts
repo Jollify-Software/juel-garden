@@ -1,4 +1,11 @@
-import { AbstractMesh, Axis, CharacterSupportedState, Mesh, Observer, PhysicsCharacterController, Scene, Tools, Vector3 } from "babylonjs";
+import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import { Axis } from "@babylonjs/core/Maths/math.axis";
+import { CharacterSupportedState, PhysicsCharacterController } from "@babylonjs/core/Physics/v2/characterController";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Observer } from "@babylonjs/core/Misc/observable";
+import { Scene } from "@babylonjs/core/scene";
+import { Tools } from "@babylonjs/core/Misc/tools";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { GardenElement } from "../GardenElement";
 import { IBehaviourTarget } from "../IBehaviourTarget";
 import { GardenPhysics } from "../Components/Physics";

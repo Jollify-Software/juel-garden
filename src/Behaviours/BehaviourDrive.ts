@@ -1,4 +1,4 @@
-import { Tools } from "babylonjs";
+import { Tools } from "@babylonjs/core/Misc/tools";
 import { GardenElement } from "../GardenElement";
 import { IBehaviourTarget } from "../IBehaviourTarget";
 

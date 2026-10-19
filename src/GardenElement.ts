@@ -1,4 +1,6 @@
-import { Scene, TransformNode, Vector3 } from "babylonjs";
+import { Scene } from "@babylonjs/core/scene";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { LitElement, ReactiveElement } from "lit";
 import {customElement, property} from 'lit/decorators.js';
 import { GardenScene } from "./Components/Scene";

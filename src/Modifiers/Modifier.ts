@@ -1,4 +1,4 @@
-import { Mesh } from "babylonjs";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { ModifyColourSetter } from "./ModifyColourSetter";
 import { ModifyFloatSetter } from "./ModifyFloatSetter";
 import { ModifyRotationSetter } from "./ModifyRotationSetter";

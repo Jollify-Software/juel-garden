@@ -1,4 +1,8 @@
-import { Color4, ParticleHelper, ParticleSystem, Texture, Vector3 } from "babylonjs";
+import { Color4 } from "@babylonjs/core/Maths/math.color";
+import { ParticleHelper } from "@babylonjs/core/Particles/particleHelper";
+import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { customElement, property } from "lit/decorators.js";
 import { Colour4Convert } from "../Converters/Colour4Convert";
 import { StaticConvert } from "../Converters/StaticConvert";

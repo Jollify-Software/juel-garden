@@ -1,4 +1,6 @@
-import { Color3, Color4, HemisphericLight, Vector3 } from "babylonjs";
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { customElement, property } from "lit/decorators.js";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { GardenElement } from "../GardenElement";

@@ -1,5 +1,6 @@
-import { ActionManager, Scene } from "babylonjs";
-import { Mesh } from "babylonjs/Meshes/mesh";
+import { ActionManager } from "@babylonjs/core/Actions/actionManager";
+import { Scene } from "@babylonjs/core/scene";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { ActionInfo } from "../ActionInfo";
 import type { GardenAction } from "../Components/Action";
 import { Color3Convert } from "../Converters/Color3Convert";

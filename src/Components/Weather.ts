@@ -1,4 +1,10 @@
-import { Color4, DynamicTexture, Mesh, ParticleSystem, Scene, TransformNode, Vector3 } from "babylonjs";
+import { Color4 } from "@babylonjs/core/Maths/math.color";
+import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
+import { Scene } from "@babylonjs/core/scene";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 
 /**
  * The weather presets behind `<garden-particle preset="...">` (see

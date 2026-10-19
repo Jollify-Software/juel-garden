@@ -1,4 +1,5 @@
-import { Scene, Mesh } from "babylonjs";
+import { Scene } from "@babylonjs/core/scene";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { buildMesh } from "./BuildMesh";
 import { StepType } from "./Stairs";
 

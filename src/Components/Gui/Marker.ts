@@ -1,4 +1,6 @@
-import { Matrix, Observer, Scene, Vector3 } from "babylonjs";
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Observer } from "@babylonjs/core/Misc/observable";
+import { Scene } from "@babylonjs/core/scene";
 import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../../GardenElement";
 import { resolveElements } from "../../Utils/resolveElements";
