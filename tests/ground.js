@@ -1,6 +1,7 @@
 // Browser test of <garden-ground>'s default material: a bare ground reads as grass, and one
 // with a <garden-material> child gets that material and no orphaned default (the default
-// used to be built before the parser reached the child). Serves a small inline page.
+// used to be built before the parser reached the child); a height map's minheight is used.
+// Serves a small inline page.
 // Run after a build: npm run test:ground. Same harness as rotunda.js.
 const fs = require("fs");
 const path = require("path");
@@ -54,6 +55,22 @@ function check(name, ok, info = "") {
         check("a bare ground is grass green", got.bare == "#6B8F4E", JSON.stringify(got));
         check("a colour attribute wins", got.coloured == "#0000FF", JSON.stringify(got));
         check("no orphaned materials", got.orphans.length == 0, JSON.stringify(got));
+        // minheight is honoured (the option map once had it as 'minheigh', so the ground started at 0).
+        const low = await page.evaluate(async () => {
+            const c = document.createElement("canvas");
+            c.width = c.height = 8;
+            const x = c.getContext("2d");
+            x.fillStyle = "#000";
+            x.fillRect(0, 0, 8, 8);
+            const hm = document.createElement("garden-height-map");
+            for (const [k, v] of Object.entries({ url: c.toDataURL(), width: "8", height: "8", subdivisions: "4", minheight: "-3", maxheight: "5", position: "40 0 0" }))
+                hm.setAttribute(k, v);
+            document.querySelector("garden-scene").appendChild(hm);
+            for (let i = 0; i < 200 && !hm.mesh; i++) await new Promise(r => setTimeout(r, 25));
+            await hm.whenReady;
+            return hm.mesh.getHeightAtCoordinates(40, 0);
+        });
+        check("a height map's minheight is used", Math.abs(low + 3) < 0.01, String(low));
         check("no page errors", errors.length == 0, JSON.stringify(errors));
     } finally {
         await browser.close();

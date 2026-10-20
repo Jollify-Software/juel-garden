@@ -132,7 +132,12 @@ and walk-throughs with guides and talking exhibits (the plan is
 
 ```html
 <garden-scene fog-density="0.01">
+    <!-- free-look: the camera keeps its own angle; look round with a drag, Q/E, the gamepad's
+         right stick, or a second thumb pad bottom right on touch screens (look-pad). -->
     <garden-camera type="follow" target="#player" free-look radius="7" height-offset="3.5"></garden-camera>
+    <!-- Touch screens: two thumbsticks, one to walk and one to look (floating: touch anywhere on that half). -->
+    <garden-thumbstick side="left" controls="#player"></garden-thumbstick>
+    <garden-thumbstick side="right" controls="camera"></garden-thumbstick>
     <garden-sky colour="#d89a6a" colour-to="#1b2140" duration="120"></garden-sky>
     <garden-height-map id="dunes" url="dunes.png" width="120" height="120" maxheight="6"></garden-height-map>
 
@@ -168,8 +173,41 @@ and walk-throughs with guides and talking exhibits (the plan is
 | Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
 | `<garden-marker>` | An icon over a target, or an edge-of-screen arrow to it |
 | `<garden-sound>` | Spatial audio on Babylon's audio engine: `play()`/`stop()`, `play-on="garden-near"`, cones, roll-off |
+| `<garden-thumbstick>` | On-screen thumbsticks for touch screens: one `controls` a walker, one the `camera` |
+| `camera.show(what)` | A cutaway: the follow camera swings round to look past the player at something happening, then `unshow()` swings it back to exactly where it was (`swingTo(place)`; `test:cutaway`) |
+| `materials="standard"` | A GLB's PBR materials swapped for StandardMaterials, for scenes without an environment map (`toStandardMaterials()` from code) |
 
-The test characters are Quaternius's CC0 RobotExpressive and the Khronos Fox
+### Characters from code
+
+For a script driving rigged characters (`npm run test:characters`; the classes are exported
+by the ES module, and are `window.JuelGarden.*` with the `<script>` bundle):
+
+| Class | What it does |
+|---|---|
+| `PoseLayer` | Changes to bones laid over whatever animation plays: `turn(bone, by)`, `scale(bone, by)`, `rest(bones)` (back to the rig's rest pose); fades in and out with `target`. A child's proportions from an adult rig, legs spread to sit astride |
+| `waveLayer()` | A wave over any clip (arm up, forearm swaying, hand open); defaults for the Unreal-style rig of Quaternius's Universal Animation Library |
+| `BoneSeat` | Keeps one model's bone on another's as both move: a child on someone's shoulders |
+| `HeldProp` | A staff, lamp or flag in the hand, following it but staying upright; `lift` for a gesture |
+| `Huddle` | A group shelters behind someone from a danger (pausing their `follow`), turns to watch it, and says when each has settled; `end()` lets them go |
+| `worldPosition()`, `boneNode()` | A node's exact place this frame; a skeleton's bone by name |
+
+### Nature
+
+Pieces for outdoor scenes built in code, light enough for a tablet (`npm run test:nature`):
+
+| Piece | What it does |
+|---|---|
+| `splatMaterial()` | Three ground textures with normal maps, blended by a mix map (a StandardMaterial plugin, so fog and lights work) |
+| `imageFromFunction()` | A heightmap or mix map drawn from a function, as a PNG data URL |
+| `PanoramaSky` | One or two sky photographs on domes, cross-fading (`blend`), hidden by thick fog, lit by `flash()` |
+| `StillWater` | A dark pool with moving ripples, and a mirror switched on by `reflect()` |
+| `rockMesh()`, `stoneWall()`, `arcPath()` | Lumpy rocks; a tapering dry-stone wall with capstones, round a circle with a gateway |
+| `cardTrees()`, `leafTexture()`, `leafMaterial()` | Gnarled low trees with leaf-card crowns, as templates to instance |
+| `GlowRing` | A glowing rim on the ground round a circle (where a pool of light ends), following the ground |
+| `mottle()`, `noise()`, `texturedMaterial()` | Brightness varied over a ground; smooth value noise; a texture with its normal map |
+
+The test characters are Quaternius's CC0 RobotExpressive and Mannequin (the Universal
+Animation Library's, cut down by `Tools/slim-glb.py`) and the Khronos Fox
 (see [examples/assets/characters/LICENCES.md](examples/assets/characters/LICENCES.md)).
 
 # Building and using it

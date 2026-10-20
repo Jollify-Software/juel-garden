@@ -24,7 +24,7 @@
   ],
   "scripts": {
     "dev": "esbuild juel-garden.global.ts --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.js --log-level=warning && npm run copy-wasm && npm run copy-decoders",
-    "build": "esbuild juel-garden.global.ts --bundle --minify --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.js --log-level=warning && npm run copy-wasm && npm run copy-decoders",
+    "build": "esbuild juel-garden.global.ts --bundle --minify --format=iife --global-name=JuelGarden --platform=browser --target=es2020 --outfile=dist/juel-garden.js --log-level=warning && npm run copy-wasm && npm run copy-decoders",
     "build:lib": "esbuild juel-garden.ts --bundle --format=esm --packages=external --platform=browser --target=es2020 --sourcemap --outfile=lib/juel-garden.mjs --log-level=warning && tsc -p tsconfig.lib.json",
     "build:lean": "esbuild juel-garden.ts --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.lean.js --log-level=warning",
     "prepare": "npm run build:lib",
@@ -63,7 +63,12 @@
     "test:near": "node tests/near.js",
     "test:lights": "node tests/lights.js",
     "test:weather": "node tests/weather.js",
-    "test:marker": "node tests/marker.js"
+    "test:marker": "node tests/marker.js",
+    "test:look": "node tests/look.js",
+    "test:thumbstick": "node tests/thumbstick.js",
+    "test:cutaway": "node tests/cutaway.js",
+    "test:characters": "node tests/characters.js",
+    "test:nature": "node tests/nature.js"
   },
   "repository": {
     "type": "git",

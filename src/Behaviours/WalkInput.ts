@@ -1,8 +1,12 @@
+import { ThumbPad } from "../Utils/ThumbPad";
+import { ThumbstickRegistry } from "../Utils/ThumbstickRegistry";
+
 /**
  * The input for a `walk` behaviour (see {@link BehaviourWalk}): keyboard
  * (WASD/arrows, Shift to run), the first gamepad's left stick (B to run, or
  * the stick pushed right over), and an on-screen thumb pad on touch screens
- * (pushed to its rim to run). {@link read} gives one direction, x right and
+ * (pushed to its rim to run): a `<garden-thumbstick controls="...">` that
+ * matches the walker, or else a built-in pad (`walk-joystick`). {@link read} gives one direction, x right and
  * y forward, each -1..1.
  *
  * @category Behaviours
@@ -12,11 +16,19 @@ export class WalkInput {
     running = false;
 
     private keys = new Set<string>();
-    private pad = { x: 0, y: 0, active: false };
-    private joystick: HTMLElement;
+    private pad: ThumbPad;
+    private host: HTMLElement;
+    private joystick: string;
+    private owner: Element;
 
-    /** `joystick`: `"auto"` (touch screens only), `"always"` or `"never"`. */
-    constructor(host: HTMLElement, joystick = "auto") {
+    /**
+     * `joystick`: `"auto"` (touch screens only), `"always"` or `"never"`.
+     * `owner`: the walking element, for `<garden-thumbstick controls>`.
+     */
+    constructor(host: HTMLElement, joystick = "auto", owner: Element = null) {
+        this.host = host;
+        this.joystick = joystick;
+        this.owner = owner;
         let typing = (e: KeyboardEvent) => {
             let t = e.target as HTMLElement;
             return t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
@@ -25,9 +37,20 @@ export class WalkInput {
         window.addEventListener("keyup", e => this.keys.delete(e.key.toLowerCase()));
         window.addEventListener("blur", () => this.keys.clear());
 
-        let touch = navigator.maxTouchPoints > 0 && matchMedia("(pointer: coarse)").matches;
-        if (host && (joystick == "always" || (joystick == "auto" && touch)))
-            this.joystick = this.buildJoystick(host);
+    }
+
+    /** The thumbsticks for this walker, or the built-in pad (made on first use) if there are none. */
+    private sticks(): { x: number, y: number, active: boolean }[] {
+        let declared = this.owner ? ThumbstickRegistry.controlling(this.owner) : [];
+        if (declared.length) {
+            this.pad?.dispose();
+            this.pad = null;
+            return declared.filter(s => s.enabled);
+        }
+        let j = this.joystick;
+        if (!this.pad && this.host && (j == "always" || (j == "auto" && ThumbPad.touchScreen)))
+            this.pad = new ThumbPad(this.host, "left", "garden-walk-joystick");
+        return this.pad ? [this.pad] : [];
     }
 
     /** The direction asked for now: x right, y forward. */
@@ -37,10 +60,11 @@ export class WalkInput {
         let y = (k.has("w") || k.has("arrowup") ? 1 : 0) - (k.has("s") || k.has("arrowdown") ? 1 : 0);
         let running = k.has("shift");
 
-        if (this.pad.active) {
-            x += this.pad.x;
-            y += this.pad.y;
-            running ||= Math.hypot(this.pad.x, this.pad.y) > 0.9;
+        for (let pad of this.sticks()) {
+            if (!pad.active) continue;
+            x += pad.x;
+            y += pad.y;
+            running ||= Math.hypot(pad.x, pad.y) > 0.9;
         }
 
         let gamepad = navigator.getGamepads?.().find(g => g?.connected);
@@ -61,46 +85,5 @@ export class WalkInput {
         }
         this.running = running && length > 0;
         return { x, y };
-    }
-
-    private buildJoystick(host: HTMLElement): HTMLElement {
-        let size = 120, knobSize = 52;
-        let base = document.createElement("div");
-        base.className = "garden-walk-joystick";
-        base.style.cssText = `position:fixed;left:24px;bottom:24px;width:${size}px;height:${size}px;border-radius:50%;
-            background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.45);touch-action:none;z-index:10;user-select:none;`;
-        let knob = document.createElement("div");
-        knob.style.cssText = `position:absolute;left:${(size - knobSize) / 2}px;top:${(size - knobSize) / 2}px;width:${knobSize}px;
-            height:${knobSize}px;border-radius:50%;background:rgba(255,255,255,.6);pointer-events:none;`;
-        base.appendChild(knob);
-        host.appendChild(base);
-
-        let pointer: number = null;
-        let move = (e: PointerEvent) => {
-            let r = base.getBoundingClientRect();
-            let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-            let max = size / 2, length = Math.hypot(dx, dy);
-            if (length > max) { dx *= max / length; dy *= max / length; }
-            knob.style.transform = `translate(${dx}px, ${dy}px)`;
-            this.pad.x = dx / max;
-            this.pad.y = -dy / max;
-        };
-        base.addEventListener("pointerdown", e => {
-            pointer = e.pointerId;
-            base.setPointerCapture(pointer);
-            this.pad.active = true;
-            move(e);
-            e.preventDefault();
-        });
-        base.addEventListener("pointermove", e => { if (e.pointerId == pointer) move(e); });
-        let end = (e: PointerEvent) => {
-            if (e.pointerId != pointer) return;
-            pointer = null;
-            this.pad = { x: 0, y: 0, active: false };
-            knob.style.transform = "";
-        };
-        base.addEventListener("pointerup", end);
-        base.addEventListener("pointercancel", end);
-        return base;
     }
 }

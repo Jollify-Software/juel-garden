@@ -93,6 +93,25 @@ export class GardenElement extends LitElement {
         return elements;
     }
 
+    /**
+     * The first element `selector` names, once it's ready, for when it may not be in the DOM
+     * yet (a game adding its characters one by one): keeps looking every quarter of a second
+     * for up to `timeout` ms, then gives null.
+     */
+    static async resolveEventually<T extends GardenElement = GardenElement>(selector: string, timeout = 30000, root: ParentNode = document): Promise<T | null> {
+        let start = performance.now();
+        for (;;) {
+            let [el] = resolveElements<T>(selector, root);
+            if (el) {
+                await el.whenReady;
+                return el;
+            }
+            if (performance.now() - start > timeout)
+                return null;
+            await new Promise(resolve => setTimeout(resolve, 250));
+        }
+    }
+
     getNode(): TransformNode {
         return this.node;
     }

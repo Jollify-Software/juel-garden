@@ -15,6 +15,7 @@ import "../Decoders";
 import { customElement, property } from "lit/decorators.js";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 import { AnimationMixer, PlayOptions, driveByMotion } from "../AnimationMixer";
+import { toStandardMaterials } from "../Utils/StandardMaterials";
 
 /**
  * Imports an external 3D model file (glTF/GLB -- Draco- or meshopt-compressed
@@ -46,6 +47,9 @@ import { AnimationMixer, PlayOptions, driveByMotion } from "../AnimationMixer";
  * - `load-distance`: don't load until the camera comes within this many
  *   metres of the model's `position` -- for big scans in a large venue, so
  *   the visitor only downloads what they walk up to.
+ * - `materials`: `"standard"` swaps the glTF's PBR materials for StandardMaterials when it
+ *   loads (see {@link toStandardMaterials}), for a scene without an environment map, where
+ *   PBR models come out dark.
  * - `loading-screen`: `"false"` to skip Babylon's loading screen, which
  *   otherwise covers the canvas while any model is loading. A model with
  *   `load-distance` loads quietly unless this is `"true"`.
@@ -220,6 +224,9 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         } else if (first) {
             this.mixer?.play(first, { blend: 0 });
         }
+
+        if (this.getAttribute("materials") == "standard")
+            toStandardMaterials(result.meshes, scene);
 
         if (result.skeletons.length > 0)
             this.skeleton = result.skeletons[0];

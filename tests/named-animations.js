@@ -40,6 +40,21 @@ run(`
     }));
     check("a one-shot fires garden-animation-end and returns to the loop", ended.name == "Wave" && ended.current == "Walking", JSON.stringify(ended));
 
+    // Replaying a one-shot from its own end event keeps it going (a gesture repeated while a pose holds).
+    const again = await page.evaluate(() => new Promise(resolve => {
+        const r = document.getElementById("robot");
+        let ends = 0;
+        const replay = () => {
+            if (++ends < 3) return r.play("Wave", { loop: false, blend: 0.1, speed: 2 });
+            r.removeEventListener("garden-animation-end", replay);
+            setTimeout(() => resolve({ ends, current: r.mixer.current }), 50);
+        };
+        r.addEventListener("garden-animation-end", replay);
+        r.play("Wave", { loop: false, blend: 0.1, speed: 2 });
+        setTimeout(() => resolve("timeout"), 15000);
+    }));
+    check("a one-shot replayed from garden-animation-end plays again, then returns to the loop", again.ends == 3 && again.current == "Walking", JSON.stringify(again));
+
     check("an unknown name returns false", await page.evaluate(() => document.getElementById("robot").play("Moonwalk") === false));
 
     // Motion-driven: the walker's own speed picks Idle / Walking / Running.

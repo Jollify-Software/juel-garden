@@ -439,3 +439,58 @@ Left over:
   element by element.
 - [ ] Babylon 9 is out (2026-03-26); this moved to 8.56.2 as decided.
 - [ ] Grotto equivalents: parked.
+- [ ] `<garden-mesh-model height>`/`fit`/`base` measure the model's unskinned
+  vertices. A skinned GLB whose meshes sit under a scaled armature (a Poly
+  Pizza Quaternius wolf: armature scale 100, vertices about 0.03 across) came
+  out a fraction of its size and floating, with its length taken as its
+  height. Found 2026-10-20 in a game; worked round there with `scale` and a
+  Blender re-export. Fix: measure the skinned bounds (refresh bounding info
+  with the skeleton applied) before fitting.
+- [x] **Shared pieces from a third-person game** (2026-10-20), moved here so later games
+  can use them, each with a browser test:
+  - `camera.show()` / `unshow()` / `swingTo()` on the follow camera: a cutaway to an event and
+    back (`npm run test:cutaway`, 9 checks).
+  - `src/Characters/`: `PoseLayer`, `waveLayer`, `BoneSeat`, `HeldProp`, `Huddle`, plus
+    `worldPosition` and `boneNode` (`npm run test:characters`, 14 checks on the new CC0
+    `Mannequin.glb`, cut down from Quaternius's Universal Animation Library by
+    `Tools/slim-glb.py`).
+  - `toStandardMaterials()` and `<garden-mesh-model materials="standard">`.
+  - `src/Nature/`: `splatMaterial`, `imageFromFunction`, `PanoramaSky`, `StillWater`,
+    `rockMesh`, `stoneWall`, `arcPath`, `cardTrees`, `leafTexture`, `leafMaterial`,
+    `GlowRing`, `mottle`, `texturedMaterial`, and `noise`/`smoothstep`/`seededRandom`
+    (`npm run test:nature`, 15 checks).
+  - The `<script>` bundle now has a global name, `window.JuelGarden`, so pages can use these.
+- [ ] Elements for the nature pieces (`<garden-water>`, `<garden-rocks>`, `<garden-trees>`,
+  a `<garden-sky>` with panoramas), so markup-only scenes can use them too.
+- [ ] `tests/follow.js` "…and stop once there" is flaky (one follower at 0.20 m/s against a
+  0.2 limit about every other run); it did the same before 2026-10-20's changes. Loosen the
+  limit or wait longer.
+- [x] **`follow` and `follow-wait` find an element added later** (2026-10-20,
+  in `npm run test:follow`): they looked their target up once and gave up
+  (with a warning) if it wasn't in the DOM yet, so a guide waiting for a
+  player created after it never waited. `GardenElement.resolveEventually`
+  keeps looking (every 250 ms, up to 30 s). Found in a game.
+- [x] **Replaying a one-shot from `garden-animation-end`** (2026-10-20, in
+  `npm run test:named-animations`): the mixer went back to the loop after
+  announcing the end, overriding a listener that played the one-shot again,
+  and Babylon also clears an animation group started inside its own end
+  notification. Now a listener's choice stands, and the same group restarts
+  before the next frame's animations at the weight it had. Found in a game
+  (a gesture repeated while a pose holds).
+- [x] **Look controls for the follow camera** (2026-10-20, `npm run test:look`):
+  with `free-look`, the gamepad's right stick, Q/E and a second touch thumb pad
+  (`look-pad`, bottom right) turn the view independently of walking, like
+  twin sticks; `look-speed`; `orbitAngle` settable from code. The thumb pad
+  is shared with `walk` (`src/Utils/ThumbPad.ts`). The walk example's wave
+  moved from E to F.
+- [x] **`<garden-thumbstick>`** (2026-10-20, `npm run test:thumbstick`): an
+  on-screen stick for touch screens that `controls` a `walk` element or the
+  follow camera (`camera`); `side`, `show` (auto/always/never), `mode`
+  (floating, the default: it comes to the thumb; or fixed), `size`, `colour`,
+  `disabled`; start/move/end events. While one controls something the
+  built-in pads stay away. `ThumbPad` gained floating mode and colour;
+  `Utils/ThumbstickRegistry.ts` lets walk and the camera read the sticks.
+- [x] `<garden-height-map minheight>` was ignored (the option map's key was
+  `'minheigh'`), so every height map started at 0. Fixed 2026-10-20, with a
+  check in `npm run test:ground`; found building a game on a ground that dips
+  below 0.
