@@ -36,8 +36,12 @@ The [Waypoints example](https://jollify.app/doc/waypoints.html) shows how this l
 without controllers); the **next** stop in order has a glowing ring (`highlight-next="false"`
 hides it); `next()`, `previous()` and `go(index)` fly along the order and fire
 `waypoint-changed` (`{ index }`). For headsets keep the fly short (`speed="2"` or more).
+**Keys** (`keys`, on by default): PageDown and Right arrow go to the next stop, PageUp and Left arrow
+to the previous one, which is what presentation clickers send, so a published scene works with one
+(in an iframe, while the iframe has focus); keys typed into a form field or editable text, or with
+Ctrl/Alt/Meta held, are left alone, and `keys="false"` turns it off.
 A stop that moves (one with `orbit`) is followed during the fly, so you land on it and ride its orbit.
-Tests: `node tests/waypoint-dwell.js`, `node tests/waypoint-orbit.js`.  
+Tests: `node tests/waypoint-dwell.js`, `node tests/waypoint-orbit.js`, `node tests/waypoint-keys.js`.  
 A stop can circle something: give it `orbit` (and `orbit-angle`, radians per frame) inside the
 element it goes round. Its `position` stays world-space (height included), and a
 `<garden-mesh-model>` parent is waited for until its file has loaded. Test: `node tests/orbit.js`.  

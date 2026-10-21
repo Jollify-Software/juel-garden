@@ -494,3 +494,12 @@ Left over:
   `'minheigh'`), so every height map started at 0. Fixed 2026-10-20, with a
   check in `npm run test:ground`; found building a game on a ground that dips
   below 0.
+- [x] **Next/previous keys on `<garden-waypoint>`** (2026-10-21, `node tests/waypoint-keys.js`):
+  `keys`, on by default (`keys="false"` off): PageDown/ArrowRight call `next()`,
+  PageUp/ArrowLeft `previous()`, what presentation clickers send, so a published
+  scene works with one. A `keydown` listener on `window` (added on connect,
+  removed on disconnect; in an iframe it hears keys while the iframe has focus)
+  that leaves alone keys typed into an input, textarea, select or editable text,
+  keys with Ctrl/Alt/Meta held, and keys already `preventDefault()`ed by the page;
+  only the keys it acts on are `preventDefault()`ed. The scene's audio-unlock
+  `keydown` (capture phase) is untouched.

@@ -30,7 +30,11 @@ import { GardenMesh } from "../GardenMesh";
  * looking at a stop before flying there, with a reticle filling at the
  * centre of view meanwhile; 1500 by default, 0 turns it off),
  * `highlight-next` (a glowing ring round the next stop in order; on by
- * default, `highlight-next="false"` turns it off).
+ * default, `highlight-next="false"` turns it off), `keys` (PageDown and
+ * ArrowRight fly to the next stop, PageUp and ArrowLeft to the previous one,
+ * which is what presentation clickers send; on by default, `keys="false"`
+ * turns it off; keys typed into a form field or editable text, or pressed
+ * with Ctrl, Alt or Meta, are left alone).
  *
  * Methods: {@link next} and {@link previous} fly along the order;
  * {@link go} flies to a stop by its index. Each move fires
@@ -47,6 +51,8 @@ export class GardenWaypoint extends GardenElement {
     @property({ type: Number }) dwell: number = 1500;
     /** A glowing ring round the next stop in order. */
     @property({ attribute: "highlight-next", converter: (v: string | null) => v !== "false" }) highlightNext: boolean = true;
+    /** PageDown/ArrowRight: next stop, PageUp/ArrowLeft: previous (presentation clickers). */
+    @property({ converter: (v: string | null) => v !== "false" }) keys: boolean = true;
     index: number = 0;
     prevWaypoint: GardenMesh;
     /** How far the look-and-hold reticle has filled, 0 to 1 (for tests and UIs). */
@@ -55,6 +61,31 @@ export class GardenWaypoint extends GardenElement {
     private nextRing: Mesh;
     private looking: GardenMesh | undefined;
     private lookedMs = 0;
+
+    connectedCallback() {
+        super.connectedCallback();
+        // On the window, bubbling: a scene in an iframe gets keys while the iframe has focus,
+        // and a host page handler that calls preventDefault() first wins.
+        window.addEventListener("keydown", this.onKeyDown);
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        window.removeEventListener("keydown", this.onKeyDown);
+    }
+
+    /** next()/previous() from the keys a presentation clicker sends (see `keys`). */
+    private onKeyDown = (e: KeyboardEvent) => {
+        if (!this.keys || e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey) return;
+        const step = e.key === "PageDown" || e.key === "ArrowRight" ? 1
+            : e.key === "PageUp" || e.key === "ArrowLeft" ? -1 : 0;
+        if (!step || !this.waypoints?.length || typeof this.waypoints === "string") return;
+        // The real target, inside any shadow root (focus in a component's own input counts).
+        const t = (e.composedPath?.()[0] ?? e.target) as HTMLElement;
+        if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName ?? ""))) return;
+        e.preventDefault();
+        if (step > 0) this.next(); else this.previous();
+    };
 
     async updated() {
         if (typeof this.waypoints !== 'string')
