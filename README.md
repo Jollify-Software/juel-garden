@@ -31,6 +31,16 @@ Here is the Garden equivalent of the [A-Frame basic scene](https://aframe.io/doc
 ```
 
 The [Waypoints example](https://jollify.app/doc/waypoints.html) shows how this library could be used to create educational VR experiences.  
+`<garden-waypoint>` moves you to a stop when you click it, or when you **look at it and hold**
+(`dwell`, 1500 ms by default, `0` off: a white reticle, dark-edged so it reads on pale surfaces too, fills at the centre of view, for headsets
+without controllers); the **next** stop in order has a glowing ring (`highlight-next="false"`
+hides it); `next()`, `previous()` and `go(index)` fly along the order and fire
+`waypoint-changed` (`{ index }`). For headsets keep the fly short (`speed="2"` or more).
+A stop that moves (one with `orbit`) is followed during the fly, so you land on it and ride its orbit.
+Tests: `node tests/waypoint-dwell.js`, `node tests/waypoint-orbit.js`.  
+A stop can circle something: give it `orbit` (and `orbit-angle`, radians per frame) inside the
+element it goes round. Its `position` stays world-space (height included), and a
+`<garden-mesh-model>` parent is waited for until its file has loaded. Test: `node tests/orbit.js`.  
 My favourite example is the [temple example](https://jollify.app/doc/temple.html) which demonstrates how the library could be used to create experiences for museum exhibits:
 
 ```html
@@ -176,6 +186,7 @@ and walk-throughs with guides and talking exhibits (the plan is
 | `<garden-thumbstick>` | On-screen thumbsticks for touch screens: one `controls` a walker, one the `camera` |
 | `camera.show(what)` | A cutaway: the follow camera swings round to look past the player at something happening, then `unshow()` swings it back to exactly where it was (`swingTo(place)`; `test:cutaway`) |
 | `materials="standard"` | A GLB's PBR materials swapped for StandardMaterials, for scenes without an environment map (`toStandardMaterials()` from code) |
+| `extension` | A model's file type (`glb`, `gltf`, `obj`…) for a `src` that doesn't end in one, such as a `blob:` or `data:` URL; Babylon picks its loader by it (`node tests/model-extension.js`) |
 
 ### Characters from code
 

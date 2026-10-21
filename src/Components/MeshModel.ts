@@ -30,6 +30,9 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
  *
  * Attributes:
  * - `src`: the model's URL (or use `root` + `filename`).
+ * - `extension`: the file type (`glb`, `.gltf`, `obj`…), for a `src` whose URL doesn't end in
+ *   one, such as a `blob:` or `data:` URL. Babylon picks its loader by it
+ *   (`pluginExtension`). Without it, the loader is guessed from the URL.
  * - `meshnames`: which meshes to import, empty/`"*"` for all.
  * - `height`: scales the model so it stands this tall (scene units, i.e.
  *   metres). Scans and downloads come in any unit; this fixes it.
@@ -76,6 +79,7 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
 export class GardenMeshModel extends GardenSkeletonMesh {
     @property() meshNames: string;
     @property() src: string;
+    @property() extension: string;
     @property() root: string;
     @property() filename: string;
     @property({ type: Number }) height: number;
@@ -97,7 +101,7 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     loaded: Promise<void>;
 
     updated(changed?: Map<string, unknown>) {
-        let key = [this.src, this.root, this.filename, this.meshNames,
+        let key = [this.src, this.extension, this.root, this.filename, this.meshNames,
             this.height, this.fit, this.base, this.animation].join("|");
         if (key == this.loadedKey) {
             // Only position/rotation/scale etc. changed: no need to reload.
@@ -181,7 +185,9 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         };
         let result;
         try {
-            result = await SceneLoader.ImportMeshAsync(names, root, file, scene, progress);
+            let ext = this.extension?.trim();
+            result = await SceneLoader.ImportMeshAsync(names, root, file, scene, progress,
+                ext ? (ext.startsWith(".") ? ext : "." + ext).toLowerCase() : undefined);
         } catch (error) {
             console.error(`<garden-mesh-model> couldn't load ${root}${file}`, error);
             this.dispatchEvent(new CustomEvent("garden-model-error", { bubbles: true, detail: { error } }));
