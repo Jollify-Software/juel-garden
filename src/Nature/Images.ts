@@ -1,7 +1,7 @@
 /**
  * A picture drawn from a function, as a PNG data URL, for terrain made in code:
  * `<garden-height-map url="...">` from a height function, or a mix map for
- * {@link splatMaterial} from where each ground should be.
+ * {@link "Nature/SplatMaterial"!splatMaterial} from where each ground should be.
  *
  * `fn(x, z)` is called for every pixel with world coordinates across `width` × `depth` centred
  * on the origin, laid out as Babylon reads a heightmap (row 0 is the far, +z edge), and returns

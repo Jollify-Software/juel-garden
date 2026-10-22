@@ -5,7 +5,12 @@ import { noise as valueNoise } from "../Utils/noise";
 /**
  * Varies a mesh's brightness over its surface with vertex colours (`scales` in metres, each
  * adding `amount` of noise), so a tiled ground texture doesn't read as a repeat. Warms the
- * shadows a touch (`warmth`). `noise` defaults to {@link noise}.
+ * shadows a touch (`warmth`). `noise` defaults to the value noise in `src/Utils/noise.ts`.
+ *
+ * @example
+ * ```ts
+ * mottle(ground, { scales: [3, 12], amounts: [0.15, 0.1], warmth: 0.05 });
+ * ```
  *
  * @category Nature
  */

@@ -84,7 +84,7 @@ class SplatPlugin extends MaterialPluginBase {
 /**
  * A ground material blending three textures, each with its own normal map (so cracks and
  * ripples catch the light), by a mix map: its red, green and blue say how much of layers 1, 2
- * and 3 go where, across the ground's 0..1 UVs (draw one with {@link imageFromFunction}).
+ * and 3 go where, across the ground's 0..1 UVs (draw one with {@link "Nature/Images"!imageFromFunction}).
  *
  * It's Babylon's own StandardMaterial with a material plugin, not `@babylonjs/materials`'
  * TerrainMaterial (whose `.js` imports can give a bundler a second copy of Babylon), so fog,

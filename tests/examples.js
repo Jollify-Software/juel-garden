@@ -35,6 +35,13 @@ function check(name, ok, info = "") {
         args: ["--enable-gpu", "--ignore-gpu-blocklist", "--use-angle=d3d11", "--enable-webgl"] });
     try {
         for (const file of files) {
+            // The lean build is the library as an app bundles it: no window.BABYLON and no
+            // window.JuelGarden. A page that scripts those globals can only run on the global
+            // bundle, so --lean skips it (its elements are still covered by the other pages).
+            if (lean && /\b(BABYLON|JuelGarden)\b/.test(fs.readFileSync(path.join(ROOT, file), "utf8").replace(/<script[^>]*\bsrc=[^>]*>/g, ""))) {
+                console.log(`SKIP  ${file}  -- scripts the global bundle's BABYLON/JuelGarden`);
+                continue;
+            }
             const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
             const errors = [];
             page.on("pageerror", e => errors.push("pageerror: " + e.message));

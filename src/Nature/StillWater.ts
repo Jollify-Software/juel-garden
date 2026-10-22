@@ -81,6 +81,14 @@ export class StillWater {
         return mirror;
     }
 
+    /** Turns the mirror off again (and frees it), so a later `reflect()` can mirror something else. */
+    unreflect() {
+        if (!this.mirrorTexture) return;
+        this.material.reflectionTexture = null;
+        this.mirrorTexture.dispose();
+        this.mirrorTexture = null;
+    }
+
     dispose() {
         this.scene.onBeforeRenderObservable.remove(this.observer);
         this.mirrorTexture?.dispose();

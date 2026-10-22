@@ -6,8 +6,8 @@ import type { GardenCamera } from "./Components/Camera";
  * The shape every entry in {@link CameraTypeStrategies}'s `type` map
  * implements: given the `<garden-camera>` element and the Babylon `Scene`,
  * construct and return the actual Babylon `Camera`. Implemented by
- * {@link ArcCameraStrategy}, {@link FreeCameraStrategy} and
- * {@link FollowCameraStrategy}.
+ * {@link "CameraTypes/ArcCameraStrategy"!ArcCameraStrategy}, {@link "CameraTypes/FreeCameraStrategy"!FreeCameraStrategy} and
+ * {@link "CameraTypes/FollowCameraStrategy"!FollowCameraStrategy}.
  *
  * @category Core
  */

@@ -4,7 +4,17 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { Observer } from "@babylonjs/core/Misc/observable";
 import { Scene } from "@babylonjs/core/scene";
 
-/** A bone of a skinned model: its linked node (glTF), or the bone itself. */
+/**
+ * A bone of a skinned model: its linked node (glTF), or the bone itself.
+ *
+ * @example
+ * ```ts
+ * const hand = boneNode(model.skeletons[0], "hand_r");
+ * if (hand) lantern.parent = hand;
+ * ```
+ *
+ * @category Characters
+ */
 export function boneNode(skeleton: Skeleton, name: string): TransformNode {
     let bone = skeleton?.bones.find(b => b.name == name);
     return bone ? bone.getTransformNode() ?? <TransformNode><unknown>bone : null;

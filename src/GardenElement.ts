@@ -136,8 +136,9 @@ export class GardenElement extends LitElement {
         this.node.scaling = scale;
     }
 
+    /** The scene this element is in; null once it's removed (a queued update can still run then). */
     getScene(): Scene {
-        if ('getScene' in this.parentElement) {
+        if (this.parentElement && 'getScene' in this.parentElement) {
             return (<GardenElement>this.parentElement).getScene();
         } else {
             return null;
@@ -145,7 +146,7 @@ export class GardenElement extends LitElement {
     }
 
     getSceneEl(): GardenScene {
-        if ('getSceneEl' in this.parentElement) {
+        if (this.parentElement && 'getSceneEl' in this.parentElement) {
             return (<GardenElement>this.parentElement).getSceneEl();
         } else {
             return null;
@@ -154,6 +155,29 @@ export class GardenElement extends LitElement {
 
     createRenderRoot() {
         return this;
+    }
+
+    private skippedFirstBuild = false;
+
+    /**
+     * Skips the first build if the element was removed before it ran (added and
+     * removed in one task): with no parent there is no scene, and a subclass's
+     * `updated()` would build into the wrong scene or throw. Re-adding the
+     * element builds it then.
+     */
+    protected shouldUpdate(): boolean {
+        if (this.isConnected || this.hasUpdated)
+            return true;
+        this.skippedFirstBuild = true;
+        return false;
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+        if (this.skippedFirstBuild) {
+            this.skippedFirstBuild = false;
+            this.requestUpdate();
+        }
     }
 
     updated() {

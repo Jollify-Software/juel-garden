@@ -34,40 +34,6 @@ import { ThumbstickRegistry } from "../Utils/ThumbstickRegistry";
 // BehaviourDrive's dt is) so it stays stable regardless of frame rate. A
 // target that itself moves smoothly (see BehaviourDrive's own dt scaling)
 // keeps this camera smooth too, however loose the spring is tuned.
-/**
- * `type="follow"`: a spring-damped third-person chase camera locked to
- * `target`. See {@link GardenCamera}. `look-offset` raises the point the
- * camera aims at (not the camera itself) above the target, tilting the view
- * up toward the horizon -- useful at a small `radius`, where aiming exactly
- * at the target otherwise reads as looking almost straight down over it.
- *
- * `free-look` keeps the camera at its own angle round the target instead of
- * swinging behind it on every turn -- what a walking player wants (see
- * {@link BehaviourWalk}), whose controls are relative to the camera. Drag to
- * look round (sideways turns, up and down raises or lowers the camera).
- *
- * **Looking round independently of walking** (with `free-look`), like a
- * controller's two sticks: the first gamepad's right stick, the Q and E keys,
- * and on touch screens a `<garden-thumbstick controls="camera">`, or else a
- * built-in pad bottom right (`look-pad`: `auto`, the default, shows it on
- * touch screens; `always`; `never`). The walker can
- * turn right round without the camera following. `look-speed` is how fast
- * the stick turns it (degrees/second, default 150). A script can read or set
- * the camera's `orbitAngle` (radians round the target; 0 puts the camera on
- * the target's +Z side) to turn the view itself.
- *
- * Showing something (a cutaway): `camera.show(what, options)` swings the
- * camera round to look past the target at `what` (a mesh or node, a
- * `Vector3`, or a function giving one each frame, for something that moves),
- * pulled back to fit them both, and returns where the camera was (a
- * {@link CameraPlace}). `camera.unshow()` swings it back there and resolves
- * when it's back; `unshow({ keepAngle: true })` comes back onto the target
- * but keeps the new angle. `camera.swingTo(place, seconds)` eases to any
- * place (an angle needs `free-look`). The look controls are ignored while it
- * shows something. See {@link ShowOptions}.
- *
- * @category Camera Types
- */
 /** Where a follow camera is round its target: see `camera.show()`. */
 export interface CameraPlace {
     /** Radians round the target (0: on its +Z side). */
@@ -95,6 +61,47 @@ export interface ShowOptions {
     rate?: number;
 }
 
+/**
+ * `type="follow"`: a spring-damped third-person chase camera locked to
+ * `target`. See {@link "Components/Camera"!GardenCamera}. `look-offset` raises the point the
+ * camera aims at (not the camera itself) above the target, tilting the view
+ * up toward the horizon -- useful at a small `radius`, where aiming exactly
+ * at the target otherwise reads as looking almost straight down over it.
+ *
+ * `free-look` keeps the camera at its own angle round the target instead of
+ * swinging behind it on every turn -- what a walking player wants (see
+ * {@link "Behaviours/BehaviourWalk"!Walker}), whose controls are relative to the camera. Drag to
+ * look round (sideways turns, up and down raises or lowers the camera).
+ *
+ * **Looking round independently of walking** (with `free-look`), like a
+ * controller's two sticks: the first gamepad's right stick, the Q and E keys,
+ * and on touch screens a `<garden-thumbstick controls="camera">`, or else a
+ * built-in pad bottom right (`look-pad`: `auto`, the default, shows it on
+ * touch screens; `always`; `never`). The walker can
+ * turn right round without the camera following. `look-speed` is how fast
+ * the stick turns it (degrees/second, default 150). A script can read or set
+ * the camera's `orbitAngle` (radians round the target; 0 puts the camera on
+ * the target's +Z side) to turn the view itself.
+ *
+ * Showing something (a cutaway): `camera.show(what, options)` swings the
+ * camera round to look past the target at `what` (a mesh or node, a
+ * `Vector3`, or a function giving one each frame, for something that moves),
+ * pulled back to fit them both, and returns where the camera was (a
+ * {@link CameraPlace}). `camera.unshow()` swings it back there and resolves
+ * when it's back; `unshow({ keepAngle: true })` comes back onto the target
+ * but keeps the new angle. `camera.swingTo(place, seconds)` eases to any
+ * place (an angle needs `free-look`). The look controls are ignored while it
+ * shows something. See {@link ShowOptions}.
+ *
+ * @example
+ * ```ts
+ * const camera = (document.querySelector("garden-camera") as any).camera;
+ * camera.show(stranger, { side: 0.6 });   // look past the player at it
+ * setTimeout(() => camera.unshow(), 3000); // and swing back after 3 s
+ * ```
+ *
+ * @category Camera Types
+ */
 export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
     let cam = new UniversalCamera("camera", new Vector3(0, 5, -10), scene);
     let state = cam as unknown as {

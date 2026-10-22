@@ -28,7 +28,19 @@ run(`
     });
     check("followers close in on the leader", flock.toLeader.every(d => d < 3.4), JSON.stringify(flock));
     check("…and keep follow-spacing apart", flock.gaps.every(g => g > 0.85), JSON.stringify(flock.gaps));
-    check("…and stop once there", flock.speeds.every(s => s < 0.2), JSON.stringify(flock.speeds));
+    // They creep the last few centimetres (easing in against keeping apart), so wait for them to
+    // stop (under 0.02 m/s, up to 3 s more), then check they stay stopped (under 0.05 for a
+    // second): a flock that keeps jostling (0.2 m/s and more) fails.
+    const settled = await page.evaluate(async (at5s) => {
+        const speeds = () => [...document.querySelectorAll(".f")].map(f => f.follower.speed);
+        const t0 = performance.now();
+        while (speeds().some(s => s > 0.02) && performance.now() - t0 < 3000) await new Promise(r => setTimeout(r, 50));
+        const after = +((performance.now() - t0) / 1000).toFixed(1);
+        let worst = 0;
+        for (let i = 0; i < 20; i++) { worst = Math.max(worst, ...speeds()); await new Promise(r => setTimeout(r, 50)); }
+        return { after, worst: +worst.toFixed(3), at5s };
+    }, flock.speeds).catch(e => ({ error: String(e) }));
+    check("…and stop once there, and stay stopped", settled.worst < 0.05, JSON.stringify(settled));
 
     // Moving the leader along +Z: followers turn to face +Z while they walk.
     await page.evaluate(() => document.getElementById("L").mesh.position.set(10, 0.5, 15));

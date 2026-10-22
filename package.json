@@ -68,7 +68,9 @@
     "test:thumbstick": "node tests/thumbstick.js",
     "test:cutaway": "node tests/cutaway.js",
     "test:characters": "node tests/characters.js",
-    "test:nature": "node tests/nature.js"
+    "test:nature": "node tests/nature.js",
+    "test:nature-elements": "node tests/nature-elements.js",
+    "test:model-skinned": "node tests/model-skinned.js"
   },
   "repository": {
     "type": "git",

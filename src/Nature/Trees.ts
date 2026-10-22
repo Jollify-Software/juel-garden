@@ -25,6 +25,12 @@ export interface LeafOptions {
  * and thinning to a ragged edge, for {@link cardTrees}' crowns (or bushes, hedges). Loaded as
  * a PNG with `hasAlpha` (a DynamicTexture's transparent parts aren't cut away by the alpha test).
  *
+ * @example
+ * ```ts
+ * // An autumn hedge: fewer, broader leaves in reds and golds.
+ * const leaves = leafTexture(scene, { shades: ["#a5481c", "#c9862b", "#7d3a17"], count: 600, width: [4, 6], seed: 3 });
+ * ```
+ *
  * @category Nature
  */
 export function leafTexture(scene: Scene, options: LeafOptions = {}): Texture {
@@ -51,7 +57,17 @@ export function leafTexture(scene: Scene, options: LeafOptions = {}): Texture {
     return texture;
 }
 
-/** A material for leaf cards: cut out by the texture's alpha, lit on both sides. */
+/**
+ * A material for leaf cards: cut out by the texture's alpha, lit on both sides.
+ *
+ * @example
+ * ```ts
+ * const bush = MeshBuilder.CreatePlane("bush", { size: 1.5 }, scene);
+ * bush.material = leafMaterial(scene, leafTexture(scene), "bush");
+ * ```
+ *
+ * @category Nature
+ */
 export function leafMaterial(scene: Scene, texture: Texture, name = "leaves"): StandardMaterial {
     let m = new StandardMaterial(name, scene);
     m.diffuseTexture = texture;

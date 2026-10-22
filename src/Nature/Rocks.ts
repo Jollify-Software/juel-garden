@@ -14,6 +14,12 @@ import { noise } from "../Utils/noise";
  * A textured material from a colour texture and its normal map, repeating `uTiles` × `vTiles`
  * times per UV unit, with a faint specular: rock, bark, stone walls.
  *
+ * @example
+ * ```ts
+ * const stone = texturedMaterial(scene, "stone", "rock_diff.jpg", "rock_nor.jpg", 2);
+ * rockMesh(scene, 0.6, 7).material = stone;
+ * ```
+ *
  * @category Nature
  */
 export function texturedMaterial(scene: Scene, name: string, colour: string, normal?: string, uTiles = 1, vTiles = uTiles): StandardMaterial {
@@ -34,6 +40,17 @@ export function texturedMaterial(scene: Scene, name: string, colour: string, nor
  * round, with a flattened base so it sits on the ground. About 640 triangles. Scale it unevenly
  * for slabs and boulders, sink it a little into the ground, and merge many with
  * `Mesh.MergeMeshes` (one draw call) under one {@link texturedMaterial}.
+ *
+ * @example
+ * ```ts
+ * const rocks = [1, 2, 3].map(seed => {
+ *     const rock = rockMesh(scene, 0.5, seed);
+ *     rock.scaling.set(1.4, 0.6, 1);
+ *     rock.position.set(seed * 2, -0.1, 0);
+ *     return rock;
+ * });
+ * Mesh.MergeMeshes(rocks, true).material = texturedMaterial(scene, "rock", "rock_diff.jpg");
+ * ```
  *
  * @category Nature
  */
@@ -73,6 +90,12 @@ export interface StoneWallOptions {
  * a tapering cross-section, with rough capstones along the top and bigger ones at each end.
  * Give its material a stone-wall texture repeating about every 1.6 m. {@link arcPath} gives a
  * path round a circle (a sheepfold, a well), leaving a gap for a gate.
+ *
+ * @example
+ * ```ts
+ * const { wall, caps } = stoneWall(scene, arcPath({ x: 0, z: 0 }, 6, 0.3, 2 * Math.PI - 0.3), { height: 1.2 });
+ * wall.material = caps.material = texturedMaterial(scene, "wall", "wall_diff.jpg", "wall_nor.jpg");
+ * ```
  *
  * @category Nature
  */
@@ -119,6 +142,14 @@ export function stoneWall(scene: Scene, path: Vector3[], options: StoneWallOptio
  * Points round a circle every `step` metres, from angle `from` to `to` (radians; 0 is +z),
  * at the ground's height: a path for {@link stoneWall}. Leave a gap for a gate by going from
  * `gate + gap / 2` to `gate + 2π - gap / 2`.
+ *
+ * @example
+ * ```ts
+ * // A ring of radius 5 m (10 m across) with a 2 m gate facing +z, following the ground.
+ * const gate = 0, gap = 2 / 5;
+ * const path = arcPath({ x: 0, z: 0 }, 5, gate + gap / 2, gate + 2 * Math.PI - gap / 2,
+ *     (x, z) => ground.getHeightAtCoordinates(x, z));
+ * ```
  *
  * @category Nature
  */

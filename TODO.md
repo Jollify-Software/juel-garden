@@ -437,15 +437,23 @@ Left over:
   own `update()`, so later property changes don't re-run `updated()`.
   `liveUpdate()` opts an element in (light, sound, marker); worth doing
   element by element.
+  Decided 2026-10-22 to do on the same night (Q1 of the 2026-10-21 queue): **moving a built
+  element.** Today water, light, sky, sound, particles and lightning come back empty when
+  removed and re-added (they dispose on `disconnectedCallback`), and `GardenMesh` elements
+  dispose nothing when removed. Do it once in `GardenElement`: disconnect schedules disposal
+  (microtask / next frame), a reconnect before it runs cancels it (a move keeps everything),
+  a reconnect after it runs rebuilds; `GardenMesh` elements dispose on permanent removal; a
+  move to a new parent re-applies transform and ground sampling. Test: move a box, water and
+  light; remove one for good and check it has left the scene; re-run `follow` and `walk`.
 - [ ] Babylon 9 is out (2026-03-26); this moved to 8.56.2 as decided.
 - [ ] Grotto equivalents: parked.
-- [ ] `<garden-mesh-model height>`/`fit`/`base` measure the model's unskinned
-  vertices. A skinned GLB whose meshes sit under a scaled armature (a Poly
-  Pizza Quaternius wolf: armature scale 100, vertices about 0.03 across) came
-  out a fraction of its size and floating, with its length taken as its
-  height. Found 2026-10-20 in a game; worked round there with `scale` and a
-  Blender re-export. Fix: measure the skinned bounds (refresh bounding info
-  with the skeleton applied) before fitting.
+- [x] `<garden-mesh-model height>`/`fit`/`base` on skinned models (looked into 2026-10-21): not a
+  measuring bug. A skinned figure under an armature scaled 100 is measured as drawn
+  (`node tests/model-skinned.js`, 4 checks, fixture made by `tests/fixtures/make-scaled-armature.py`).
+  The model that prompted it, an animated wolf from Poly Pizza, has a skin Babylon can't draw as
+  it comes (it warns "Skeleton node is not a common root" and draws the legs crossed in an X);
+  re-exported through Blender it draws properly and `height` sizes it right (0.95 asked, 0.951
+  drawn, feet on the ground). If a model comes out the wrong size, check it draws properly first.
 - [x] **Shared pieces from a third-person game** (2026-10-20), moved here so later games
   can use them, each with a browser test:
   - `camera.show()` / `unshow()` / `swingTo()` on the follow camera: a cutaway to an event and
@@ -460,11 +468,72 @@ Left over:
     `GlowRing`, `mottle`, `texturedMaterial`, and `noise`/`smoothstep`/`seededRandom`
     (`npm run test:nature`, 15 checks).
   - The `<script>` bundle now has a global name, `window.JuelGarden`, so pages can use these.
-- [ ] Elements for the nature pieces (`<garden-water>`, `<garden-rocks>`, `<garden-trees>`,
-  a `<garden-sky>` with panoramas), so markup-only scenes can use them too.
-- [ ] `tests/follow.js` "…and stop once there" is flaky (one follower at 0.20 m/s against a
-  0.2 limit about every other run); it did the same before 2026-10-20's changes. Loosen the
-  limit or wait longer.
+  - [x] A demo of them together (2026-10-21): `examples/Characters/pieces.html`, on the CC0
+    Mannequin: the guide waves while waiting and carries a staff, a small figure rides a
+    follower's shoulders, the group huddles behind the guide while the camera cuts away to
+    what appeared, on a splat ground (textures drawn in the page) with a glow ring, rocks,
+    trees, walls and a pool. Opened by `npm run test:examples`.
+- [x] Elements for the nature pieces (`<garden-water>`, `<garden-rocks>`, `<garden-trees>`,
+  `<garden-stone-wall>`, a `<garden-sky>` with panoramas), so markup-only scenes can use them too
+  (2026-10-21; all together in `examples/Nature/nature.html`, skies drawn in the page).
+  - [x] `<garden-water>` (2026-10-21): `StillWater` in markup; `position`, `radius`, `colour`,
+    `ripples`, `mirror`, and `reflect` (bare: the whole scene once it has loaded; a selector:
+    just those elements' meshes; set from code: the mirror turns on then).
+    `npm run test:nature-elements`. Fixed the same night: two waters that reflect each other
+    (both bare, or naming each other) waited on each other's mirror for ever, so neither got one;
+    a water now doesn't wait for another water, whose mesh is there at once. And changing
+    `reflect` while the first mirror was still waiting started a second build, whose `whenReady`
+    replaced the first (which then never resolved) and whose newer selector was ignored; now
+    one build runs at a time and picks up the newer `reflect`.
+    And once the mirror was made, changing `reflect` (another selector) or removing it did
+    nothing; now the mirror is remade for the new selector, or turned off (`StillWater.unreflect()`).
+    And (2026-10-22) a water given `reflect` and removed in the same task threw a page error:
+    its queued update ran with no parent, and `getScene()` looked inside `null`. `getScene()` and
+    `getSceneEl()` (`GardenElement`, `GardenMesh`) now give null once an element is removed.
+    The same for any element removed before its *first* build (2026-10-22): a box, sphere,
+    plane, line or model added and removed in one task built a stray mesh into the scene and
+    then threw. `GardenElement.shouldUpdate()` now skips that build, and adding the element
+    back builds it (`node tests/detached.js`).
+  - [x] `<garden-rocks>` (2026-10-21): `rockMesh`es scattered over `width` × `depth` or a
+    `ground` (sitting on it, slopes too), merged into one mesh; `count`, `size`, `seed`, and the
+    usual texture/colour attributes (default a weathered grey).
+  - [x] `<garden-trees>` (2026-10-21): `cardTrees` shapes (hidden) instanced over an area or a
+    `ground`, `spacing` apart; `count`, `seed`, `variants`, `size`, `bark-colour`,
+    `bark-texture`, `bark-bump-texture`, `leaf-colours`.
+  - [x] `<garden-stone-wall>` (2026-10-21): along `points` or a ring (`radius`, `gate`,
+    `gate-width`), following a `ground`; `height`, `foot-width`, `top-width`, `cap-every`; the
+    capstones share the wall's material (`setMaterial` passes it on). Fixed 2026-10-22: with
+    `ground`, a wall or rocks turned by `rotation` (or scaled) sampled the ground where they'd be
+    unturned, so they floated or sank on a slope (a 45° wall up to 0.58 m off); they now sample it
+    through the element's own position, rotation and scale.
+    Also fixed 2026-10-22: one with its own `rotation` inside a turned element gets the parent's
+    turn added to it (`ModifyRotationSetter`) but sampled without it (1.7 m off); both now read
+    their frame through `Modifier.transformOf`, exactly as the mesh gets it. The position too: inside a
+    moved element they ignored its position (unlike every other mesh element); now they add it.
+    And inside a `parent`-tagged element, whose node their mesh is really parented to, they sampled
+    as if unparented (a wall up to 4.3 m off, rocks buried 1.4 m); they now sample in that node's
+    world frame (`Modifier.worldFrameOf`). Rocks with no `position` there were also centred off
+    their ground by the parent's place (they cover the ground elsewhere); the ground's centre is
+    now turned into that node's frame.
+  - [x] `<garden-sky panorama>` (2026-10-21): `panorama`, `panorama-to`, `blend` (live),
+    `duration`, `tint`, `tint-to`, `haze-from`, `haze-range`, `size` (the dome); flashes with `<garden-lightning>`;
+    `blendTo()`, `flash()`. Colour and cubemap skies unchanged (`test:weather` 17/17).
+    Fixed the same night: removing the element left both domes (and their per-frame observer)
+    in the scene, since `mesh` is only the first dome; it now disposes its `PanoramaSky`.
+- [ ] `stoneWall`'s sides shade from light at the top to near-black at the foot, even untextured
+  in daylight (seen in `examples/Nature/nature.html`): probably the extruded shape's normals
+  smoothed round the foot and top edges. Check with a textured wall before changing it.
+  Measured 2026-10-22 (normals read back from the same `ExtrudeShape`): it is. Each shape corner
+  is shared by the side and the bottom or top, so a side's normal at the foot is (-0.74, -0.68),
+  tilted 43° down from the face's own (-1.00, 0.09), and at the top 43° up. Lit from above, the
+  foot turns away from the light. A fix (unshared corners, or flat normals) changes how every
+  wall looks, so it waits for a look at both.
+- [x] `tests/follow.js` "…and stop once there" was flaky (one follower at 0.20 m/s against a
+  0.2 limit about every other run). Measured 2026-10-21: no endless jostling; at 5 s the
+  followers are still creeping the last centimetres (0.12–0.18 m/s, easing in against keeping
+  apart, resting about 0.92 m apart, just past the 0.9 "crowded" line) and stop within 0.4 s more.
+  The check now waits up to 3 s for them to stop, then requires them to stay stopped for a
+  second (under 0.05 m/s; a follower kept nudged reads over 1 m/s and fails it).
 - [x] **`follow` and `follow-wait` find an element added later** (2026-10-20,
   in `npm run test:follow`): they looked their target up once and gave up
   (with a warning) if it wasn't in the DOM yet, so a guide waiting for a
@@ -503,3 +572,10 @@ Left over:
   keys with Ctrl/Alt/Meta held, and keys already `preventDefault()`ed by the page;
   only the keys it acts on are `preventDefault()`ed. The scene's audio-unlock
   `keydown` (capture phase) is untouched.
+- [ ] `walk` with `<garden-physics>` can rest up to about 15 cm above the floor (2026-10-21,
+  measured 0.02-0.14 m over 8 runs): Babylon's `PhysicsCharacterController` counts as standing
+  anywhere within `keepDistance` (0.05) + `keepContactTolerance` (0.1) of a surface, and
+  `BehaviourWalk` (like Babylon's sample) adds no gravity once it stands, so it stays where it
+  first came within that band. `tests/walk.js` "falls and lands" failed about 1 run in 5 on a
+  0.1 limit; it now checks the real band and that it has stopped. Possible fix: a small
+  downward pull while supported, or a smaller tolerance; check slopes and steps don't jitter.

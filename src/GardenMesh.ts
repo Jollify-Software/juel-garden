@@ -114,7 +114,7 @@ export abstract class GardenMesh extends GardenElement {
     }
 
     getScene(): Scene {
-        if ('getScene' in this.parentElement) {
+        if (this.parentElement && 'getScene' in this.parentElement) {
             return (<any>this.parentElement).getScene();
         } else {
             return null;

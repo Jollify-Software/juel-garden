@@ -1,0 +1,215 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <script src="../../dist/juel-garden.js"></script>
+        <style>
+            #hud { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1; font: 15px sans-serif; color: white;
+                   text-shadow: 0 1px 3px black; }
+            #hud button { font-size: 15px; padding: 4px 12px; }
+        </style>
+    </head>
+    <body>
+        <div id="hud">Follow the guide. WASD / arrows or a gamepad, or the thumb pads on a phone; drag to look round.
+            <button id="danger-button">Something's coming</button> <b id="status"></b></div>
+
+        <garden-scene fog-density="0.012" fog-colour="#a9b8c4">
+            <!--
+              THE SHARED PIECES TOGETHER
+
+              Markup:
+              - The guide walks a path (`track`) and stops for you when you fall
+                10 m behind (`follow-wait`); a pool of light goes with them.
+              - A group follows the guide (`follow`), keeping apart.
+              - Rocks, trees, a stone fold and a pool (<garden-rocks>,
+                <garden-trees>, <garden-stone-wall>, <garden-water>).
+
+              Script (the "Characters from code" and "Nature" classes):
+              - splatMaterial(): grass, earth and stones blended by a mix map
+                drawn by imageFromFunction(); every texture is drawn in this
+                page, so it needs no image files.
+              - GlowRing: the rim of the guide's pool of light on the ground.
+              - waveLayer(): the guide waves while waiting for you.
+              - HeldProp: the guide carries a staff, upright in the left hand.
+              - BoneSeat: a small figure rides on one follower's shoulders.
+              - Huddle + camera.show(): something appears; the group shelters
+                behind the guide, and the camera cuts away to it and back.
+            -->
+            <garden-camera type="follow" target="#player" free-look radius="7" height-offset="3" look-offset="1.1"
+                camera-stiffness="20" camera-damping="7"></garden-camera>
+            <garden-sky colour="#a9b8c4"></garden-sky>
+            <garden-light intensity="0.8"></garden-light>
+            <garden-light type="directional" direction="-1 -2 1" intensity="0.5"></garden-light>
+
+            <garden-ground id="field" width="80" height="80" colour="#6f8a4a"></garden-ground>
+
+            <garden-rocks ground="#field" count="45" size="0.15 0.9" seed="4"></garden-rocks>
+            <garden-trees ground="#field" count="16" spacing="7" seed="5"></garden-trees>
+            <garden-stone-wall position="14 0 6" radius="5" gate="-90" gate-width="1.6"></garden-stone-wall>
+            <garden-stone-wall points="-30 0 30, -10 0 34, 12 0 31, 30 0 36" height="0.9"></garden-stone-wall>
+            <garden-water position="-12 0.05 -2" radius="5" ripples="0.3"></garden-water>
+
+            <garden-line points="0 0 -20, 0 0 -6, 5 0 6, 2 0 18, -8 0 24, -18 0 14, -22 0 -6, -10 0 -22, 0 0 -20">
+                <garden-mesh-model id="guide" src="../assets/characters/Mannequin.glb" height="1.8" loading-screen="false"
+                    materials="standard" track track-smooth="10" track-step="0.02"
+                    follow-wait="#player" follow-wait-distance="10"
+                    anim-idle="Idle_Loop" anim-walk="Walk_Loop" anim-walk-speed="1.2">
+                    <garden-light pool="5" position="0 3 0" intensity="1.2" diffuse="1 0.85 0.6"></garden-light>
+                </garden-mesh-model>
+            </garden-line>
+
+            <garden-mesh-model class="group" src="../assets/characters/Mannequin.glb" height="1.1" loading-screen="false"
+                materials="standard" position="-2 0 -26" follow="#guide" follow-distance="2.5" follow-spacing="1.4"
+                anim-idle="Idle_Loop" anim-walk="Walk_Loop" anim-walk-speed="1"></garden-mesh-model>
+            <garden-mesh-model class="group" src="../assets/characters/Mannequin.glb" height="1.0" loading-screen="false"
+                materials="standard" position="2 0 -26" follow="#guide" follow-distance="2.5" follow-spacing="1.4"
+                anim-idle="Idle_Loop" anim-walk="Walk_Loop" anim-walk-speed="1"></garden-mesh-model>
+            <garden-mesh-model id="carrier" class="group" src="../assets/characters/Mannequin.glb" height="1.75" loading-screen="false"
+                materials="standard" position="0 0 -28" follow="#guide" follow-distance="2.5" follow-spacing="1.4"
+                anim-idle="Idle_Loop" anim-walk="Walk_Loop" anim-walk-speed="1.2"></garden-mesh-model>
+            <garden-mesh-model id="rider" src="../assets/characters/Mannequin.glb" height="0.95" loading-screen="false"
+                materials="standard" position="0 2 -28" play="Sitting_Idle_Loop"></garden-mesh-model>
+
+            <garden-mesh-model id="player" src="../assets/characters/Mannequin.glb" height="1.7" loading-screen="false"
+                materials="standard" position="0 0 -32" walk walk-speed="2.4" walk-run-speed="5"
+                anim-idle="Idle_Loop" anim-walk="Walk_Loop" anim-walk-speed="1.4"></garden-mesh-model>
+
+            <!-- Hidden until it appears. -->
+            <garden-sphere id="danger" diameter="1.4" position="0 -10 0" colour="#1c1a22"></garden-sphere>
+
+            <garden-thumbstick side="left" controls="#player"></garden-thumbstick>
+            <garden-thumbstick side="right" controls="camera"></garden-thumbstick>
+            <garden-marker target="#guide" icon="★" label="Guide" from="#player" hide-within="6" show-distance></garden-marker>
+        </garden-scene>
+
+        <script>
+            const { Vector3, Color3, MeshBuilder, Matrix } = BABYLON;
+            const JG = JuelGarden;
+            const sceneEl = document.querySelector("garden-scene");
+            const $ = (id) => document.getElementById(id);
+            const status = $("status");
+            // Resolves once every test passes, checking each frame.
+            const when = (test) => new Promise(r => { const f = () => test() ? r() : requestAnimationFrame(f); f(); });
+
+            // A tile drawn in a canvas: a base colour with speckles.
+            function tile(base, speck, seed) {
+                const c = document.createElement("canvas");
+                c.width = c.height = 256;
+                const x = c.getContext("2d");
+                x.fillStyle = base; x.fillRect(0, 0, 256, 256);
+                let s = seed;
+                const rand = () => (s = (s * 16807) % 2147483647) / 2147483647;
+                x.fillStyle = speck;
+                for (let i = 0; i < 900; i++) { x.globalAlpha = 0.15 + rand() * 0.3; x.fillRect(rand() * 256, rand() * 256, 2 + rand() * 4, 2 + rand() * 4); }
+                return c.toDataURL("image/png");
+            }
+            function flatNormal() {
+                const c = document.createElement("canvas");
+                c.width = c.height = 4;
+                const x = c.getContext("2d");
+                x.fillStyle = "rgb(128,128,255)"; x.fillRect(0, 0, 4, 4);
+                return c.toDataURL("image/png");
+            }
+
+            (async () => {
+                await when(() => sceneEl.scene && $("field").mesh);
+                const scene = sceneEl.scene;
+                // The worn earth shows the guide's path, so the line itself needn't.
+                await when(() => document.querySelector("garden-line").mesh);
+                document.querySelector("garden-line").mesh.isVisible = false;
+
+                // The ground: grass, worn earth along the path, stony patches.
+                const path = [[0, -20], [0, -6], [5, 6], [2, 18], [-8, 24], [-18, 14], [-22, -6], [-10, -22], [0, -20]];
+                const toPath = (x, z) => {
+                    let best = 1e9;
+                    for (let i = 0; i < path.length - 1; i++) {
+                        const [ax, az] = path[i], [bx, bz] = path[i + 1];
+                        const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)));
+                        best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+                    }
+                    return best;
+                };
+                const mix = JG.imageFromFunction(128, 80, 80, (x, z) => {
+                    const earth = Math.max(0, 1 - toPath(x, z) / 2.2);
+                    const stones = Math.max(0, JG.noise(x * 0.15, z * 0.15) - 0.6) * 2.5;
+                    const grass = Math.max(0, 1 - earth - stones);
+                    return [grass, earth, Math.min(1, stones)];
+                });
+                const flat = flatNormal();
+                const ground = $("field").mesh;
+                ground.material = JG.splatMaterial(scene, mix, [
+                    { colour: tile("#5e7d3c", "#3f5a28", 3), normal: flat, tiles: 20 },
+                    { colour: tile("#8a6d4c", "#5d4730", 5), normal: flat, tiles: 20 },
+                    { colour: tile("#8d8a82", "#5a5852", 7), normal: flat, tiles: 20 },
+                ]);
+
+                const guide = $("guide"), carrier = $("carrier"), rider = $("rider");
+                await when(() => guide.skeleton && carrier.skeleton && rider.skeleton);
+
+                // The rim of the guide's pool of light.
+                const ring = new JG.GlowRing(scene, { colour: "#ffd27a" });
+                ring.level = 0.6;
+                scene.onBeforeRenderObservable.add(() => { const p = guide.mesh.position; ring.update(p.x, p.z, 4.6); });
+
+                // A staff in the guide's left hand (the right one waves).
+                const staff = MeshBuilder.CreateCylinder("staff", { height: 1.9, diameter: 0.045 }, scene);
+                staff.bakeTransformIntoVertices(Matrix.Translation(0, 0.95, 0));
+                const wood = new BABYLON.StandardMaterial("staff-m", scene);
+                wood.diffuseColor = Color3.FromHexString("#6b4a2b");
+                staff.material = wood;
+                new JG.HeldProp(scene, staff, JG.boneNode(guide.skeleton, "hand_l"), guide.mesh, { grip: 1.0 });
+
+                // The guide waves while waiting for you.
+                const wave = JG.waveLayer(scene, guide.skeleton, { side: "r" });
+                guide.addEventListener("garden-wait", () => { status.textContent = "The guide is waiting for you."; wave.target = 1; });
+                guide.addEventListener("garden-resume", () => { status.textContent = ""; wave.target = 0; });
+
+                // A small figure on the carrier's shoulders, facing the carrier's way.
+                new JG.BoneSeat(scene, rider.mesh, JG.boneNode(rider.skeleton, "pelvis"), JG.boneNode(carrier.skeleton, "neck_01"),
+                    { offset: new Vector3(0, 0.1, -0.15), facing: carrier.mesh });
+                scene.onBeforeRenderObservable.add(() => {
+                    if (carrier.mesh.rotationQuaternion) {
+                        rider.mesh.rotationQuaternion = carrier.mesh.rotationQuaternion.clone();
+                    } else {
+                        rider.mesh.rotationQuaternion = null;
+                        rider.mesh.rotation.y = carrier.mesh.rotation.y;
+                    }
+                });
+
+                // Something appears beside the guide: the group shelters behind the guide while the
+                // camera cuts away to it; it drifts closer, then fades, and they carry on.
+                const danger = $("danger").mesh, camera = document.querySelector("garden-camera").camera;
+                let busy = false;
+                async function appear() {
+                    if (busy) return;
+                    busy = true;
+                    const g = guide.mesh.position;
+                    const side = new Vector3(Math.random() < 0.5 ? -1 : 1, 0, 0.6).normalize();
+                    danger.position.set(g.x + side.x * 9, 0.9, g.z + side.z * 9);
+                    danger.visibility = 1;
+                    status.textContent = "Something's out there! Everyone behind the guide.";
+                    const huddle = new JG.Huddle(scene, [...document.querySelectorAll(".group")], { centre: guide.mesh, danger });
+                    camera.show(danger);
+                    const start = performance.now();
+                    const drift = scene.onBeforeRenderObservable.add(() => {
+                        const k = (performance.now() - start) / 1000;
+                        const to = guide.mesh.position.subtract(danger.position);
+                        to.y = 0;
+                        if (to.length() > 5) danger.position.addInPlace(to.normalize().scale(0.012));
+                        danger.visibility = Math.max(0, Math.min(1, (8 - k) / 2));
+                    });
+                    await new Promise(r => setTimeout(r, 3500));
+                    await camera.unshow();
+                    await new Promise(r => setTimeout(r, 4500));
+                    scene.onBeforeRenderObservable.remove(drift);
+                    danger.position.y = -10;
+                    huddle.end();
+                    status.textContent = "";
+                    busy = false;
+                }
+                $("danger-button").onclick = appear;
+                setTimeout(appear, 25000);
+            })();
+        </script>
+    </body>
+</html>

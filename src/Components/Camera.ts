@@ -12,11 +12,11 @@ import { GardenScene } from "./Scene";
  * sibling of `<garden-light>`. Which Babylon camera actually gets built is
  * chosen by `type`, delegated to {@link CameraTypeStrategies}:
  *
- * - `"arc"` (default) -- an orbiting `ArcRotateCamera` ({@link ArcCameraStrategy}).
+ * - `"arc"` (default) -- an orbiting `ArcRotateCamera` ({@link "CameraTypes/ArcCameraStrategy"!ArcCameraStrategy}).
  * - `"free"` -- WASD/touch-joystick free-fly, with optional `collisions`
- *   ({@link FreeCameraStrategy}).
+ *   ({@link "CameraTypes/FreeCameraStrategy"!FreeCameraStrategy}).
  * - `"follow"` -- a spring-damped third-person chase camera locked to
- *   `target` ({@link FollowCameraStrategy}).
+ *   `target` ({@link "CameraTypes/FollowCameraStrategy"!FollowCameraStrategy}).
  *
  * Attributes: `type`, `position`, `speed`, `target` (an element selector, for
  * `type="follow"` or any type exposing `chaseTarget`), `radius`,

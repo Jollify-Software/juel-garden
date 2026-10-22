@@ -50,15 +50,33 @@ run(`
     await page.evaluate(() => (window.wave.target = 1));
     await page.waitForTimeout(1200);
     const up1 = await hand();
-    await page.waitForTimeout(230);
-    const up2 = await hand();
+    // The sway is a sine about 0.9 s round: sample a whole cycle (two samples can land either
+    // side of a peak at the same x).
+    const xs = [];
+    for (let i = 0; i < 10; i++) { await page.waitForTimeout(100); xs.push((await hand()).x); }
+    const swayRange = Math.max(...xs) - Math.min(...xs);
     check("waveLayer raises the hand above the head", down.up < -0.3 && up1.up > -0.05, `${down.up.toFixed(2)} -> ${up1.up.toFixed(2)}`);
-    check("…and sways it", Math.abs(up1.x - up2.x) > 0.02, `${up1.x.toFixed(3)} / ${up2.x.toFixed(3)}`);
+    check("…and sways it", swayRange > 0.02, `x ranges ${swayRange.toFixed(3)} over a cycle`);
     check("…with the hand opened from the clip's", JSON.stringify(up1.finger) != JSON.stringify(down.finger));
     await page.evaluate(() => (window.wave.target = 0));
     await page.waitForTimeout(1500);
     const lowered = await hand();
     check("target 0 lowers it again", Math.abs(lowered.up - down.up) < 0.05, `${lowered.up.toFixed(2)} vs ${down.up.toFixed(2)}`);
+
+    // PoseLayer.rest on its own: the seated clip bends the thighs; rest straightens only the one named.
+    const rested = await page.evaluate(async () => {
+        const b = document.getElementById("b"), scene = document.querySelector("garden-scene").scene;
+        const restOf = (name) => { const q = new BABYLON.Quaternion(); b.skeleton.bones.find(x => x.name == name).getRestPose().decompose(undefined, q); return q; };
+        const near = (name) => Math.abs(BABYLON.Quaternion.Dot(JuelGarden.boneNode(b.skeleton, name).rotationQuaternion, restOf(name)));
+        const before = { l: near("thigh_l"), r: near("thigh_r") };
+        const layer = new JuelGarden.PoseLayer(scene, b.skeleton, { weight: 1, target: 1 }).rest("thigh_l");
+        await new Promise(r => setTimeout(r, 300));
+        const during = { l: near("thigh_l"), r: near("thigh_r") };
+        layer.dispose();
+        return { before, during };
+    });
+    check("PoseLayer.rest puts the named bone back to its rest pose", rested.before.l < 0.99 && rested.during.l > 0.9999, JSON.stringify(rested));
+    check("…and only that bone", rested.during.r < 0.99, JSON.stringify(rested));
 
     // BoneSeat: the small one's pelvis on the big one's neck while the big one walks about.
     await page.evaluate(() => {
@@ -120,6 +138,18 @@ run(`
     check("Huddle: they shelter behind the leader, away from the danger", sheltered.every(s => s.behind), JSON.stringify(sheltered));
     check("…turn to watch it, paused (waiting)", sheltered.every(s => s.faces && s.waiting), JSON.stringify(sheltered));
     check("…and say when each has settled", (await page.evaluate(() => window.changes)) == 3);
+    // The danger goes round to the other side of the leader: they move round too.
+    const sideBefore = await page.evaluate(() => [...document.querySelectorAll(".kid")].map(k => Math.sign(k.mesh.position.x - document.getElementById("leader").mesh.position.x)));
+    await page.evaluate(() => document.getElementById("wolf").mesh.position.set(-18, 0.4, 0));
+    await page.waitForTimeout(2500);
+    const moved = await page.evaluate(() => {
+        const L = document.getElementById("leader").mesh.position, W = document.getElementById("wolf").mesh.position;
+        return [...document.querySelectorAll(".kid")].map(k => {
+            const p = k.mesh.position;
+            return { side: Math.sign(p.x - L.x), behind: (p.x - L.x) * (L.x - W.x) + (p.z - L.z) * (L.z - W.z) > 0 };
+        });
+    });
+    check("…and move round when the danger goes round them", moved.every((m, i) => m.behind && m.side == -sideBefore[i]), JSON.stringify({ sideBefore, moved }));
     await page.evaluate(() => { window.huddle.end(); document.getElementById("leader").mesh.position.set(-10, 0.5, 12); });
     await page.waitForTimeout(3000);
     const after = await page.evaluate(() => [...document.querySelectorAll(".kid")].map(k => +k.mesh.position.z.toFixed(1)));

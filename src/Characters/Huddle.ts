@@ -33,8 +33,8 @@ export interface HuddleOptions {
  *
  * @example
  * ```ts
- * const huddle = new Huddle(scene, [...document.querySelectorAll(".child")], { centre: guide.mesh, danger: wolf.mesh,
- *     onChange: (child, i, settled) => child.play(settled ? "Crouch" : "Run") });
+ * const huddle = new Huddle(scene, [...document.querySelectorAll<GardenElement>(".visitor")], { centre: guide.mesh, danger: bear.mesh,
+ *     onChange: (visitor, i, settled) => visitor.toggleAttribute("crouching", settled) });
  * // ...when it's gone
  * huddle.end();
  * ```
