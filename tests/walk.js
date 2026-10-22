@@ -94,9 +94,16 @@ run(`
   <garden-box id="p" width="0.6" height="1.8" depth="0.6" position="0 3 0" walk></garden-box>
 </garden-scene>`);
     await page.waitForFunction(() => document.getElementById("p").walker?.controller);
-    await page.waitForTimeout(1500);
+    // Babylon's controller counts as standing anywhere within keepDistance (0.05) + keepContactTolerance
+    // (0.1) of the floor and stops where it first gets there: measured 0.92-1.04 over 8 runs (centre 0.9).
+    const trace = [];
+    for (let t = 0; t < 15; t++) {
+        await page.waitForTimeout(100);
+        trace.push((await page.evaluate(new Function(`return ${pos("p")}`)))[1]);
+    }
     const landed = await page.evaluate(new Function(`return ${pos("p")}`));
-    check("character controller: falls and lands on the floor", Math.abs(landed[1] - 0.9) < 0.1, JSON.stringify(landed));
+    const still = trace.slice(-5).every(y => Math.abs(y - landed[1]) < 0.005);
+    check("character controller: falls and lands on the floor", landed[1] > 0.85 && landed[1] < 1.06 && still, JSON.stringify(landed) + " " + trace.join(" "));
     await hold(["w"], 2500);
     const blocked = await page.evaluate(new Function(`return ${pos("p")}`));
     check("character controller: walks and stops at the wall", blocked[2] > 2.5 && blocked[2] < 3.5 - 0.25, JSON.stringify(blocked));

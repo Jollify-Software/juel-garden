@@ -51,7 +51,8 @@ export function BehaviourWait(el: GardenElement, mesh: Mesh, attr: Attr[]) {
     if (!byCamera)
         (async () => {
             await GardenElement.whenDocumentReady();
-            [other] = await GardenElement.resolveReady(selector);
+            // It may be added later (a game builds its cast in turn).
+            other = await GardenElement.resolveEventually(selector);
             if (!other)
                 console.warn(`follow-wait="${selector}" did not match any element.`);
         })().catch(err => console.error("[follow-wait] failed to resolve", selector, err));

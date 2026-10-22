@@ -34,7 +34,7 @@ export module OptionsBuilder {
         'points': OptionsVector3ArraySetter('points'),
         'shape': OptionsVector3ArraySetter('shape'),
         'subdivisions': FloatSetter('subdivisions'),
-        'minheigh': FloatSetter('minheight', 'minHeight'),
+        'minheight': FloatSetter('minheight', 'minHeight'),
         'maxheight': FloatSetter('maxheight', 'maxHeight'),
         'sideorientation': ConverterSetter('sideorientation', 'sideOrientation', StaticConvert.sideOrientation),
         'diffuse': ConverterSetter('diffuse', 'diffuse', Color3Convert.fromString),

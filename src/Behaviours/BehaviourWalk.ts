@@ -100,7 +100,7 @@ export function BehaviourWalk(el: GardenElement, target: IBehaviourTarget, attr:
     walker._target = target;
     walker.enabled = previous?.enabled ?? true;
     walker.heading = previous?.heading ?? target.rotation.y - facingOffset;
-    walker.input = previous?.input ?? new WalkInput(el.getSceneEl(), el.getAttribute("walk-joystick") ?? "auto");
+    walker.input = previous?.input ?? new WalkInput(el.getSceneEl(), el.getAttribute("walk-joystick") ?? "auto", el);
     (<any>el).walker = walker;
 
     let mesh = target instanceof AbstractMesh ? target : null;

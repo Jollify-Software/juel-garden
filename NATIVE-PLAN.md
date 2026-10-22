@@ -156,8 +156,11 @@ Jetty viewer (`jetty/VIEWER-PLAN.md`).
    `garden-contract`. Built with the shared `Jollify.Packaging` library.
    Grotto (Track B) can read the same package directly, because it loads
    scene HTML at runtime.
-2. **`parterre pack`:** collects references with AngleSharp (as
-   `slipway pack` will), bundles the runtime, and writes the manifest.
+2. **`parterre pack`:** hands the generated page to
+   `Jollify.Packaging.Html`'s `PackPlanner`. That collects its references,
+   mirrors the layout, detects the scene and its `garden-*` metas and the
+   `juel-garden.js` runtime, and writes the manifest. Until then,
+   `jollify pack scene.html -o venue.garden` already works on any scene page.
 3. **Player:** the MAUI Windows viewer opens `.garden` as well as `.jetty`,
    through the same `IDeckHost` (WebView2 virtual-host mapping). It becomes a
    generic "Jollify player".

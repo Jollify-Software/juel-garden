@@ -1,0 +1,79 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <script src="../../dist/juel-garden.js"></script>
+        <style>
+            #hud { position: absolute; top: 12px; left: 12px; z-index: 1; font: 15px sans-serif; color: white;
+                   text-shadow: 0 1px 2px black; }
+            #hud button { font-size: 15px; padding: 4px 12px; }
+        </style>
+    </head>
+    <body>
+        <div id="hud">
+            <button id="day">Day</button> <button id="dusk">Dusk</button>
+            <button id="mirror">Mirror the pool</button> <button id="strike">Lightning</button>
+            &nbsp;Drag to look round.
+        </div>
+
+        <garden-scene>
+            <!--
+              NATURE IN MARKUP
+
+              - <garden-height-map>: rolling ground for everything to stand on.
+              - <garden-rocks ground>: rocks scattered over it and merged into one mesh.
+              - <garden-trees ground spacing>: low gnarled trees, instanced, kept apart.
+              - <garden-stone-wall radius gate>: a round fold with its gateway facing the pool;
+                a second wall along `points` following the ground.
+              - <garden-water reflect>: a still pool; "Mirror the pool" sets `reflect` from code.
+              - <garden-sky panorama panorama-to>: two skies drawn below in canvases (no image
+                files), cross-faded by `blend`; a <garden-lightning> strike lights the first up.
+            -->
+            <garden-camera type="arc" position="0 9 -30" target="0 1 0" radius="34"></garden-camera>
+            <garden-light intensity="0.9"></garden-light>
+            <garden-light type="directional" direction="-1 -2 1" intensity="0.6"></garden-light>
+            <garden-height-map id="hills" url="../assets/dunes.png" width="80" height="80" subdivisions="60" maxheight="3" colour="#7c8a52"></garden-height-map>
+
+            <garden-rocks ground="#hills" count="40" size="0.2 1.1" seed="3"></garden-rocks>
+            <garden-rocks ground="#hills" position="6 0 -4" width="5" depth="3" count="8" size="0.3 0.8" seed="9" colour="#9a9284"></garden-rocks>
+            <garden-trees ground="#hills" count="18" spacing="6" seed="2"></garden-trees>
+
+            <garden-stone-wall ground="#hills" position="-12 0 4" radius="5" gate="90" gate-width="1.6"></garden-stone-wall>
+            <garden-stone-wall ground="#hills" points="-30 0 -20, -6 0 -16, 14 0 -22" height="0.9"></garden-stone-wall>
+
+            <garden-water id="pool" position="4 1.1 6" radius="6" ripples="0.3"></garden-water>
+            <garden-lightning id="bolt"></garden-lightning>
+        </garden-scene>
+
+        <script>
+            // Two skies drawn here, so the page needs no image files: a blue day and an evening.
+            function skyImage(top, horizon, cloud, seed) {
+                const c = document.createElement("canvas");
+                c.width = 1024; c.height = 512;
+                const x = c.getContext("2d");
+                const g = x.createLinearGradient(0, 0, 0, 512);
+                g.addColorStop(0, top); g.addColorStop(0.5, horizon); g.addColorStop(1, horizon);
+                x.fillStyle = g; x.fillRect(0, 0, 1024, 512);
+                let s = seed;
+                const rand = () => (s = (s * 16807) % 2147483647) / 2147483647;
+                x.fillStyle = cloud;
+                for (let i = 0; i < 70; i++) {
+                    const cx = rand() * 1024, cy = 120 + rand() * 120, w = 30 + rand() * 70;
+                    x.globalAlpha = 0.25 + rand() * 0.3;
+                    x.beginPath(); x.ellipse(cx, cy, w, w * 0.35, 0, 0, Math.PI * 2); x.fill();
+                }
+                return c.toDataURL("image/png");
+            }
+            const sky = document.createElement("garden-sky");
+            sky.setAttribute("panorama", skyImage("#3d6fb0", "#b9d3ea", "#ffffff", 7));
+            sky.setAttribute("panorama-to", skyImage("#1d2448", "#e0925a", "#7a4a5a", 11));
+            sky.setAttribute("blend", "0");
+            document.querySelector("garden-scene").appendChild(sky);
+
+            document.getElementById("day").onclick = () => sky.blendTo(0, 4);
+            document.getElementById("dusk").onclick = () => sky.blendTo(1, 4);
+            document.getElementById("mirror").onclick = () => document.getElementById("pool").setAttribute("reflect", "");
+            document.getElementById("strike").onclick = () => document.getElementById("bolt").strike();
+        </script>
+    </body>
+</html>

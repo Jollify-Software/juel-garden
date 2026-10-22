@@ -9,7 +9,7 @@
         </style>
     </head>
     <body>
-        <div id="hud">WASD / arrows or a gamepad to walk, Shift to run, E to wave, drag to look round. <span id="speed"></span></div>
+        <div id="hud">WASD / arrows or a gamepad to walk, Shift to run, F to wave; drag, Q/E or the right stick to look round. <span id="speed"></span></div>
 
         <garden-scene>
             <!--
@@ -27,7 +27,7 @@
               The robot is Quaternius's CC0 RobotExpressive (see
               examples/assets/characters/LICENCES.md). `anim-idle`,
               `anim-walk` and `anim-run` pick its animation from how fast it
-              is going, cross-fading between them; press E to wave (a
+              is going, cross-fading between them; press F to wave (a
               one-shot `play("Wave", { loop: false })`).
             -->
             <garden-camera type="follow" target="#player" free-look radius="7" height-offset="3.5" look-offset="1.2"
@@ -55,7 +55,7 @@
                 const w = player.walker;
                 if (w) hud.textContent = `${w.speed.toFixed(1)} m/s${w.running ? " (running)" : ""}`;
             }, 200);
-            addEventListener("keydown", e => { if (e.key == "e") player.play("Wave", { loop: false, blend: 0.15 }); });
+            addEventListener("keydown", e => { if (e.key == "f") player.play("Wave", { loop: false, blend: 0.15 }); });
         </script>
     </body>
 </html>

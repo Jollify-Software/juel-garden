@@ -32,6 +32,8 @@ export class AnimationMixer {
     private fades: { group: AnimationGroup, from: number, to: number, t: number, length: number }[] = [];
     private observer: Observer<Scene>;
     private oneShot = false;
+    /** The one-shot whose end is being announced. */
+    private ending: AnimationGroup = null;
     private lastLoop: { name: string, speed: number } = null;
 
     /** Set by the motion driver: what to return to after a one-shot. */
@@ -79,12 +81,21 @@ export class AnimationMixer {
 
         // A looping group still fading out carries on from where it is; a one-shot starts over.
         let wasPlaying = group.isPlaying && loop;
+        // Restarted from its own end (a listener of garden-animation-end playing it again):
+        // Babylon clears what starts inside its end notification, so start it before the next
+        // frame's animations, at the weight it has (no blend through the rest pose).
+        let again = this.ending == group;
         group.onAnimationGroupEndObservable.clear();
-        if (!wasPlaying)
-            group.start(loop, speed);
-        if (!loop) {
-            group.onAnimationGroupEndObservable.addOnce(() => this.ended(group));
-        }
+        let start = () => {
+            if (!wasPlaying)
+                group.start(loop, speed);
+            if (!loop)
+                group.onAnimationGroupEndObservable.addOnce(() => this.ended(group));
+        };
+        if (again)
+            this.scene.onBeforeAnimationsObservable.addOnce(() => { if (this.current == group.name) start(); });
+        else
+            start();
         if (blend == 0) {
             this.fades = [];
             for (let other of this.groups.values())
@@ -98,7 +109,7 @@ export class AnimationMixer {
                 this.fades = this.fades.filter(f => f.group != other);
                 this.fades.push({ group: other, from: other.weight, to: 0, t: 0, length: blend });
             }
-            let from = wasPlaying ? group.weight : 0;
+            let from = wasPlaying || again ? group.weight : 0;
             this.fades.push({ group, from, to: 1, t: 0, length: blend });
             group.weight = from;
         }
@@ -133,8 +144,16 @@ export class AnimationMixer {
     private ended(group: AnimationGroup) {
         if (this.current != group.name)
             return;
-        this.owner.dispatchEvent(new CustomEvent("garden-animation-end", { bubbles: true, detail: { name: group.name } }));
         this.oneShot = false;
+        this.ending = group;
+        try {
+            this.owner.dispatchEvent(new CustomEvent("garden-animation-end", { bubbles: true, detail: { name: group.name } }));
+        } finally {
+            this.ending = null;
+        }
+        // A listener may have started something, even the same one-shot again: leave it playing.
+        if (this.oneShot || this.current != group.name)
+            return;
         let next = this.motion?.() ?? this.lastLoop;
         if (next)
             this.play(next.name, { speed: next.speed, blend: 0.2 });

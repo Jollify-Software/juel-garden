@@ -15,6 +15,7 @@ import "../Decoders";
 import { customElement, property } from "lit/decorators.js";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 import { AnimationMixer, PlayOptions, driveByMotion } from "../AnimationMixer";
+import { toStandardMaterials } from "../Utils/StandardMaterials";
 
 /**
  * Imports an external 3D model file (glTF/GLB -- Draco- or meshopt-compressed
@@ -29,6 +30,9 @@ import { AnimationMixer, PlayOptions, driveByMotion } from "../AnimationMixer";
  *
  * Attributes:
  * - `src`: the model's URL (or use `root` + `filename`).
+ * - `extension`: the file type (`glb`, `.gltf`, `obj`…), for a `src` whose URL doesn't end in
+ *   one, such as a `blob:` or `data:` URL. Babylon picks its loader by it
+ *   (`pluginExtension`). Without it, the loader is guessed from the URL.
  * - `meshnames`: which meshes to import, empty/`"*"` for all.
  * - `height`: scales the model so it stands this tall (scene units, i.e.
  *   metres). Scans and downloads come in any unit; this fixes it.
@@ -46,6 +50,9 @@ import { AnimationMixer, PlayOptions, driveByMotion } from "../AnimationMixer";
  * - `load-distance`: don't load until the camera comes within this many
  *   metres of the model's `position` -- for big scans in a large venue, so
  *   the visitor only downloads what they walk up to.
+ * - `materials`: `"standard"` swaps the glTF's PBR materials for StandardMaterials when it
+ *   loads (see {@link toStandardMaterials}), for a scene without an environment map, where
+ *   PBR models come out dark.
  * - `loading-screen`: `"false"` to skip Babylon's loading screen, which
  *   otherwise covers the canvas while any model is loading. A model with
  *   `load-distance` loads quietly unless this is `"true"`.
@@ -72,6 +79,7 @@ import { AnimationMixer, PlayOptions, driveByMotion } from "../AnimationMixer";
 export class GardenMeshModel extends GardenSkeletonMesh {
     @property() meshNames: string;
     @property() src: string;
+    @property() extension: string;
     @property() root: string;
     @property() filename: string;
     @property({ type: Number }) height: number;
@@ -93,7 +101,7 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     loaded: Promise<void>;
 
     updated(changed?: Map<string, unknown>) {
-        let key = [this.src, this.root, this.filename, this.meshNames,
+        let key = [this.src, this.extension, this.root, this.filename, this.meshNames,
             this.height, this.fit, this.base, this.animation].join("|");
         if (key == this.loadedKey) {
             // Only position/rotation/scale etc. changed: no need to reload.
@@ -177,7 +185,9 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         };
         let result;
         try {
-            result = await SceneLoader.ImportMeshAsync(names, root, file, scene, progress);
+            let ext = this.extension?.trim();
+            result = await SceneLoader.ImportMeshAsync(names, root, file, scene, progress,
+                ext ? (ext.startsWith(".") ? ext : "." + ext).toLowerCase() : undefined);
         } catch (error) {
             console.error(`<garden-mesh-model> couldn't load ${root}${file}`, error);
             this.dispatchEvent(new CustomEvent("garden-model-error", { bubbles: true, detail: { error } }));
@@ -220,6 +230,9 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         } else if (first) {
             this.mixer?.play(first, { blend: 0 });
         }
+
+        if (this.getAttribute("materials") == "standard")
+            toStandardMaterials(result.meshes, scene);
 
         if (result.skeletons.length > 0)
             this.skeleton = result.skeletons[0];

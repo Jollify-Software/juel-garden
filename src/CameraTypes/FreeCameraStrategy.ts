@@ -6,7 +6,7 @@ import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 /**
  * `type="free"`: WASD/arrow-key + mouse-look free-fly camera, or a
  * touch-joystick camera on a tablet when `touch="true"` (the default). See
- * {@link GardenCamera}.
+ * {@link "Components/Camera"!GardenCamera}.
  *
  * @category Camera Types
  */

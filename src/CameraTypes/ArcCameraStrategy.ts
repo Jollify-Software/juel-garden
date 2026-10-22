@@ -4,7 +4,7 @@ import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 
 /**
  * `type="arc"` (the default): an orbiting `ArcRotateCamera` -- drag to orbit,
- * scroll to zoom. See {@link GardenCamera}.
+ * scroll to zoom. See {@link "Components/Camera"!GardenCamera}.
  *
  * @category Camera Types
  */

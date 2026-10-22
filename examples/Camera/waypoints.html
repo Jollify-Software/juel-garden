@@ -8,7 +8,9 @@
 <body>
     <garden-scene>
         <garden-camera type="free">
-            <garden-waypoint offset="0 2 0" waypoints="#wp1 #wp2 #wp3 #wp4 #wp5"></garden-waypoint>
+            <!-- Click a platform, or look at one and hold for 1.5 s (dwell); the next one in order has a ring.
+                 PageDown/Right arrow and PageUp/Left arrow (a presentation clicker) go to the next/previous one. -->
+            <garden-waypoint offset="0 2 0" speed="2" dwell="1500" waypoints="#wp1 #wp2 #wp3 #wp4 #wp5"></garden-waypoint>
         </garden-camera>
         <garden-light></garden-light>
 

@@ -31,6 +31,20 @@ Here is the Garden equivalent of the [A-Frame basic scene](https://aframe.io/doc
 ```
 
 The [Waypoints example](https://jollify.app/doc/waypoints.html) shows how this library could be used to create educational VR experiences.  
+`<garden-waypoint>` moves you to a stop when you click it, or when you **look at it and hold**
+(`dwell`, 1500 ms by default, `0` off: a white reticle, dark-edged so it reads on pale surfaces too, fills at the centre of view, for headsets
+without controllers); the **next** stop in order has a glowing ring (`highlight-next="false"`
+hides it); `next()`, `previous()` and `go(index)` fly along the order and fire
+`waypoint-changed` (`{ index }`). For headsets keep the fly short (`speed="2"` or more).
+**Keys** (`keys`, on by default): PageDown and Right arrow go to the next stop, PageUp and Left arrow
+to the previous one, which is what presentation clickers send, so a published scene works with one
+(in an iframe, while the iframe has focus); keys typed into a form field or editable text, or with
+Ctrl/Alt/Meta held, are left alone, and `keys="false"` turns it off.
+A stop that moves (one with `orbit`) is followed during the fly, so you land on it and ride its orbit.
+Tests: `node tests/waypoint-dwell.js`, `node tests/waypoint-orbit.js`, `node tests/waypoint-keys.js`.  
+A stop can circle something: give it `orbit` (and `orbit-angle`, radians per frame) inside the
+element it goes round. Its `position` stays world-space (height included), and a
+`<garden-mesh-model>` parent is waited for until its file has loaded. Test: `node tests/orbit.js`.  
 My favourite example is the [temple example](https://jollify.app/doc/temple.html) which demonstrates how the library could be used to create experiences for museum exhibits:
 
 ```html
@@ -132,17 +146,23 @@ and walk-throughs with guides and talking exhibits (the plan is
 
 ```html
 <garden-scene fog-density="0.01">
+    <!-- free-look: the camera keeps its own angle; look round with a drag, Q/E, the gamepad's
+         right stick, or a second thumb pad bottom right on touch screens (look-pad). -->
     <garden-camera type="follow" target="#player" free-look radius="7" height-offset="3.5"></garden-camera>
+    <!-- Touch screens: two thumbsticks, one to walk and one to look (floating: touch anywhere on that half). -->
+    <garden-thumbstick side="left" controls="#player"></garden-thumbstick>
+    <garden-thumbstick side="right" controls="camera"></garden-thumbstick>
     <garden-sky colour="#d89a6a" colour-to="#1b2140" duration="120"></garden-sky>
     <garden-height-map id="dunes" url="dunes.png" width="120" height="120" maxheight="6"></garden-height-map>
 
     <!-- A walking player: WASD / gamepad / touch thumb pad, relative to the camera. -->
-    <garden-mesh-model id="player" src="robot.glb" height="1.8" walk terrain="#dunes"
+    <!-- materials="standard": its PBR materials as StandardMaterials (no environment map here). -->
+    <garden-mesh-model id="player" src="robot.glb" height="1.8" walk terrain="#dunes" materials="standard"
         anim-idle="Idle" anim-walk="Walking" anim-run="Running"></garden-mesh-model>
 
     <!-- A guide on a path who waits (and turns round) when you fall 10 m behind. -->
     <garden-line points="0 0 0, 0 0 40, 30 0 40">
-        <garden-mesh-model id="guide" src="robot.glb" track follow-wait="#player" follow-wait-distance="10"
+        <garden-mesh-model id="guide" src="robot.glb" track follow-wait="#player" follow-wait-distance="10" materials="standard"
             anim-idle="Idle" anim-walk="Walking">
             <garden-light pool="6" position="0 3 0" diffuse="1 0.8 0.5"></garden-light>
             <garden-sound url="voice.mp3" loop ref-distance="3"></garden-sound>
@@ -156,6 +176,16 @@ and walk-throughs with guides and talking exhibits (the plan is
     <garden-particle preset="sand" wind="7 0 2" density="0.5"></garden-particle>
     <garden-lightning interval="8 20"><garden-sound url="thunder.wav"></garden-sound></garden-lightning>
 </garden-scene>
+<script>
+    // A cutaway to the marker's target: when the guide stops to wait, the camera swings round
+    // to show where he is, then back to exactly where it was.
+    const guide = document.getElementById("guide");
+    guide.addEventListener("garden-wait", () => {
+        const camera = document.querySelector("garden-camera").camera;
+        camera.show(guide.mesh);
+        setTimeout(() => camera.unshow(), 3000);
+    });
+</script>
 ```
 
 | Piece | What it does |
@@ -168,8 +198,58 @@ and walk-throughs with guides and talking exhibits (the plan is
 | Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
 | `<garden-marker>` | An icon over a target, or an edge-of-screen arrow to it |
 | `<garden-sound>` | Spatial audio on Babylon's audio engine: `play()`/`stop()`, `play-on="garden-near"`, cones, roll-off |
+| `<garden-thumbstick>` | On-screen thumbsticks for touch screens: one `controls` a walker, one the `camera` |
+| `camera.show(what)` | A cutaway: the follow camera swings round to look past the player at something happening, then `unshow()` swings it back to exactly where it was (`swingTo(place)`; `test:cutaway`) |
+| `materials="standard"` | A GLB's PBR materials swapped for StandardMaterials, for scenes without an environment map (`toStandardMaterials()` from code) |
+| `extension` | A model's file type (`glb`, `gltf`, `obj`…) for a `src` that doesn't end in one, such as a `blob:` or `data:` URL; Babylon picks its loader by it (`node tests/model-extension.js`) |
 
-The test characters are Quaternius's CC0 RobotExpressive and the Khronos Fox
+### Characters from code
+
+For a script driving rigged characters (`npm run test:characters`; the classes are exported
+by the ES module, and are `window.JuelGarden.*` with the `<script>` bundle):
+
+| Class | What it does |
+|---|---|
+| `PoseLayer` | Changes to bones laid over whatever animation plays: `turn(bone, by)`, `scale(bone, by)`, `rest(bones)` (back to the rig's rest pose); fades in and out with `target`. A child's proportions from an adult rig, legs spread to sit astride |
+| `waveLayer()` | A wave over any clip (arm up, forearm swaying, hand open); defaults for the Unreal-style rig of Quaternius's Universal Animation Library |
+| `BoneSeat` | Keeps one model's bone on another's as both move: a child on someone's shoulders |
+| `HeldProp` | A staff, lamp or flag in the hand, following it but staying upright; `lift` for a gesture |
+| `Huddle` | A group shelters behind someone from a danger (pausing their `follow`), turns to watch it, and says when each has settled; `end()` lets them go |
+| `worldPosition()`, `boneNode()` | A node's exact place this frame; a skeleton's bone by name |
+
+All of them together, with the nature pieces, in
+[examples/Characters/pieces.html](examples/Characters/pieces.html).
+
+### Nature
+
+Pieces for outdoor scenes built in code, light enough for a tablet (`npm run test:nature`):
+
+| Piece | What it does |
+|---|---|
+| `splatMaterial()` | Three ground textures with normal maps, blended by a mix map (a StandardMaterial plugin, so fog and lights work) |
+| `imageFromFunction()` | A heightmap or mix map drawn from a function, as a PNG data URL |
+| `PanoramaSky` | One or two sky photographs on domes, cross-fading (`blend`), hidden by thick fog, lit by `flash()` |
+| `StillWater` | A dark pool with moving ripples, and a mirror switched on by `reflect()` |
+| `rockMesh()`, `stoneWall()`, `arcPath()` | Lumpy rocks; a tapering dry-stone wall with capstones, round a circle with a gateway |
+| `cardTrees()`, `leafTexture()`, `leafMaterial()` | Gnarled low trees with leaf-card crowns, as templates to instance |
+| `GlowRing` | A glowing rim on the ground round a circle (where a pool of light ends), following the ground |
+| `mottle()`, `noise()`, `texturedMaterial()` | Brightness varied over a ground; smooth value noise; a texture with its normal map |
+
+#### Nature in markup
+
+The same pieces as elements, for scenes written in HTML (`npm run test:nature-elements`; all of
+them together in [examples/Nature/nature.html](examples/Nature/nature.html)):
+
+| Element | Attributes |
+|---|---|
+| `<garden-water>` | A still pool (`StillWater`): `position` (its centre; the surface's height), `radius` (default 5), `colour`, `ripples` (0–1, default 0.25), `mirror` (0–1, default 0.4), `reflect` (bare: mirror the whole scene once it has loaded; a selector: only those elements; set it from code to turn the mirror on later, change it to mirror something else, remove it to turn the mirror off). `element.water` |
+| `<garden-rocks>` | Rocks scattered and merged into one mesh: `count` (default 12), `width`/`depth` (the area round `position`, default 10 × 10), `size` (smallest and largest radius, default `0.3 0.9`), `seed`, `ground` (a selector for a ground or height map: the rocks sit on it, and cover it unless `width`/`depth` say otherwise); `texture`, `bump-texture`, `colour` or a `<garden-material>` child as on any mesh |
+| `<garden-trees>` | Low gnarled trees (`cardTrees`) as instances: `count` (default 8), `width`/`depth` (default 20 × 20) or `ground`, `seed`, `variants` (shapes, default 3), `size` (scale range, default `0.85 1.15`), `spacing` (least distance between trunks, default 2.5), `bark-colour`, `bark-texture`, `bark-bump-texture`, `leaf-colours` (shades separated by spaces). `element.trees`, `element.shapes` |
+| `<garden-stone-wall>` | A dry-stone wall (`stoneWall`): along `points` (relative to `position`), or a ring of `radius` round `position` with `gate` (the gateway's direction in degrees, 0 = +z; off for a closed ring) and `gate-width` (default 1.2); `height` (default 1.05), `foot-width`, `top-width`, `cap-every` (0 for no capstones), `ground` (follow it up and down); `texture`, `bump-texture`, `colour` or a `<garden-material>`, shared by the capstones (`element.caps`) |
+| `<garden-sky panorama>` | A photographed sky (`PanoramaSky`): `panorama` (a 2:1 image), `panorama-to` (a second behind it), `blend` (0 the first … 1 the second; live), `duration` (cross-fade to the second once built), `tint`/`tint-to`, `haze-from`/`haze-range` (thick fog hides it), `size` (the dome's diameter, default 900); a `<garden-lightning>` strike lights it up. `blendTo(blend, seconds)`, `flash()`, `element.panoramaSky`. The `colour` and `root` skies work as before |
+
+The test characters are Quaternius's CC0 RobotExpressive and Mannequin (the Universal
+Animation Library's, cut down by `Tools/slim-glb.py`) and the Khronos Fox
 (see [examples/assets/characters/LICENCES.md](examples/assets/characters/LICENCES.md)).
 
 # Building and using it
@@ -196,7 +276,9 @@ point `<garden-physics wasm="...">` at it.
 
 `npm run test:examples` opens every example in Chrome; `npm run test:lean`
 does the same against the npm build, which catches a Babylon side-effect
-import missing from `src/SideEffects.ts`. Each feature has its own
+import missing from `src/SideEffects.ts` (it skips pages that script the
+global bundle's `BABYLON` or `JuelGarden`, which the npm build doesn't
+define). Each feature has its own
 `npm run test:*`.
 
 # Related projects

@@ -1,6 +1,7 @@
 // Browser test of `follow` and `follow-wait`: followers close in on their leader and keep
 // apart, face the way they walk, follow-offset holds a place in the leader's own frame,
-// and a guide on a track stops, turns to the player and fires garden-wait/garden-resume.
+// and a guide on a track stops, turns to the player and fires garden-wait/garden-resume;
+// a leader or player added after them is still found.
 // Run after a build: npm run test:follow.
 const { run } = require("./harness");
 
@@ -27,7 +28,19 @@ run(`
     });
     check("followers close in on the leader", flock.toLeader.every(d => d < 3.4), JSON.stringify(flock));
     check("…and keep follow-spacing apart", flock.gaps.every(g => g > 0.85), JSON.stringify(flock.gaps));
-    check("…and stop once there", flock.speeds.every(s => s < 0.2), JSON.stringify(flock.speeds));
+    // They creep the last few centimetres (easing in against keeping apart), so wait for them to
+    // stop (under 0.02 m/s, up to 3 s more), then check they stay stopped (under 0.05 for a
+    // second): a flock that keeps jostling (0.2 m/s and more) fails.
+    const settled = await page.evaluate(async (at5s) => {
+        const speeds = () => [...document.querySelectorAll(".f")].map(f => f.follower.speed);
+        const t0 = performance.now();
+        while (speeds().some(s => s > 0.02) && performance.now() - t0 < 3000) await new Promise(r => setTimeout(r, 50));
+        const after = +((performance.now() - t0) / 1000).toFixed(1);
+        let worst = 0;
+        for (let i = 0; i < 20; i++) { worst = Math.max(worst, ...speeds()); await new Promise(r => setTimeout(r, 50)); }
+        return { after, worst: +worst.toFixed(3), at5s };
+    }, flock.speeds).catch(e => ({ error: String(e) }));
+    check("…and stop once there, and stay stopped", settled.worst < 0.05, JSON.stringify(settled));
 
     // Moving the leader along +Z: followers turn to face +Z while they walk.
     await page.evaluate(() => document.getElementById("L").mesh.position.set(10, 0.5, 15));
@@ -99,4 +112,27 @@ run(`
     await page.evaluate(() => { const z = document.getElementById("docent").mesh.position.z; document.querySelector("garden-scene").scene.activeCamera.position.set(0, 1.7, z - 1); });
     await page.waitForTimeout(300);
     check("follow-wait=\"camera\" waits for the camera and carries on when it comes", !(await page.evaluate(() => document.getElementById("docent").waiting)));
+
+    // The ones they follow or wait for may be added later (a game builds its cast in turn).
+    await open(`
+<garden-scene>
+  <garden-camera type="arc" position="0 20 -20"></garden-camera>
+  <garden-light></garden-light>
+  <garden-box id="keeper" position="0 0.5 0" follow-wait="#late" follow-wait-distance="5"></garden-box>
+  <garden-box id="trailer" position="-4 0.5 0" follow="#late-leader" follow-distance="1.5"></garden-box>
+</garden-scene>`);
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => {
+        const scene = document.querySelector("garden-scene");
+        for (const [id, x] of [["late", 12], ["late-leader", 8]]) {
+            const b = document.createElement("garden-box");
+            b.id = id;
+            b.setAttribute("position", `${x} 0.5 0`);
+            scene.appendChild(b);
+        }
+    });
+    await page.waitForTimeout(2500);
+    const late = await page.evaluate(() => ({ waiting: document.getElementById("keeper").waiting, x: +document.getElementById("trailer").mesh.position.x.toFixed(2) }));
+    check("follow-wait finds a player added later", late.waiting === true, JSON.stringify(late));
+    check("follow finds a leader added later", late.x > 0, JSON.stringify(late));
 });

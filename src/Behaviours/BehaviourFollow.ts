@@ -110,7 +110,8 @@ export function BehaviourFollow(el: GardenElement, target: IBehaviourTarget, att
 
     (async () => {
         await GardenElement.whenDocumentReady();
-        let [found] = await GardenElement.resolveReady(selector);
+        // The leader may be added later (a game builds its cast in turn).
+        let found = await GardenElement.resolveEventually(selector);
         if (!found)
             console.warn(`follow="${selector}" did not match any element.`);
         else if (!follower.leader)
