@@ -579,3 +579,10 @@ Left over:
   first came within that band. `tests/walk.js` "falls and lands" failed about 1 run in 5 on a
   0.1 limit; it now checks the real band and that it has stopped. Possible fix: a small
   downward pull while supported, or a smaller tolerance; check slopes and steps don't jitter.
+- [x] `teleport()` from inside the physics step did nothing (2026-10-22): it turned the pre-step
+  back off with an `onAfterPhysicsObservable.addOnce`, and called from a `garden-rest` or
+  `garden-collide` listener (both fire inside that observable) the new observer ran in the same
+  pass, so the body never got the new transform; the mesh jumped for a frame, then went back.
+  Now it waits for the next step to begin (`onBeforePhysicsObservable`) before handing the
+  transform back. Found when a game put a ball back after a shot from its rest handler; check in
+  `npm run test:physics`.
