@@ -17,6 +17,18 @@ import { GardenMesh } from "../../GardenMesh";
  */
 @customElement("garden-house")
 export class GardenHouse extends GardenMesh {
+    /**
+     * The merge below consumes the walls' and roof's own meshes, so a rebuild has them
+     * built again first (they're children: generated, or the author's).
+     */
+    protected unbuild() {
+        let house = this.firstElementChild as GardenMesh;
+        let roof = house?.firstElementChild as GardenMesh;
+        for (let el of [house, roof])
+            el?.requestUpdate();
+        super.unbuild();
+    }
+
     updated() {
         // GardenElement/GardenMesh's update() never calls super.update(), so Lit's own
         // render()-into-renderRoot step (which would have built these from a template)

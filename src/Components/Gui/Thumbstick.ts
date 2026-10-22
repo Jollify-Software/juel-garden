@@ -76,8 +76,9 @@ export class GardenThumbstick extends GardenElement implements ThumbstickInput {
         super.dispose();
     }
 
-    update(changed?: Map<PropertyKey, unknown>) {
-        this.liveUpdate(changed);
+    /** Its `updated()` handles later changes in place. */
+    protected get handlesChanges() {
+        return true;
     }
 
     updated() {

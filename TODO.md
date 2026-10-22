@@ -433,10 +433,19 @@ Left over:
   viewer); it is a DOM overlay, so it isn't drawn in VR.
 - [ ] `follow` with Havok's character controller (followers use `terrain` or
   `collisions` only); `walk`'s controller could be shared.
-- [ ] Most elements still build once: `GardenElement.update()` skips Lit's
+- [x] Most elements still build once: `GardenElement.update()` skips Lit's
   own `update()`, so later property changes don't re-run `updated()`.
-  `liveUpdate()` opts an element in (light, sound, marker); worth doing
-  element by element.
+  **DONE 2026-10-22** (`tests/live.js` 18/18): every change goes through Lit again, and one
+  shared MutationObserver turns plain attributes (`colour`, `track`, `physics`...) into
+  updates. `position`/`rotation`/`scale` alone apply in place (meshes, `<garden-element>`,
+  cameras; physics teleports); anything else rebuilds: `unbuild()` stops behaviours and
+  physics, `setMesh` keeps other elements' child meshes and disposes the build's own parts
+  and unworn materials (not a `<garden-material>`'s or `<garden-texture>`'s). Light, water,
+  sound, marker, thumbstick and model opt out with `handlesChanges`. Fixed on the way: trees
+  never rebuilt and leaked on removal; cameras never disposed; info stacked observers;
+  house/semi-house merges failed on rebuild; materials and textures now swap themselves in.
+  Known: `<garden-lathe>` and `<garden-replicate>` throw when built with no attributes (as
+  before); a child element's own change doesn't re-merge a house.
   **Moving a built element: DONE 2026-10-22** (QUESTIONS.md §15, `tests/moved.js`):
   `GardenElement` defers disposal a microtask (a move cancels it, a re-add after it rebuilds via
   `updated()`), subclasses override `dispose()`, `moved()` re-parents a mesh / rebuilds rocks and

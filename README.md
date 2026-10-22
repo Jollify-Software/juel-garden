@@ -283,9 +283,18 @@ define). Each feature has its own
 
 # Related projects
 
-## Adding, moving and removing elements
+## Changing, adding, moving and removing elements
 
-Elements can be added, moved and removed from script at any time:
+Elements can be changed, added, moved and removed from script at any time:
+
+- **Changing** an attribute (or its property) after the element has built applies it.
+  `position`, `rotation` and `scale` alone move a mesh, a plain `<garden-element>` or a camera
+  in place (a physics body is teleported). Anything else, `width`, `colour`, `texture`, `track`,
+  `physics` and so on, builds the element again: its old mesh, own material and behaviours go,
+  and its child elements' meshes stay with the new one. A `<garden-material>` or
+  `<garden-texture>` that changes swaps itself into whatever wore the old one. A light, water,
+  sound, marker, thumbstick or model changes in place (a model reloads only for a new file).
+  Changing `id`, `class`, `style`, `slot`, `data-*` or `aria-*` builds nothing.
 
 - **Moving** one (`appendChild`/`insertBefore` elsewhere, or anything else that removes it and
   adds it back in the same task) keeps what it built: the same mesh, water, light or sound.
@@ -297,10 +306,12 @@ Elements can be added, moved and removed from script at any time:
   `follow`, `walk`, …) stop. Materials stay; their `<garden-material>` owns them.
 - **Adding it back** after that builds it again from its attributes.
 
-`node tests/moved.js` covers all three. A subclass disposes its own objects by overriding
-`dispose()` (calling `super.dispose()`), and a script or behaviour can tie per-frame work to an
-element's build with `element.observe(scene.onBeforeRenderObservable, fn)` or
-`element.whenDisposed(fn)`.
+`node tests/live.js` covers changes, `node tests/moved.js` moves and removals. A subclass
+disposes its own objects by overriding `dispose()` (removed for good) and `unbuild()` (before a
+rebuild for a change), each calling `super`; one whose `updated()` handles changes itself
+returns true from `handlesChanges`. A script or behaviour ties per-frame work to an element's
+build with `element.observe(scene.onBeforeRenderObservable, fn)` or `element.whenDisposed(fn)`:
+it stops when the element rebuilds or goes.
 
 ## Parterre
 

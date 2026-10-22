@@ -56,6 +56,46 @@ export class GardenCamera extends GardenElement {
     setPosition(position: Vector3) {
         this.camera.position = position;
     }
+    /** A `position` change moves the camera; any other change builds it again. */
+    protected get transformsInPlace() {
+        return true;
+    }
+
+    applyTransform() {
+        if (!this.camera || !this.position)
+            return;
+        // ArcRotateCamera recomputes .position from its alpha/beta/radius
+        // every frame, so a plain assignment gets silently overwritten on
+        // the next render. setPosition() re-derives those from the given
+        // point (keeping the current target) instead.
+        if ("setPosition" in this.camera)
+            (<any>this.camera).setPosition(this.position);
+        else
+            this.camera.position = this.position;
+    }
+
+    /** Was the scene's active camera when it was last disposed, so its rebuild is too. */
+    private wasActive = false;
+
+    protected unbuild() {
+        this.disposeCamera();
+        super.unbuild();
+    }
+
+    protected dispose() {
+        this.disposeCamera();
+        super.dispose();
+    }
+
+    private disposeCamera() {
+        if (!this.camera) return;
+        let scene = this.camera.getScene();
+        this.wasActive = scene.activeCamera == this.camera;
+        this.camera.detachControl();
+        this.camera.dispose();
+        this.camera = null;
+    }
+
     async updated() {
         let sceneEl = this.parentElement as GardenScene
         let scene = sceneEl.scene
@@ -65,17 +105,12 @@ export class GardenCamera extends GardenElement {
             console.warn(`<garden-camera> has unrecognized type "${this.type}".`);
             return;
         }
-
-        if (this.position) {
-            // ArcRotateCamera recomputes .position from its alpha/beta/radius
-            // every frame, so a plain assignment gets silently overwritten on
-            // the next render. setPosition() re-derives those from the given
-            // point (keeping the current target) instead.
-            if ("setPosition" in this.camera)
-                (<any>this.camera).setPosition(this.position);
-            else
-                this.camera.position = this.position;
+        if (this.wasActive) {
+            scene.activeCamera = this.camera;
+            this.wasActive = false;
         }
+
+        this.applyTransform();
 
         let opt = this.buildOptions();
         this.camera = Object.assign(this.camera, opt);
