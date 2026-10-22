@@ -245,11 +245,21 @@ export class GardenInfo extends GardenElement {
         this.panel.style.display = "none";
     }
 
+    /** A rebuild makes its marker, panel and per-frame placing again. */
+    protected unbuild() {
+        this.removeBuilt();
+        super.unbuild();
+    }
+
     protected dispose() {
+        this.removeBuilt();
+        super.dispose();
+    }
+
+    private removeBuilt() {
         this.renderObserver?.remove();
         document.removeEventListener("pointerdown", this.outsideClickHandler, { capture: true });
         this.marker?.remove();
         this.panel?.remove();
-        super.dispose();
     }
 }

@@ -91,7 +91,8 @@ export class GardenAction extends GardenElement {
                             default:
                                 break;
                         }
-                        el.update();
+                        // Now, not after the update Lit queues, which would land after this frame.
+                        el.applyTransform();
                         i += this.increment ?? 0;
                     });
                     break;

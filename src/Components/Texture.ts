@@ -45,12 +45,28 @@ export class GardenTexture extends GardenElement {
         return (this.angle ?? 0) * Math.PI / 180;
     }
 
+    /** The material slots a `type` names (`diffuse` -> `diffuseTexture`). */
+    private static slots = ["diffuse", "bump", "reflection", "emissive", "specular", "opacity", "ambient", "lightmap", "refraction"];
+
+    /** Textures a `<garden-texture>` built: disposing a mesh's own material leaves them alone. */
+    static owned = new WeakSet<object>();
+
     updated() {
         let texture = new Texture(this.src, this.getScene());
+        GardenTexture.owned.add(texture);
         if (this.uScale)
             texture.uScale = this.uScale;
         if (this.vScale)
             texture.vScale = this.vScale;
+        // Rebuilt for a change: every material slot holding the old texture gets this one.
+        let old = this.texture;
         this.texture = texture;
+        if (old && old != texture) {
+            for (let material of this.getScene()?.materials ?? [])
+                for (let type of GardenTexture.slots)
+                    if (material[type + "Texture"] == old)
+                        material[type + "Texture"] = texture;
+            old.dispose();
+        }
     }
 }

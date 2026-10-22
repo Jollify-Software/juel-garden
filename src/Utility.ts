@@ -3,7 +3,6 @@ import { toJSON } from 'cssjson';
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { Tools } from "@babylonjs/core/Misc/tools";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
-import { GardenElement } from "./GardenElement";
 
 /**
  * Small stateless helpers shared across converters, setters and components:
@@ -49,7 +48,6 @@ export module Utility {
     export var applyRules = (sceneEl: GardenScene) => {
         let styles = document.getElementById("garden-styles") as HTMLStyleElement;
         if (styles) {
-            let toUpdate: GardenElement[] = [];
             let props = toJSON(styles.textContent);
             if ('children' in props) {
                 for (var selector in props.children) {
@@ -59,22 +57,15 @@ export module Utility {
                         let attributes = obj.attributes;
                         let elements = sceneEl.querySelectorAll(selector);
                         for (let el of elements) {
+                        // Garden elements apply attribute changes themselves.
                         if (el && 'update' in el) {
                             for (var attr in attributes) {
                                 (<any>el).setAttribute(attr, attributes[attr]);
-                            }
-                            if (!toUpdate.some(x => x == el)) {
-                                toUpdate.push(el as GardenElement);
                             }
                         }
                     }
                     }
                 }
-            }
-            if (toUpdate) {
-                toUpdate.forEach(el => {
-                    el.update();
-                })
             }
         }
     }

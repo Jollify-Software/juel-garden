@@ -102,13 +102,18 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     /** Resolves once the model has loaded (or failed). */
     loaded: Promise<void>;
 
+    /** Reloads only when what it loads changes; anything else applies in place. */
+    protected get handlesChanges() {
+        return true;
+    }
+
     updated(changed?: Map<string, unknown>) {
         let key = [this.src, this.extension, this.root, this.filename, this.meshNames,
             this.height, this.fit, this.base, this.animation].join("|");
         if (key == this.loadedKey) {
             // Only position/rotation/scale etc. changed: no need to reload.
             if (this.mesh)
-                this.update();
+                this.applyTransform();
             return;
         }
         this.loadedKey = key;
@@ -261,7 +266,7 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         if (result.skeletons.length > 0)
             this.skeleton = result.skeletons[0];
         this.setMesh(holder);
-        this.update();
+        this.applyTransform();
 
         let anim = (name: string) => this.getAttribute("anim-" + name);
         if (this.mixer && (anim("idle") || anim("walk") || anim("run"))) {

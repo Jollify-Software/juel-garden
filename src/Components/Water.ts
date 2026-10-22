@@ -42,8 +42,9 @@ export class GardenWater extends GardenElement {
     /** The `reflect` the current mirror was made for. */
     private _reflectedWith: string;
 
-    update(changed?: Map<PropertyKey, unknown>) {
-        this.liveUpdate(changed);
+    /** Its `updated()` handles later changes in place. */
+    protected get handlesChanges() {
+        return true;
     }
 
     getNode() {

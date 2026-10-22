@@ -2,7 +2,7 @@ import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Observable, Observer } from "@babylonjs/core/Misc/observable";
-import { LitElement, ReactiveElement } from "lit";
+import { LitElement } from "lit";
 import {customElement, property} from 'lit/decorators.js';
 import { GardenScene } from "./Components/Scene";
 import { Vector3Convert } from "./Converters/Vector3Convert";
@@ -165,6 +165,43 @@ export class GardenElement extends LitElement {
     private disposed = false;
     private builtUnder: Element = null;
     private disposers: (() => void)[] = [];
+    /** A change came while it was out of the document; it's applied when it's back. */
+    private changedWhileAway = false;
+
+    /**
+     * Attributes that aren't Lit properties (`colour`, `texture`, `physics`, `track`...) are
+     * read straight from the element, so one observer for all elements turns their changes
+     * into updates as well.
+     */
+    private static attributeWatcher = new MutationObserver(records => {
+        for (let record of records) {
+            let el = record.target as GardenElement;
+            let name = record.attributeName;
+            if (GardenElement.ignoredAttribute.test(name) ||
+                (<any>el.constructor).observedAttributes?.includes(name))
+                continue;
+            el.requestUpdate(name, record.oldValue);
+        }
+    });
+    private static ignoredAttribute = /^(id|class|style|slot|data-.*|aria-.*)$/;
+    private static transformKeys = new Set<PropertyKey>(["position", "rotation", "scale"]);
+
+    /**
+     * True for an element whose `updated()` handles later changes itself (a light's
+     * `intensity` set from code updates the light in place). Otherwise a change rebuilds
+     * the element: {@link unbuild}, then `updated()` again.
+     */
+    protected get handlesChanges(): boolean {
+        return false;
+    }
+
+    /**
+     * True when a change of `position`, `rotation` or `scale` alone only needs
+     * {@link applyTransform}, not a rebuild: a plain `<garden-element>` and the meshes.
+     */
+    protected get transformsInPlace(): boolean {
+        return this.constructor == GardenElement;
+    }
 
     /**
      * Skips the first build if the element was removed before it ran (added and
@@ -172,11 +209,64 @@ export class GardenElement extends LitElement {
      * `updated()` would build into the wrong scene or throw. Re-adding the
      * element builds it then.
      */
-    protected shouldUpdate(): boolean {
-        if (this.isConnected || this.hasUpdated)
+    protected shouldUpdate(changed: Map<PropertyKey, unknown>): boolean {
+        if (!this.hasUpdated) {
+            if (this.isConnected)
+                return true;
+            this.skippedFirstBuild = true;
+            return false;
+        }
+        if (!this.isConnected) {
+            // Applied on a move back in; a rebuild after disposal reads everything anyway.
+            this.changedWhileAway = true;
+            return false;
+        }
+        if (this.handlesChanges)
             return true;
-        this.skippedFirstBuild = true;
-        return false;
+        if (changed.size && this.transformsInPlace &&
+            [...changed.keys()].every(key => GardenElement.transformKeys.has(key))) {
+            this.applyTransform();
+            return false;
+        }
+        return true;
+    }
+
+    /** Before a rebuild for a change (not the first build): see {@link unbuild}. */
+    protected willUpdate(_changed: Map<PropertyKey, unknown>) {
+        if (this.hasUpdated && !this.handlesChanges)
+            this.unbuild();
+    }
+
+    /**
+     * Gets ready for `updated()` to build again after a change: behaviours and other
+     * {@link whenDisposed} work stop (the build re-applies them). Keeps the node, so
+     * children parented to it stay; an override drops what its own `updated()` would
+     * otherwise build a second time, and calls `super.unbuild()`.
+     */
+    protected unbuild() {
+        for (let disposer of this.disposers.splice(0))
+            disposer();
+    }
+
+    /** `position`, `rotation` and `scale` onto what the element built, without rebuilding it. */
+    applyTransform() {
+        this.transformNode();
+    }
+
+    /**
+     * The element's own node only. The build calls this, not {@link applyTransform}: a mesh's
+     * `updated()` calls `super.updated()` after its behaviours have placed the mesh (an
+     * `orbit` re-parents it), and moving the mesh again there would undo that.
+     */
+    private transformNode() {
+        if (!this.node)
+            return;
+        if (this.position)
+            this.node.position = this.position;
+        if (this.rotation)
+            this.node.rotation = this.rotation;
+        if (this.scale)
+            this.node.scaling = this.scale;
     }
 
     /**
@@ -193,11 +283,15 @@ export class GardenElement extends LitElement {
             this.disposeQueued = false;
             if (this.parentElement != this.builtUnder)
                 this.moved();
+            if (this.changedWhileAway)
+                this.requestUpdate();
         } else if (this.disposed) {
             this.disposed = false;
             this.rebuild();
         }
+        this.changedWhileAway = false;
         this.builtUnder = this.parentElement;
+        GardenElement.attributeWatcher.observe(this, { attributes: true, attributeOldValue: true });
     }
 
     /**
@@ -256,40 +350,14 @@ export class GardenElement extends LitElement {
     }
 
     updated(_changed?: Map<PropertyKey, unknown>) {
-        this.node = new TransformNode(this.id ?? "node", this.getScene());
-        (<any>this.node).element = this;
-        if (this.position)
-            this.node.position = this.position;
-        if (this.rotation)
-            this.node.rotation = this.rotation;
-        if (this.scale)
-            this.node.scaling = this.scale;
+        if (!this.node) {
+            this.node = new TransformNode(this.id || "node", this.getScene());
+            (<any>this.node).element = this;
+        }
+        this.transformNode();
         // A plain <garden-element near="..."> is a proximity point (meshes get it through Behaviours).
         if (this.hasAttribute("near"))
             BehaviourNear(this, this.node);
-    }
-
-    update() {
-        if (!this.node)
-            return;
-
-        if (this.position)
-            this.node.position = this.position;
-        if (this.rotation)
-            this.node.rotation = this.rotation;
-        if (this.scale)
-            this.node.scaling = this.scale;
-    }
-
-    /**
-     * {@link update} here doesn't call Lit's own `update()`, so Lit thinks the
-     * first update never finished and ignores later property changes -- most
-     * elements build once from their markup. An element whose `updated()`
-     * handles later changes (a light's `intensity` set from code) calls this
-     * from its own `update()` instead, so each change runs `updated()` again.
-     */
-    protected liveUpdate(changed?: Map<PropertyKey, unknown>) {
-        (<any>ReactiveElement.prototype).update.call(this, changed);
     }
 
     buildOptions(): object {

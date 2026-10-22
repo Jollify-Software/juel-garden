@@ -78,8 +78,9 @@ export class GardenLight extends GardenElement {
         return this.light;
     }
 
-    update(changed?: Map<PropertyKey, unknown>) {
-        this.liveUpdate(changed);
+    /** Its `updated()` handles later changes in place. */
+    protected get handlesChanges() {
+        return true;
     }
 
     async updated() {

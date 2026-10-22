@@ -52,6 +52,9 @@ export class GardenMaterial extends GardenElement {
 
     material: StandardMaterial;
 
+    /** Materials a `<garden-material>` built: a mesh's rebuild or removal leaves them alone. */
+    static owned = new WeakSet<object>();
+
     async updated() {
         // beginBuild()/endBuild() make `whenReady` a real signal even though this build is
         // synchronous -- a parent (e.g. GardenRoof's dome, which needs each material *before*
@@ -64,6 +67,7 @@ export class GardenMaterial extends GardenElement {
         await GardenMaterial.whenDocumentReady();
 
         let material = new StandardMaterial("material", this.getScene());
+        GardenMaterial.owned.add(material);
         if (this.colour)
             material.diffuseColor = this.colour;
         if (this.specColour)
@@ -79,7 +83,14 @@ export class GardenMaterial extends GardenElement {
         for (let textureEl of this.getTextures())
             material[`${textureEl.type ?? "diffuse"}Texture`] = textureEl.texture;
 
+        // Rebuilt for a change: whatever wore the old material wears this one.
+        let old = this.material;
         this.material = material;
+        if (old && old != material) {
+            for (let mesh of old.getBindedMeshes())
+                mesh.material = material;
+            old.dispose(false, false); // the textures belong to their <garden-texture>s
+        }
         this.endBuild();
     }
 

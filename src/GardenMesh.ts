@@ -1,11 +1,13 @@
 import { Material } from "@babylonjs/core/Materials/material";
+import { MultiMaterial } from "@babylonjs/core/Materials/multiMaterial";
+import { GardenTexture } from "./Components/Texture";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { PhysicsAggregate } from "@babylonjs/core/Physics/v2/physicsAggregate";
 import { PhysicsEventType, PhysicsMotionType, PhysicsShapeType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
 import { PointerEventTypes } from "@babylonjs/core/Events/pointerEvents";
 import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { CSG } from "@babylonjs/core/Meshes/csg";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { property } from "lit/decorators.js";
@@ -121,28 +123,51 @@ export abstract class GardenMesh extends GardenElement {
         }
     }
 
-    update() {
-        if (!this.node)
+    /** In place, except under `orbit`: the mesh sits in its pivot's frame, so the orbit is built again. */
+    protected get transformsInPlace() {
+        return !this.hasAttribute("orbit");
+    }
+
+    /**
+     * `position`, `rotation` and `scale` onto the mesh as the build gives them (a parent
+     * element's share included); a physics body is teleported there.
+     */
+    applyTransform() {
+        if (!this.mesh)
             return;
+        let { position, rotation, scaling } = Modifier.transformOf(this);
+        if (rotation) {
+            if (this.mesh.rotationQuaternion)
+                this.mesh.rotationQuaternion = Quaternion.FromEulerVector(rotation);
+            else
+                this.mesh.rotation = rotation;
+        }
+        if (scaling)
+            this.mesh.scaling = scaling;
+        if (position) {
+            if (this.physicsAggregate)
+                this.teleport(position);
+            else
+                this.mesh.position = position;
+        }
+    }
 
-        if (this.physicsAggregate && this.position)
-            this.teleport(this.position);
-        else if (this.position)
-            this.mesh.position = this.position;
-        if (this.rotation)
-            this.mesh.rotation = this.rotation;
-        if (this.scale)
-            this.mesh.scaling = this.scale;
-
-        this.modifyMesh([ "position", "rotation", "scale" ]);
+    /** Before a rebuild for a change: the body goes too (setMesh replaces the mesh itself). */
+    protected unbuild() {
+        this.removePhysics();
+        super.unbuild();
     }
 
     setMesh(mesh: Mesh) {
         this.removePhysics();
         let orphans: TransformNode[] = [];
+        let worn: Set<Material> = new Set();
         if (this.mesh) {
-            orphans = this.mesh.getChildTransformNodes(true).concat(this.mesh.getChildMeshes(true));
-            this.mesh.dispose(true); // doNotRecurse: children are re-parented below, not destroyed
+            // Other elements' nodes move onto the new mesh; this build's own parts (a wall's
+            // caps) were made again with it, so the old ones go.
+            orphans = this.mesh.getChildTransformNodes(true).concat(this.mesh.getChildMeshes(true))
+                .filter(node => this.belongsToOther(node));
+            worn = this.disposeBuilt(this.mesh, orphans);
         }
 
         if (this.hasAttribute("split")) {
@@ -165,6 +190,54 @@ export abstract class GardenMesh extends GardenElement {
 
         if (this.hasAttribute("physics"))
             this.attachPhysics(mesh);
+        GardenMesh.disposeUnworn(worn);
+    }
+
+    private belongsToOther(node: TransformNode): boolean {
+        let el = (<any>node).element;
+        return el != null && el != this;
+    }
+
+    /**
+     * Disposes `mesh` and this build's own parts under it, leaving `keep` (other
+     * elements' nodes); gives back the materials they wore, for {@link disposeUnworn}.
+     */
+    private disposeBuilt(mesh: Mesh, keep: TransformNode[] = []): Set<Material> {
+        let worn = new Set<Material>();
+        let parts = [mesh as TransformNode].concat(mesh.getDescendants(false, node =>
+            !keep.some(k => k == node || node.isDescendantOf(k))) as TransformNode[]);
+        for (let part of parts)
+            for (let material of GardenMesh.materialsOf(part))
+                worn.add(material);
+        for (let node of keep)
+            node.parent = null;
+        for (let part of parts.reverse())
+            if (!part.isDisposed())
+                part.dispose(true);
+        return worn;
+    }
+
+    private static materialsOf(node: TransformNode): Material[] {
+        let material = (<any>node).material as Material;
+        if (!material) return [];
+        return material instanceof MultiMaterial ? [material as Material].concat(material.subMaterials.filter(m => m)) : [material];
+    }
+
+    /**
+     * Disposes the materials in `materials` that no mesh wears any more, unless a
+     * `<garden-material>` owns them, with their textures unless a `<garden-texture>` owns those.
+     */
+    private static disposeUnworn(materials: Set<Material>) {
+        for (let material of materials) {
+            if (GardenMaterial.owned.has(material) || material.getBindedMeshes().length ||
+                !material.getScene()?.materials.includes(material))
+                continue;
+            let textures = material.getActiveTextures().filter(t => !GardenTexture.owned.has(t));
+            material.dispose(false, false);
+            for (let texture of textures)
+                if (!texture.getScene()?.materials.some(m => m.hasTexture(texture)))
+                    texture.dispose();
+        }
     }
 
     /**
@@ -301,8 +374,11 @@ export abstract class GardenMesh extends GardenElement {
      */
     protected dispose() {
         this.removePhysics();
-        if (this.mesh && !this.mesh.isDisposed())
-            this.mesh.dispose(true);
+        if (this.mesh && !this.mesh.isDisposed()) {
+            let others = this.mesh.getChildTransformNodes(true).concat(this.mesh.getChildMeshes(true))
+                .filter(node => this.belongsToOther(node));
+            GardenMesh.disposeUnworn(this.disposeBuilt(this.mesh, others));
+        }
         this.mesh = null;
         super.dispose();
     }
@@ -414,7 +490,7 @@ export abstract class GardenMesh extends GardenElement {
                             p.play();
                             break;
                         case "pointerdown":
-                            scene.onPointerObservable.add((pointerInfo) => {            
+                            this.observe(scene.onPointerObservable, (pointerInfo) => {            
                                 switch (pointerInfo.type) {
                                     case PointerEventTypes.POINTERDOWN:
                                         if(pointerInfo.pickInfo.hit &&

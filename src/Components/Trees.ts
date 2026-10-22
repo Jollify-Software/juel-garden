@@ -1,3 +1,4 @@
+import { Material } from "@babylonjs/core/Materials/material";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh";
@@ -55,6 +56,38 @@ export class GardenTrees extends GardenElement {
     shapes: { trunk: Mesh, leaves: Mesh }[] = [];
     /** Each tree: an instance of a shape's trunk and of its crown. */
     trees: { trunk: InstancedMesh, leaves: InstancedMesh }[] = [];
+
+    protected unbuild() {
+        this.disposeTrees();
+        super.unbuild();
+    }
+
+    protected dispose() {
+        this.disposeTrees();
+        super.dispose();
+    }
+
+    /** Planted on the ground where it is, so under a new parent it's planted again. */
+    protected moved() {
+        this.disposeTrees();
+        this.updated();
+    }
+
+    /** The trees, their templates, and the bark and leaf materials (shared by the variants: each once). */
+    private disposeTrees() {
+        this.node?.dispose();
+        this.node = null;
+        let materials = new Set<Material>();
+        for (let shape of this.shapes)
+            for (let mesh of [shape.trunk, shape.leaves]) {
+                if (mesh.material) materials.add(mesh.material);
+                mesh.dispose(false, false);
+            }
+        for (let material of materials)
+            material.dispose(false, true);
+        this.shapes = [];
+        this.trees = [];
+    }
 
     async updated() {
         let scene = this.getScene();

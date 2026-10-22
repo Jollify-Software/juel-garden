@@ -56,8 +56,9 @@ export class GardenMarker extends GardenElement {
     private observer: Observer<Scene>;
     private scene: Scene;
 
-    update(changed?: Map<PropertyKey, unknown>) {
-        this.liveUpdate(changed);
+    /** Its `updated()` handles later changes in place. */
+    protected get handlesChanges() {
+        return true;
     }
 
     updated() {
