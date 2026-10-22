@@ -179,11 +179,11 @@ export class GardenLight extends GardenElement {
         }
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
+    protected dispose() {
         this.shadowGenerator?.dispose();
         this.light?.dispose();
         this.light = null;
         this._builtKey = null;
+        super.dispose();
     }
 }

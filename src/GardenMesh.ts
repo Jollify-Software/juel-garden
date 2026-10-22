@@ -294,6 +294,29 @@ export abstract class GardenMesh extends GardenElement {
         this.physicsAggregate = null;
     }
 
+    /**
+     * Removed for good: the body and the mesh leave the scene. Not recursive: child meshes
+     * belong to child elements, which dispose their own (or keep them, when only this one
+     * was removed and they were moved out first). Materials stay; `<garden-material>` owns them.
+     */
+    protected dispose() {
+        this.removePhysics();
+        if (this.mesh && !this.mesh.isDisposed())
+            this.mesh.dispose(true);
+        this.mesh = null;
+        super.dispose();
+    }
+
+    /** Under a new parent: the mesh follows a `parent`-tagged element's node, or leaves the old one's. */
+    protected moved() {
+        if (!this.mesh)
+            return;
+        let parent = this.parentElement as GardenElement;
+        this.mesh.parent = parent?.hasAttribute("parent") && 'getNode' in parent ? parent.getNode() : null;
+        if (this.physicsAggregate)
+            this.teleport(this.position ?? this.mesh.position);
+    }
+
     hollowMesh(mesh: Mesh, hollowScale: Vector3) {
         console.log(hollowScale)
         let clone = mesh.clone("hollowClone");

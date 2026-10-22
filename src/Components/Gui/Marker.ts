@@ -178,11 +178,11 @@ export class GardenMarker extends GardenElement {
         if (this.box) this.box.style.display = "none";
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
+    protected dispose() {
         this.scene?.onAfterRenderObservable.remove(this.observer);
         this.observer = null;
         this.box?.remove();
         this.box = null;
+        super.dispose();
     }
 }

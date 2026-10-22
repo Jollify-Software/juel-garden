@@ -245,11 +245,11 @@ export class GardenInfo extends GardenElement {
         this.panel.style.display = "none";
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
+    protected dispose() {
         this.renderObserver?.remove();
         document.removeEventListener("pointerdown", this.outsideClickHandler, { capture: true });
         this.marker?.remove();
         this.panel?.remove();
+        super.dispose();
     }
 }

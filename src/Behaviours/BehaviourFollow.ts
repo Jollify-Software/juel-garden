@@ -129,7 +129,7 @@ export function BehaviourFollow(el: GardenElement, target: IBehaviourTarget, att
     let heading = target.rotation.y - facingOffset;
     let last = target.position.clone();
 
-    let observer: Observer<Scene> = scene.onBeforeRenderObservable.add(() => {
+    let observer: Observer<Scene> = el.observe(scene.onBeforeRenderObservable, () => {
         let dt = Math.min(engine.getDeltaTime(), 50) / 1000;
         if (!dt) return;
         let pos = target.position;

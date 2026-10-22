@@ -111,10 +111,10 @@ export class GardenLightning extends GardenElement {
         }
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
+    protected dispose() {
         clearTimeout(this.timer);
         this.flash?.dispose();
         this.flash = null;
+        super.dispose();
     }
 }

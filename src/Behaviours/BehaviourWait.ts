@@ -61,7 +61,7 @@ export function BehaviourWait(el: GardenElement, mesh: Mesh, attr: Attr[]) {
     let waitingHere = false;
     (<any>el).waiting ??= false;
 
-    (<any>el)._waitObserver = scene.onBeforeRenderObservable.add(() => {
+    (<any>el)._waitObserver = el.observe(scene.onBeforeRenderObservable, () => {
         let them = byCamera ? scene.activeCamera?.globalPosition : other?.getNode()?.getAbsolutePosition();
         if (!them || !mesh.isEnabled())
             return;

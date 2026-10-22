@@ -57,7 +57,7 @@ export function BehaviourNear(el: GardenElement, node: TransformNode) {
     GardenElement.whenDocumentReady().then(resolve);
 
     let frame = 0;
-    (<any>el)._nearObserver = scene.onBeforeRenderObservable.add(() => {
+    (<any>el)._nearObserver = el.observe(scene.onBeforeRenderObservable, () => {
         // Pick up targets added to the page later, about once a second.
         if (++frame % 60 == 0)
             resolve();

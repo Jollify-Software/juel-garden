@@ -93,7 +93,7 @@ export function BehaviourSuspension(el: GardenElement, target: IBehaviourTarget,
         })().catch(err => console.error("[suspension] failed to resolve suspension-terrain", terrainAttr, err));
     }
 
-    scene.onBeforeRenderObservable.add(() => {
+    el.observe(scene.onBeforeRenderObservable, () => {
         if (!terrain) {
             return;
         }

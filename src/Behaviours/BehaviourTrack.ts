@@ -86,7 +86,7 @@ export function BehaviourTrack(el: GardenElement, target: IBehaviourTarget, attr
     // `follow-wait` holds it before its first step.
     place();
 
-    scene.onBeforeRenderObservable.add(() => {
+    el.observe(scene.onBeforeRenderObservable, () => {
         // Held by `follow-wait` (or a game): stay put, facing wherever it turned.
         if ((<any>el).waiting)
             return;

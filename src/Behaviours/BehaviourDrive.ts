@@ -57,7 +57,7 @@ export function BehaviourDrive(el: GardenElement, target: IBehaviourTarget, attr
     let speed = 0;
     let heading = target.rotation.y;
 
-    scene.onBeforeRenderObservable.add(() => {
+    el.observe(scene.onBeforeRenderObservable, () => {
         // accel/turnRate/friction below are tuned per frame at a 60fps baseline --
         // dt turns that into a real-time rate instead of a per-rendered-frame one.
         // Frame time is also capped (a stalled/backgrounded tab can report a huge

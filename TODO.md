@@ -437,6 +437,11 @@ Left over:
   own `update()`, so later property changes don't re-run `updated()`.
   `liveUpdate()` opts an element in (light, sound, marker); worth doing
   element by element.
+  **Moving a built element: DONE 2026-10-22** (QUESTIONS.md §15, `tests/moved.js`):
+  `GardenElement` defers disposal a microtask (a move cancels it, a re-add after it rebuilds via
+  `updated()`), subclasses override `dispose()`, `moved()` re-parents a mesh / rebuilds rocks and
+  walls, behaviours' observers go through `el.observe()` and stop on disposal. The live-attributes
+  half (below) is still to do. Original note:
   Decided 2026-10-22 to do on the same night (Q1 of the 2026-10-21 queue): **moving a built
   element.** Today water, light, sky, sound, particles and lightning come back empty when
   removed and re-added (they dispose on `disconnectedCallback`), and `GardenMesh` elements

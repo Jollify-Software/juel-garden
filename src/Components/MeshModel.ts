@@ -1,4 +1,5 @@
 import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup";
+import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { Nullable } from "@babylonjs/core/types";
 import { Observer } from "@babylonjs/core/Misc/observable";
@@ -94,6 +95,7 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     /** Models still loading, across the page: the loading screen shows while this is above 0. */
     private static loading = 0;
     private loadedKey: string;
+    private loadedMeshes: AbstractMesh[] = [];
     private nearObserver: Nullable<Observer<Scene>>;
     private nearScene: Scene;
 
@@ -158,17 +160,32 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         this.mixer?.stop(blend);
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
+    /** Removed for good: the loaded meshes, skeletons and animations go; added back, it loads again. */
+    protected dispose() {
+        // getScene() walks parentElement, which is gone by now.
         if (this.motionObserver) this.nearScene?.onBeforeRenderObservable.remove(this.motionObserver);
         this.motionObserver = null;
-        // getScene() walks parentElement, which is gone by now.
         if (this.nearObserver) this.nearScene?.onBeforeRenderObservable.remove(this.nearObserver);
         this.nearObserver = null;
+        this.disposeLoaded();
+        this.loadedKey = null;
+        super.dispose();
+    }
+
+    private disposeLoaded() {
+        for (let group of this.animationGroups) group.dispose();
+        this.animationGroups = [];
+        this._mixer?.dispose();
+        this._mixer = null;
+        for (let mesh of this.loadedMeshes) if (!mesh.isDisposed()) mesh.dispose(false, true);
+        this.loadedMeshes = [];
+        this.skeleton?.dispose();
+        this.skeleton = null;
     }
 
     private async load() {
         let scene = this.getScene();
+        let key = this.loadedKey;
         let [root, file] = this.src ? splitUrl(this.src) : [this.root ?? "", this.filename];
         if (!file) return;
         let names = !this.meshNames || this.meshNames == "*" ? "" : this.meshNames;
@@ -197,12 +214,19 @@ export class GardenMeshModel extends GardenSkeletonMesh {
                 engine.hideLoadingUI();
         }
 
-        for (let group of this.animationGroups) group.dispose();
-        this._mixer?.dispose();
-        this._mixer = null;
+        // Removed for good (or asked for another model) while loading: this one isn't wanted.
+        if (this.loadedKey != key) {
+            for (let group of result.animationGroups) group.dispose();
+            for (let mesh of result.meshes) if (!mesh.parent) mesh.dispose(false, true);
+            for (let skeleton of result.skeletons) skeleton.dispose();
+            return;
+        }
+
         if (this.motionObserver) scene.onBeforeRenderObservable.remove(this.motionObserver);
         this.motionObserver = null;
+        this.disposeLoaded();
         this.animationGroups = result.animationGroups;
+        this.loadedMeshes = result.meshes;
 
         let holder = new Mesh(this.id || "garden-mesh-model", scene);
         let tops = result.meshes.filter(m => !m.parent);

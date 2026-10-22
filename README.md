@@ -283,6 +283,25 @@ define). Each feature has its own
 
 # Related projects
 
+## Adding, moving and removing elements
+
+Elements can be added, moved and removed from script at any time:
+
+- **Moving** one (`appendChild`/`insertBefore` elsewhere, or anything else that removes it and
+  adds it back in the same task) keeps what it built: the same mesh, water, light or sound.
+  Under a different parent, a mesh follows a `parent`-tagged element's node (or leaves it), a
+  physics body is teleported to match, and `<garden-rocks>`/`<garden-stone-wall>`, which sit on
+  the ground where they are, are built again.
+- **Removing** one for good disposes what it built a microtask later: its mesh, physics body,
+  light, water, sky, sound, particles or model leave the scene, and its behaviours (`track`,
+  `follow`, `walk`, …) stop. Materials stay; their `<garden-material>` owns them.
+- **Adding it back** after that builds it again from its attributes.
+
+`node tests/moved.js` covers all three. A subclass disposes its own objects by overriding
+`dispose()` (calling `super.dispose()`), and a script or behaviour can tie per-frame work to an
+element's build with `element.observe(scene.onBeforeRenderObservable, fn)` or
+`element.whenDisposed(fn)`.
+
 ## Parterre
 
 [Parterre](../parterre) (`@C:\Jollify\parterre`) is a **generator that targets

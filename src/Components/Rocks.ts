@@ -43,6 +43,11 @@ export class GardenRocks extends GardenMesh {
     @property({ type: Number }) seed: number;
     @property() ground: string;
 
+    /** Its shape is sat on the ground where it is, so under a new parent it's built again. */
+    protected moved() {
+        this.updated();
+    }
+
     async updated() {
         let scene = this.getScene();
         if (!scene) return;
