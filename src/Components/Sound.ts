@@ -181,13 +181,13 @@ export class GardenSound extends GardenElement {
         this.sound?.resume();
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
+    protected dispose() {
         for (let [target, name, listener] of this._listeners)
             target.removeEventListener(name, listener);
         this._listeners = [];
         this.sound?.dispose();
         this.sound = null;
         this._built = null;
+        super.dispose();
     }
 }

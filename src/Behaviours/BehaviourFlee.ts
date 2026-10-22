@@ -49,7 +49,7 @@ export function BehaviourFlee(el: GardenElement, target: IBehaviourTarget, attr:
 
     let velocity = Vector3.Zero();
 
-    scene.onBeforeRenderObservable.add(() => {
+    el.observe(scene.onBeforeRenderObservable, () => {
         let dt = Math.min(engine.getDeltaTime(), 50) / 1000;
         let pos = target.position;
         let force = Vector3.Zero();

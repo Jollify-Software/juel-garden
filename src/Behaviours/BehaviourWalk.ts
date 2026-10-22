@@ -191,7 +191,7 @@ export function BehaviourWalk(el: GardenElement, target: IBehaviourTarget, attr:
                 target.position.add(new Vector3(0, centreOffset, 0)),
                 { capsuleHeight: height, capsuleRadius: radius }, scene);
             let up = Axis.Y;
-            observers.push([scene.onAfterPhysicsObservable, scene.onAfterPhysicsObservable.add(() => {
+            observers.push([scene.onAfterPhysicsObservable, el.observe(scene.onAfterPhysicsObservable, () => {
                 let dt = Math.min(engine.getDeltaTime(), 50) / 1000;
                 if (!dt) return;
                 if (!walker.enabled) {
@@ -238,7 +238,7 @@ export function BehaviourWalk(el: GardenElement, target: IBehaviourTarget, attr:
             fallSpeed = 0;
             lastPosition.copyFrom(target.position);
         };
-        observers.push([scene.onBeforeRenderObservable, scene.onBeforeRenderObservable.add(() => {
+        observers.push([scene.onBeforeRenderObservable, el.observe(scene.onBeforeRenderObservable, () => {
             let dt = Math.min(engine.getDeltaTime(), 50) / 1000;
             if (!dt) return;
             if (!walker.enabled) {

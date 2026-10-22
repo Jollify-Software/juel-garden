@@ -81,7 +81,7 @@ export function BehaviourOrbit(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     // The parent's mesh may come later (a model loading): then follow it. The pivot
     // shares the parent mesh's position vector, so a moving parent carries its orbit.
     if (!parentEl.mesh) {
-        let watch = scene.onBeforeRenderObservable.add(() => {
+        let watch = (<GardenElement>el).observe(scene.onBeforeRenderObservable, () => {
             if (!parentEl.mesh) return;
             scene.onBeforeRenderObservable.remove(watch);
             let world = mesh.getAbsolutePosition().clone();
@@ -117,7 +117,7 @@ export function BehaviourOrbit(el: HTMLElement, mesh: Mesh, attr: Attr[]) {
     }
 
     /**************Animation of Rotation**********/
-    let rotate = scene.onAfterRenderObservable.add(function () {
+    let rotate = (<GardenElement>el).observe(scene.onAfterRenderObservable, function () {
         if (pivot.isDisposed()) {
             scene.onAfterRenderObservable.remove(rotate);
             return;

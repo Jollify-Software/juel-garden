@@ -1,6 +1,7 @@
 import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Observable, Observer } from "@babylonjs/core/Misc/observable";
 import { LitElement, ReactiveElement } from "lit";
 import {customElement, property} from 'lit/decorators.js';
 import { GardenScene } from "./Components/Scene";
@@ -158,6 +159,12 @@ export class GardenElement extends LitElement {
     }
 
     private skippedFirstBuild = false;
+    /** Removed after building; disposal runs in a microtask unless it's added back first (a move). */
+    private disposeQueued = false;
+    /** Its build was disposed (removed for good); adding it back rebuilds it. */
+    private disposed = false;
+    private builtUnder: Element = null;
+    private disposers: (() => void)[] = [];
 
     /**
      * Skips the first build if the element was removed before it ran (added and
@@ -172,15 +179,83 @@ export class GardenElement extends LitElement {
         return false;
     }
 
+    /**
+     * Moving an element (removing it and adding it back in the same task, as `appendChild`
+     * and `insertBefore` do) keeps its build; under a new parent it calls {@link moved}.
+     * Added back after its build was disposed, it builds again.
+     */
     connectedCallback() {
         super.connectedCallback();
         if (this.skippedFirstBuild) {
             this.skippedFirstBuild = false;
             this.requestUpdate();
+        } else if (this.disposeQueued) {
+            this.disposeQueued = false;
+            if (this.parentElement != this.builtUnder)
+                this.moved();
+        } else if (this.disposed) {
+            this.disposed = false;
+            this.rebuild();
         }
+        this.builtUnder = this.parentElement;
     }
 
-    updated() {
+    /**
+     * Disposal waits a microtask, so a move keeps everything; once it runs, the element's
+     * Babylon objects have left the scene (see {@link dispose}).
+     */
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        if (!this.hasUpdated || this.disposeQueued)
+            return;
+        this.disposeQueued = true;
+        queueMicrotask(() => {
+            if (!this.disposeQueued)
+                return;
+            this.disposeQueued = false;
+            this.disposed = true;
+            this.dispose();
+        });
+    }
+
+    /**
+     * Removes what the element built from the scene, after it was removed for good. An
+     * override disposes its own objects and calls `super.dispose()`, and leaves the element
+     * ready for {@link rebuild}.
+     */
+    protected dispose() {
+        for (let disposer of this.disposers.splice(0))
+            disposer();
+        if (this.node && !this.node.isDisposed())
+            this.node.dispose();
+        this.node = null;
+    }
+
+    /** Builds again, after {@link dispose}, when the element is added back. */
+    protected rebuild() {
+        this.updated(new Map());
+    }
+
+    /**
+     * Moved to a different parent with its build kept. `GardenMesh` re-parents its mesh;
+     * an element whose geometry depends on where it sits overrides this to rebuild.
+     */
+    protected moved() {
+    }
+
+    /** Runs `disposer` when the element's build is disposed (see {@link dispose}). */
+    whenDisposed(disposer: () => void) {
+        this.disposers.push(disposer);
+    }
+
+    /** Adds `callback` to `observable` until the element's build is disposed: behaviours' per-frame work. */
+    observe<T>(observable: Observable<T>, callback: (data: T) => void): Observer<T> {
+        let observer = observable.add(callback);
+        this.whenDisposed(() => observable.remove(observer));
+        return observer;
+    }
+
+    updated(_changed?: Map<PropertyKey, unknown>) {
         this.node = new TransformNode(this.id ?? "node", this.getScene());
         (<any>this.node).element = this;
         if (this.position)

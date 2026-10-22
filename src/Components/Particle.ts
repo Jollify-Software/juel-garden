@@ -1,6 +1,7 @@
 import { Color4 } from "@babylonjs/core/Maths/math.color";
 import { ParticleHelper } from "@babylonjs/core/Particles/particleHelper";
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
+import { ParticleSystemSet } from "@babylonjs/core/Particles/particleSystemSet";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { customElement, property } from "lit/decorators.js";
@@ -92,6 +93,7 @@ export class GardenParticle extends GardenElement {
     isPlaying: boolean = false;
 
     private weather: Weather.WeatherSystem;
+    private effectSet: ParticleSystemSet;
     private _density: number;
 
     /** How much weather, for a `preset`: 0 none, 1 the preset's normal amount, more for a storm. */
@@ -113,6 +115,12 @@ export class GardenParticle extends GardenElement {
         }
         if (this.effect) {
             ParticleHelper.CreateAsync(this.effect, scene).then((set) => {
+                // Removed for good while it was being made.
+                if (!this.parentElement) {
+                    set.dispose();
+                    return;
+                }
+                this.effectSet = set;
                 if ('mesh' in this.parentElement) {
                     // World position, not the raw local `.position` -- so the emitter is
                     // right even when the parent mesh is nested under a <garden-element
@@ -203,10 +211,14 @@ if (this.billboard)
         this.endBuild();
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
+    protected dispose() {
         this.weather?.dispose();
         this.weather = null;
+        this.effectSet?.dispose();
+        this.effectSet = null;
+        this.particleSystem?.dispose();
+        this.particleSystem = null;
+        super.dispose();
     }
 
     /** Starts the system; if it isn't built yet, it starts as soon as it is. */

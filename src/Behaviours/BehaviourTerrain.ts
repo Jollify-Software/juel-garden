@@ -41,7 +41,7 @@ export function BehaviourTerrain(el: GardenElement, target: IBehaviourTarget, at
         terrain = <any>terrainEl?.mesh;
     })().catch(err => console.error("[terrain] failed to resolve terrain", terrainSelector, err));
 
-    scene.onBeforeRenderObservable.add(() => {
+    el.observe(scene.onBeforeRenderObservable, () => {
         if (!terrain)
             return;
 

@@ -85,7 +85,7 @@ export function BehaviourWander(el: GardenElement, target: IBehaviourTarget, att
         })().catch(err => console.error("[wander] failed to resolve points-of-interest", poiSelector, err));
     }
 
-    scene.onBeforeRenderObservable.add(() => {
+    el.observe(scene.onBeforeRenderObservable, () => {
         if ((<any>el).waiting) // held by `follow-wait` or a game
             return;
         let dt = Math.min(engine.getDeltaTime(), 50) / 1000;

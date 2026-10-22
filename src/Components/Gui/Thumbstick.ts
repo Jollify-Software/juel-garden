@@ -67,9 +67,13 @@ export class GardenThumbstick extends GardenElement implements ThumbstickInput {
     disconnectedCallback() {
         super.disconnectedCallback();
         ThumbstickRegistry.sticks.delete(this);
+    }
+
+    protected dispose() {
         this.pad?.dispose();
         this.pad = null;
         this.builtKey = null;
+        super.dispose();
     }
 
     update(changed?: Map<PropertyKey, unknown>) {

@@ -127,7 +127,7 @@ if (this.scrollSpeed) {
     let reflection = <CubeTexture>skyboxMaterial.reflectionTexture;
     let engine = scene.getEngine();
     let radiansPerSecond = Tools.ToRadians(this.scrollSpeed);
-    scene.onBeforeRenderObservable.add(() => {
+    this.observe(scene.onBeforeRenderObservable, () => {
         let dt = Math.min(engine.getDeltaTime(), 50) / 1000;
         reflection.rotationY -= radiansPerSecond * dt;
     });
@@ -164,11 +164,11 @@ this.setMesh(skybox);
         });
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
+    protected dispose() {
         // Both domes and the per-frame observer go with the element (`mesh` is only the first dome).
         this.panoramaSky?.dispose();
         this.panoramaSky = null;
+        super.dispose();
     }
 }
 

@@ -123,9 +123,9 @@ export class GardenWater extends GardenElement {
         return m => named.has(m);
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
+    protected dispose() {
         this.water?.dispose();
         this.water = null;
+        super.dispose();
     }
 }
