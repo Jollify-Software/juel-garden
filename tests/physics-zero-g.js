@@ -114,6 +114,16 @@ const withTimeout = (p, ms, what) => Promise.race([
         check("garden-rest fires once everything stops", settled === true, `${settled}; status="${s4.status}"`);
         check("Shoot button re-enabled at rest", await page.isEnabled("#shoot"));
 
+        // A teleport from inside the physics step (a garden-rest or garden-collide listener, or
+        // onAfterPhysicsObservable) must still move the body, not just the mesh for a frame.
+        const moved = await withTimeout(page.evaluate(() => new Promise(r => {
+            const cue = document.getElementById("cue");
+            const scene = document.querySelector("garden-scene").scene;
+            scene.onAfterPhysicsObservable.addOnce(() => cue.teleport("-2 1 -2"));
+            setTimeout(() => r(cue.mesh.position.asArray().map(n => +n.toFixed(2))), 500);
+        })), 5000, "teleport inside the physics step");
+        check("A teleport from inside the physics step moves the body", JSON.stringify(moved) == "[-2,1,-2]", JSON.stringify(moved));
+
         await page.screenshot({ path: out });
         check("No console errors or warnings", errors.length == 0, errors.join(" | "));
     } finally {

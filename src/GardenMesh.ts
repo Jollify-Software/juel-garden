@@ -277,8 +277,13 @@ export abstract class GardenMesh extends GardenElement {
         if (!body) return;
         this.stop();
         // Let the next step copy the node's transform into the body, then hand it back.
+        // Wait for that step to begin first: called from inside the physics step (a
+        // garden-rest or garden-collide listener), an after-physics observer added now
+        // would run in this same pass, before the body ever got the new transform.
         body.disablePreStep = false;
-        this.getScene().onAfterPhysicsObservable.addOnce(() => body.disablePreStep = true);
+        const scene = this.getScene();
+        scene.onBeforePhysicsObservable.addOnce(() =>
+            scene.onAfterPhysicsObservable.addOnce(() => body.disablePreStep = true));
     }
 
     /** Disposes the physics body (e.g. a ball that has been potted). The mesh stays. */
