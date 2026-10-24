@@ -23,6 +23,13 @@ import { GardenElement } from "../GardenElement";
  * `position`), `sprite-width`/`sprite-height` (each sprite's on-screen size in
  * world units, default `1`).
  *
+ * **Cell animation** (a sprite sheet's frames played in turn, a walking
+ * character or a flapping bird): `cells="from to"` plays the sheet's cells
+ * `from` to `to` (indices left to right, top to bottom) on every sprite,
+ * `cell-delay` milliseconds a cell (default 100), looping unless
+ * `cell-loop="false"`. `cell` alone shows one cell, still. Each sprite is
+ * {@link sprites}, for `playAnimation()` from code.
+ *
  * Per-frame movement is delegated entirely to the generic `Behaviours` --
  * see {@link BehaviourFlee} (`flee-target`/`flee-radius`/`flee-speed`),
  * {@link BehaviourTerrain} (`terrain`/`terrain-offset`), and
@@ -56,15 +63,35 @@ export class GardenSprite extends GardenElement {
     @property({ type: Number }) count: number;
     @property() positions: string;
 
+    /** The sprites placed by the last build. */
+    sprites: Sprite[] = [];
+    manager: SpriteManager;
+
+    protected unbuild() {
+        this.disposeSprites();
+        super.unbuild();
+    }
+
+    protected dispose() {
+        this.disposeSprites();
+        super.dispose();
+    }
+
+    private disposeSprites() {
+        this.manager?.dispose();
+        this.manager = null;
+        this.sprites = [];
+    }
+
     updated() {
         let scene = this.getScene();
-        const manager = new SpriteManager(this.id ?? "sprites", this.url, this.capacity, this.buildOptions(), scene);
+        const manager = this.manager = new SpriteManager(this.id || "sprites", this.url, this.capacity ?? Math.max(1, this.count ?? 1), this.buildOptions(), scene);
 
         let spriteWidth = Number(this.getAttribute("sprite-width") ?? 1);
         let spriteHeight = Number(this.getAttribute("sprite-height") ?? 1);
 
         let place = (pos: Vector3): Sprite => {
-            let sprite = new Sprite(this.id ?? "sprite", manager);
+            let sprite = new Sprite(this.id || "sprite", manager);
             sprite.position = pos.clone();
             sprite.width = spriteWidth;
             sprite.height = spriteHeight;
@@ -99,6 +126,17 @@ export class GardenSprite extends GardenElement {
                 let pos = new Vector3(center.x + Math.cos(angle) * r, center.y, center.z + Math.sin(angle) * r);
                 sprites.push(place(pos));
             }
+        }
+
+        this.sprites = sprites;
+        let num = (name: string) => this.hasAttribute(name) ? Number(this.getAttribute(name)) : undefined;
+        let cells = (this.getAttribute("cells") ?? "").trim().split(/[\s,]+/).filter(x => x).map(Number);
+        let cell = num("cell");
+        for (let sprite of sprites) {
+            if (cell != null)
+                sprite.cellIndex = cell;
+            if (cells.length == 2)
+                sprite.playAnimation(cells[0], cells[1], this.getAttribute("cell-loop") != "false", num("cell-delay") ?? 100);
         }
 
         // Same generic Behaviours pipeline GardenMesh.modifyMesh applies to its

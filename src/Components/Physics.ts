@@ -1,8 +1,10 @@
 import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
 import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
-import { PhysicsEventType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
+import { PhysicsEventType, PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { PhysicsRaycastResult } from "@babylonjs/core/Physics/physicsRaycastResult";
 import HavokPhysics from "@babylonjs/havok";
+import { PhysicsViewer } from "@babylonjs/core/Debug/physicsViewer";
 import { customElement, property } from "lit/decorators.js";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
@@ -18,6 +20,20 @@ const defaultWasmUrl = scriptSrc
 /** The element a physics body belongs to (set by {@link GardenMesh.setMesh}). */
 export function elementOfBody(body: PhysicsBody): GardenElement {
     return (<any>body?.transformNode)?.element ?? null;
+}
+
+/** What {@link GardenPhysics.raycast} hit. */
+export interface RaycastHit {
+    /** The element whose body was hit. */
+    element: GardenElement;
+    /** Where, in world space. */
+    point: Vector3;
+    /** The surface's normal there. */
+    normal: Vector3;
+    /** How far from the ray's start. */
+    distance: number;
+    /** For a mesh with a `grid` of copies, which copy; else undefined. */
+    instance?: number;
 }
 
 /**
@@ -36,6 +52,9 @@ export function elementOfBody(body: PhysicsBody): GardenElement {
  * - `rest-speed` -- the speed (units/s, and rad/s for spin) under which a
  *   dynamic body counts as stopped, default `0.05`. See `garden-rest` below.
  * - `wasm` -- URL of `HavokPhysics.wasm`, default: next to `juel-garden.js`.
+ * - `debug` -- draws every body's collision shape as a wireframe (Babylon's
+ *   `PhysicsViewer`), bodies made later included, for working on a scene;
+ *   `debug="moving"` leaves out static ones (floors, walls).
  *
  * Events (all bubble, so one listener on the scene catches every body):
  * - `garden-rest` on this element -- every dynamic body has come to a stop
@@ -45,6 +64,11 @@ export function elementOfBody(body: PhysicsBody): GardenElement {
  *   another body. `detail`: `{ other, point, normal, impulse }`.
  * - `garden-trigger-enter` / `garden-trigger-exit` on a `physics="trigger"`
  *   element when a body enters or leaves it. `detail`: `{ other }`.
+ *
+ * **Raycasts** ({@link raycast}): the first body a line between two points
+ * hits, from the physics world rather than the meshes (cheaper than picking
+ * with many bodies, and it sees what the physics sees) -- an aim line, a line
+ * of sight, what's under the cursor or in front of a character.
  *
  * @example
  * ```html
@@ -82,6 +106,29 @@ export class GardenPhysics extends GardenElement {
     constructor() {
         super();
         this.ready = new Promise(resolve => { this._resolveReady = resolve; });
+    }
+
+    /**
+     * The first body the straight line from `from` to `to` hits (world space), or null.
+     * `ignore` leaves out one element's body (the one doing the looking); `triggers`
+     * counts `physics="trigger"` sensors too. The hit gives the `element`, the `point` and
+     * surface `normal`, the `distance` from `from`, and for a `grid` of copies the
+     * `instance` index of the one hit.
+     */
+    raycast(from: Vector3, to: Vector3, options: { ignore?: GardenElement, triggers?: boolean } = {}): RaycastHit | null {
+        let engine: any = this.getScene()?.getPhysicsEngine();
+        if (!engine) return null;
+        let result = new PhysicsRaycastResult();
+        let ignoreBody = (<any>options.ignore)?.physicsAggregate?.body;
+        engine.raycastToRef(from, to, result, { shouldHitTriggers: !!options.triggers, ignoreBody });
+        if (!result.hasHit) return null;
+        return {
+            element: elementOfBody(result.body),
+            point: result.hitPointWorld.clone(),
+            normal: result.hitNormalWorld.clone(),
+            distance: Vector3.Distance(from, result.hitPointWorld),
+            instance: result.bodyIndex,
+        };
     }
 
     /** The `<garden-physics>` of the scene `el` is in, or null if it has none. */
@@ -128,9 +175,32 @@ export class GardenPhysics extends GardenElement {
         });
 
         scene.onAfterPhysicsObservable.add(() => this.checkRest());
+        if (this.hasAttribute("debug"))
+            this.showBodies();
 
         this._resolveReady(this.plugin);
         this.endBuild();
+    }
+
+    /** `debug`: a wireframe on every body, checked twice a second for new ones. */
+    private showBodies() {
+        let scene = this.getScene();
+        let viewer = new PhysicsViewer(scene);
+        let shown = new Set<PhysicsBody>();
+        let movingOnly = this.getAttribute("debug") == "moving";
+        let check = () => {
+            for (let node of (scene.transformNodes as any[]).concat(scene.meshes)) {
+                let body = node.physicsBody as PhysicsBody;
+                if (body && !shown.has(body) && !body.isDisposed &&
+                    !(movingOnly && body.getMotionType() == PhysicsMotionType.STATIC)) {
+                    shown.add(body);
+                    viewer.showBody(body);
+                }
+            }
+        };
+        check();
+        let timer = setInterval(check, 500);
+        this.whenDisposed(() => { clearInterval(timer); viewer.dispose(); });
     }
 
     private applySettings() {

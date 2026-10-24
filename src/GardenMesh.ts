@@ -8,7 +8,9 @@ import { PhysicsEventType, PhysicsMotionType, PhysicsShapeType } from "@babylonj
 import { PointerEventTypes } from "@babylonjs/core/Events/pointerEvents";
 import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
+import "@babylonjs/core/Meshes/thinInstanceMesh";
 import { CSG } from "@babylonjs/core/Meshes/csg";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { property } from "lit/decorators.js";
@@ -62,6 +64,19 @@ const shapeByTag: {[tag: string]: PhysicsShapeType} = {
  *   (bounciness, 0-1), `linear-damping`, `angular-damping` (slow a body down
  *   over time -- what stops balls rolling for ever when there's no floor).
  * - `velocity`, `angular-velocity` -- `Vector3`s set once the body exists.
+ *
+ * **Copies** (a wall of bricks, a stack of crates, a field of posts): `grid="nx ny nz"`
+ * repeats the mesh nx x ny x nz times as GPU thin instances, `grid-spacing` apart (`"x y z"`,
+ * default the mesh's own size) from its `position` along +x, +y and +z: one draw call
+ * however many. `instance-colours` colours them: `random`, or colours (`#rrggbb`, by
+ * spaces) taken in turn. With `physics` every copy is a body of its own (Havok's instanced
+ * bodies, placed where the element's transform puts it (give a physics grid its size by
+ * `width`/`height`/... rather than `scale`); {@link GardenPhysics.raycast} says which copy it
+ * hit, and pointer picking sees each copy.
+ *
+ * `layer-mask` (a number, `0x...` hex allowed) is the mesh's Babylon `layerMask`
+ * (its parts' too): only cameras whose `layer-mask` shares a bit with it see it
+ * (see {@link GardenCamera}).
  *
  * Script API: {@link impulse}, {@link getVelocity}, {@link setVelocity},
  * {@link stop}, {@link teleport}, {@link removePhysics}, and the underlying
@@ -197,10 +212,59 @@ export abstract class GardenMesh extends GardenElement {
 
         if (this.hasAttribute("collisions"))
             this.mesh.checkCollisions = true;
+        if (this.hasAttribute("layer-mask")) {
+            let mask = Number(this.getAttribute("layer-mask").trim());
+            for (let part of [mesh as any].concat(mesh.getChildMeshes(false)))
+                part.layerMask = Number.isFinite(mask) ? mask >>> 0 : 0x0FFFFFFF;
+        }
+
+        if (this.hasAttribute("grid"))
+            this.makeGrid(mesh);
 
         if (this.hasAttribute("physics"))
             this.attachPhysics(mesh);
         GardenMesh.disposeUnworn(worn);
+    }
+
+    /** `grid`: the mesh's thin instances, in a block of nx x ny x nz, and their `instance-colours`. */
+    private makeGrid(mesh: Mesh) {
+        let [nx, ny, nz] = (this.getAttribute("grid") ?? "").trim().split(/\s+/).map(n => Math.max(1, Math.floor(Number(n) || 1)));
+        ny ??= 1; nz ??= 1;
+        let size = mesh.getBoundingInfo().boundingBox.extendSize.scale(2);
+        let spacing = Vector3Convert.fromString(this.getAttribute("grid-spacing")) ?? size;
+        let total = nx * ny * nz;
+        let matrices = new Float32Array(total * 16);
+        // Havok's instanced bodies read (and write back) each copy's matrix as its place in the
+        // world, so with physics the element's own transform goes into the copies and the mesh
+        // stays at the origin.
+        let world = Matrix.Identity();
+        if (this.hasAttribute("physics")) {
+            world = mesh.computeWorldMatrix(true).clone();
+            mesh.parent = null;
+            mesh.position = Vector3.Zero();
+            mesh.rotation = Vector3.Zero();
+            mesh.rotationQuaternion = null;
+            mesh.scaling = Vector3.One();
+        }
+        let index = 0;
+        for (let k = 0; k < nz; k++)
+            for (let j = 0; j < ny; j++)
+                for (let i = 0; i < nx; i++)
+                    Matrix.Translation(i * spacing.x, j * spacing.y, k * spacing.z).multiply(world)
+                        .copyToArray(matrices, index++ * 16);
+        // Physics writes the copies' matrices back every step: the GPU buffer must take updates.
+        mesh.thinInstanceSetBuffer("matrix", matrices, 16, !this.hasAttribute("physics"));
+        let colours = this.getAttribute("instance-colours")?.trim();
+        if (colours) {
+            let list = colours == "random" ? null : colours.split(/\s+/).map(c => Color3.FromHexString(c));
+            let buffer = new Float32Array(total * 4);
+            for (let n = 0; n < total; n++) {
+                let c = list ? list[n % list.length] : new Color3(Math.random(), Math.random(), Math.random());
+                new Color4(c.r, c.g, c.b, 1).toArray(buffer, n * 4);
+            }
+            mesh.thinInstanceSetBuffer("color", buffer, 4);
+        }
+        mesh.thinInstanceEnablePicking = true;
     }
 
     private belongsToOther(node: TransformNode): boolean {
