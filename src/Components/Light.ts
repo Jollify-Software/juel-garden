@@ -32,8 +32,13 @@ import { GardenAnimation } from "./Animation";
  * carrying mesh), `direction` (spot/directional), `diffuse` or `colour`
  * (see {@link Color3Convert}, or `#rrggbb`), `intensity`, `range` (how far a
  * point/spot light reaches), `angle` (spot cone, degrees, default 60),
- * `pool`, `shadows` (meshes cast and receive shadows from this light; the
- * value is the shadow-map size, default 1024 -- leave it off for phones).
+ * `exponent` (spot: how fast the light fades towards the cone's edge, default
+ * 2; 16 leaves no visible rim), `pool`, `shadows` (meshes cast and receive
+ * shadows from this light; the value is the shadow-map size, default 1024 --
+ * leave it off for phones). Every mesh casts except grounds and height maps,
+ * which only receive (a terrain shading itself shows stripes of shadow acne);
+ * a mesh's own `cast-shadows="false"` or `"true"`, or `receive-shadows="false"`,
+ * overrides that.
  *
  * `intensity`, `range`, `pool` and `diffuse` can be set from code, or
  * animated by a `<garden-animation property="intensity">` (or `range`)
@@ -59,6 +64,7 @@ export class GardenLight extends GardenElement {
     @property({ type: Number }) intensity: number;
     @property({ type: Number }) range: number;
     @property({ type: Number }) angle: number;
+    @property({ type: Number }) exponent: number;
     @property({ type: Number }) pool: number;
     @property() shadows: string;
 
@@ -129,8 +135,16 @@ export class GardenLight extends GardenElement {
             generator.usePercentageCloserFiltering = true;
             let add = (mesh: any) => {
                 if (mesh.infiniteDistance || !mesh.isVisible) return; // not the sky
-                generator.addShadowCaster(mesh, false);
-                mesh.receiveShadows = true;
+                // A mesh learns its element after it's made (GardenMesh.setMesh): decide
+                // what it casts and receives on the next frame, once it knows.
+                scene.onBeforeRenderObservable.addOnce(() => {
+                    if (mesh.isDisposed?.()) return;
+                    let el = GardenLight.elementOf(mesh);
+                    let cast = el?.getAttribute("cast-shadows");
+                    if (cast != null ? cast != "false" : !el?.matches("garden-ground, garden-height-map"))
+                        generator.addShadowCaster(mesh, false);
+                    mesh.receiveShadows = el?.getAttribute("receive-shadows") != "false";
+                });
             };
             scene.meshes.forEach(add);
             scene.onNewMeshAddedObservable.add(add);
@@ -154,6 +168,13 @@ export class GardenLight extends GardenElement {
     }
 
     /** The live-settable attributes. */
+    /** The element a mesh was built for: its own, else its nearest parent node's. */
+    static elementOf(mesh: any): HTMLElement | undefined {
+        for (let node = mesh; node; node = node.parent)
+            if (node.element) return node.element;
+        return undefined;
+    }
+
     private apply() {
         let light = this.light;
         if (!light) return;
@@ -177,6 +198,8 @@ export class GardenLight extends GardenElement {
             } else if (this.angle != null) {
                 light.angle = Tools.ToRadians(this.angle);
             }
+            if (this.exponent != null && !(this.pool > 0))
+                light.exponent = this.exponent;
         }
     }
 
