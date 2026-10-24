@@ -209,6 +209,7 @@ and walk-throughs with guides and talking exhibits (the plan is
 | `follow`, `follow-wait` | Followers that keep apart; a leader that stops for stragglers (`garden-wait` / `garden-resume`) |
 | `play()`, `anim-*` | Named GLB animations with cross-fades; idle/walk/run picked by speed; one-shots fire `garden-animation-end` |
 | `near` | `garden-near` / `garden-far` when something (or `camera`) comes close |
+| `grab` | Pick a mesh or model up and move it in six directions (a controller or hand turns it over); `grab="scale"` pinches it bigger or smaller; `grab-box` draws a bounding box with handles; `garden-grab` / `garden-release` |
 | `<garden-light pool>` | Lights carried by meshes; a pool of light on the ground; live `intensity`/`range`; `shadows` (everything casts but grounds and height maps; a mesh's `cast-shadows`/`receive-shadows` overrides it); a spot light's `exponent` |
 | Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
 | `<garden-camera type="arc">` | `alpha`/`beta`/`radius` (radians, as Babylon's ArcRotateCamera), `target="x y z"` or an element to follow, `beta-lower`/`beta-upper`/`radius-lower`/`radius-upper` |
