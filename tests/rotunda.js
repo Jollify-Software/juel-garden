@@ -56,13 +56,14 @@ const cast = (page, from, dir) => page.evaluate(([from, dir]) => {
     try {
         let { page, errors } = await open(browser, "rotunda.html");
         const round = await bounds(page, "drum");
-        check("a rotunda without depth stays round", near(round.min, [-8, -0.4, -8]) && near(round.max, [8, 5, 8]), JSON.stringify(round));
+        // Lowest point: the floor slab's bottom (-thickness); the wall sinks into the slab, not past it.
+        check("a rotunda without depth stays round", near(round.min, [-8, -0.2, -8]) && near(round.max, [8, 5, 8]), JSON.stringify(round));
         check("no errors (round)", errors.length == 0, errors.join(" | "));
         await page.close();
 
         ({ page, errors } = await open(browser, "oval-rotunda.html"));
         const oval = await bounds(page, "rotunda");
-        check("depth makes it oval: 24 x 16", near(oval.min, [-12, -0.4, -8]) && near(oval.max, [12, 9, 8]), JSON.stringify(oval));
+        check("depth makes it oval: 24 x 16", near(oval.min, [-12, -0.2, -8]) && near(oval.max, [12, 9, 8]), JSON.stringify(oval));
         const north = await cast(page, [0, 1.2, 0], [0, 0, 1]);
         check("the wall follows the oval (inner face 7.8 m north)", Math.abs(north - 7.8) < 0.1, String(north));
         const east = await cast(page, [0, 1.2, 0], [1, 0, 0]);

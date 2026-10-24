@@ -49,7 +49,11 @@ interface AxisOverlap {
  *
  * Attributes: `opening-width`, `opening-height`, `opening-depth` (the fixed
  * cut dimensions used at every detected join), `tolerance` (how close two
- * bounding boxes must be to count as touching).
+ * bounding boxes must be to count as touching), and `doorways`: `auto` (the
+ * default) cuts a doorway at every wall join as above; `none` cuts none, for a
+ * plan whose doors are all drawn as `<garden-opening>`s (a museum map: several
+ * doors in one wall, a wide arch, a wall with no door at all). Stairs still
+ * punch their floor openings either way.
  *
  * @example
  * ```html
@@ -73,6 +77,8 @@ export class GardenStructure extends GardenElement {
     @property({ type: Number, attribute: "opening-height" }) openingHeight: number;
     @property({ type: Number, attribute: "opening-depth" }) openingDepth: number;
     @property({ type: Number }) tolerance: number;
+    /** `auto` (default): a doorway at every wall join; `none`: only floor openings for stairs, the doors are drawn. */
+    @property() doorways: "auto" | "none";
 
     constructor() {
         super();
@@ -80,6 +86,7 @@ export class GardenStructure extends GardenElement {
         this.openingHeight = GardenRoom.WallHeight - 1;
         this.openingDepth = GardenRoom.WallThickness * 2;
         this.tolerance = 0.05;
+        this.doorways = "auto";
     }
 
     async updated() {
@@ -124,6 +131,10 @@ export class GardenStructure extends GardenElement {
         b.mesh.computeWorldMatrix(true);
 
         if (this.tryFloorOpening(a, b))
+            return;
+
+        // Drawn doors only: no wall joins at all (stairs above still cut their floors).
+        if (this.doorways === "none")
             return;
 
         if (this.tryWallCrossing(a, b))
@@ -394,7 +405,7 @@ export class GardenStructure extends GardenElement {
         if (doorways.length === 0)
             return true;
 
-        let floorY = Math.max(aBox.minimumWorld.y, bBox.minimumWorld.y);
+        let floorY = this.doorwayBase(curved, aBox.minimumWorld.y, other, bBox.minimumWorld.y);
         for (let at of doorways)
             this.cutDoorway(curved, other, at, floorY);
         return true;
@@ -435,18 +446,42 @@ export class GardenStructure extends GardenElement {
         cutter.dispose();
     }
 
+    /**
+     * How far below a room's floor top a doorway's cut goes: a shallow groove at the
+     * threshold, inside the slab, so the cut never shows the ground through the floor.
+     */
+    static readonly THRESHOLD_GROOVE = 0.05;
+
+    /**
+     * Where a doorway between `a` and `b` starts: just under the higher of their floor
+     * tops (a box room's slab is centred on its floor level, so its top is half a
+     * thickness up; a rotunda's, polygon's or slotted room's top is at its level). For
+     * anything that isn't a room (stairs) its lowest point, as before. It used to be
+     * the slabs' bottoms, which cut the higher slab right through: a slot to the
+     * ground under every doorway.
+     */
+    private doorwayBase(a: GardenMesh, aMinY: number, b: GardenMesh, bMinY: number): number {
+        let top = (el: GardenMesh, minY: number) => el instanceof GardenRoom
+            ? (el.position?.y ?? 0) + (el.wallLoop ? 0 : el.thickness / 2) - GardenStructure.THRESHOLD_GROOVE
+            : minY;
+        return Math.max(top(a, aMinY), top(b, bMinY));
+    }
+
     private cut(a: GardenMesh, b: GardenMesh, touchAxis: Axis, otherAxes: Axis[],
         overlap: Record<Axis, AxisOverlap>, aMin: Vector3, bMin: Vector3) {
         let scene = this.getScene();
         let size = { x: 0, y: 0, z: 0 };
         let center = { x: 0, y: 0, z: 0 };
 
-        size[touchAxis] = this.openingDepth;
+        // Through both rooms' walls, however thick (a venue's 1.5 m walls), never less than opening-depth.
+        let walls = (el: GardenMesh) => el instanceof GardenRoom ? el.walls : 0;
+        let through = walls(a) + walls(b);
+        size[touchAxis] = through > this.openingDepth ? through + 0.02 : this.openingDepth;
         center[touchAxis] = (overlap[touchAxis].lo + overlap[touchAxis].hi) / 2;
 
         for (let axis of otherAxes) {
             if (axis === "y") {
-                let floor = Math.max(aMin.y, bMin.y);
+                let floor = this.doorwayBase(a, aMin.y, b, bMin.y);
                 size.y = this.openingHeight;
                 center.y = floor + this.openingHeight / 2;
             } else {

@@ -114,6 +114,7 @@ want to route it themselves. See
 | `width`, `depth` | `rect`, `rotunda` | 8, 16 (a `rotunda` without `depth` is round: `depth` = `width`) | outer size in metres (ignored by `polygon`) |
 | `points` | `polygon` | none | the corners, `"x z, x z, ..."` (at least three; `x y z` also accepted, `y` ignored), in the room's own space (relative to `position`), tracing the walls' **outer** face. Concave shapes (an L, a U) work; either winding. A repeated corner (or a closing point equal to the first) is dropped; fewer than three distinct corners warns and builds a box. A `<garden-roof>` child (or a structure's roof) sizes to the points' bounds, and a flat one is trimmed to the outline unless `clip="false"`. |
 | `height`, `thickness` | all | 6, 0.2 | wall height and wall/floor thickness |
+| `wall-thickness` | all | `thickness` | the walls' thickness alone, when it differs from the floor slab's (a venue's 1.5 m walls). The outer face stays on the outline, so a thicker wall grows inward; a `<garden-structure>` join cuts through both rooms' walls however thick. |
 | `floor-color`, `north-color`, `east-color`, `south-color`, `west-color` | all | floor `#9c968c`, walls `#e0dcd3` | surface colours; a `rotunda`, a `polygon` room or one with `<garden-wall slot>` sides has one wall colour, `north-color` |
 | `debug-colors` | all | off | the per-face black/green/red/blue/yellow palette |
 
@@ -127,8 +128,8 @@ room does: along its actual wall line, not its bounding box, so a shared edge ge
 doorway at any angle (a diagonal wall between two triangles works) and against a box
 room too. A hand-placed `<garden-opening>` is an axis-aligned box, so it cuts cleanly
 only through an edge that runs along x or z; for a slanted edge, rely on the
-structure's join. (Every structure doorway, box or polygon, starts 0.1 m below
-floor level and notches the top of the floor slab: an existing quirk, not new.)
+structure's join. (Every structure doorway, box or polygon, starts 5 cm below the
+higher room's floor top: a shallow groove at the threshold, never through the slab.)
 
 ```html
 <garden-room type="polygon" height="4" points="-6 -4, 6 -4, 6 0, 0 0, 0 4, -6 4"></garden-room>
@@ -136,6 +137,20 @@ floor level and notches the top of the floor slab: an existing quirk, not new.)
 
 See [examples/Structures/polygon-room.html](examples/Structures/polygon-room.html);
 `npm run test:polygon` checks it in Chrome.
+
+A `<garden-structure>` cuts a doorway (`opening-width` wide, 3 m by default) in the
+middle of every wall two of its rooms share. When the doors come from a plan instead
+(several doors in one wall, a wide arch, a wall with none), set `doorways="none"`:
+the structure then cuts no doorways of its own, only the floor openings its stairs
+need, and each door is a `<garden-opening>`.
+
+```html
+<garden-structure doorways="none">
+  <garden-room id="a" width="10" depth="10" position="-5 0 0"></garden-room>
+  <garden-room id="b" width="10" depth="10" position="5 0 0"></garden-room>
+  <garden-opening between="#a #b" position="0 0 2" width="0.6" depth="2" height="3"></garden-opening>
+</garden-structure>
+```
 
 ## Characters, guides and weather
 

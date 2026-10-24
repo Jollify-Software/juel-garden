@@ -85,7 +85,7 @@ function createBaseCap(
     material: Material,
     scene: Scene,
     outline?: Vector2[]
-): Mesh {
+): Mesh | null {
     let slab: Mesh;
     if (outline && outline.length >= 3) {
         // PolygonMeshBuilder lays the shape at y = 0 and extrudes down by `depth`;
@@ -114,6 +114,12 @@ function createBaseCap(
     slab.dispose();
     hole.dispose();
 
+    // Nothing left: the outline lies inside the hole (a room whose wall-thickness pulls
+    // its wall loop in past the dome's inner rim). The walls' tops close that gap.
+    if (cap.getTotalVertices() === 0) {
+        cap.dispose();
+        return null;
+    }
     return cap;
 }
 
@@ -191,7 +197,7 @@ export function createDomeRoof(
     const innerBase = createBaseCap(`${name}_inner_base`, width, depth, innerRadiusX, innerRadiusZ, thickness, insideMaterial, scene, outline);
 
     const dome = Mesh.MergeMeshes(
-        [outerDome, outerBase, innerDome, innerBase],
+        [outerDome, outerBase, innerDome, innerBase].filter((m): m is Mesh => m !== null),
         true, true, undefined, false, true
     );
 

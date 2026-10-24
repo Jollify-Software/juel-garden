@@ -48,8 +48,9 @@ function check(name, ok, info = "") {
         await page.waitForTimeout(2000); // structure joins finish
 
         // Straight-down rays from above the landing; the first thing hit, and at what height.
-        // The stairs rect is x -5..-2, z 2..7 in the scene (position is the foot's centre,
-        // climbing +z), so (-3.5, 2.5) is near the foot and (-3.5, 6.5) near the top.
+        // The stairs rect is x -5..-2, z -2..-7 in the scene (plan north is +z; position is
+        // the foot's centre, climbing south, -z), so (-3.5, -2.5) is near the foot and
+        // (-3.5, -6.5) near the top.
         const down = await page.evaluate(([points]) => {
             const scene = document.querySelector("garden-scene").scene;
             const owner = m => { while (m && !m.element) m = m.parent; return m?.element?.id || "(none)"; };
@@ -58,7 +59,7 @@ function check(name, ok, info = "") {
                 const hit = scene.pickWithRay(ray, m => m.isPickable && m.isEnabled() && m.isVisible);
                 return { x, z, hit: hit?.hit ? owner(hit.pickedMesh) : "(none)", y: hit?.hit ? +hit.pickedPoint.y.toFixed(2) : null };
             });
-        }, [[[-3.5, 2.5], [-3.5, 6.5], [3, 4.5], [-3.5, 0]]]);
+        }, [[[-3.5, -2.5], [-3.5, -6.5], [3, -4.5], [-3.5, 0]]]);
         const [well, well2, beside, behind] = down;
         check("beside the stairs, a ray down lands on the landing's floor (~3.2)",
             beside.hit == "landing" && Math.abs(beside.y - 3.2) < 0.25, JSON.stringify(beside));
