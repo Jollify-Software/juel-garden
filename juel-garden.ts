@@ -38,6 +38,7 @@ export * from "./src/Components/Light";
 export * from "./src/Components/Box";
 export * from "./src/Components/Torus";
 export * from "./src/Components/TorusKnot";
+export * from "./src/Components/Pipeline";
 export * from "./src/Components/Sphere";
 export * from "./src/Components/Line";
 export * from "./src/Components/Cylinder";

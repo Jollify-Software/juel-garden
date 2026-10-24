@@ -70,6 +70,7 @@
     "test:lights": "node tests/lights.js",
     "test:arc-camera": "node tests/arc-camera.js",
     "test:grab": "node tests/grab.js",
+    "test:pipeline": "node tests/pipeline.js",
     "test:device-environment": "node tests/device-environment.js",
     "test:shadow-casters": "node tests/shadow-casters.js",
     "test:weather": "node tests/weather.js",

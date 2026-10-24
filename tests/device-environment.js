@@ -44,4 +44,15 @@ run(`
     });
     check("environment lights the scene (scene.environmentTexture)", s.env, JSON.stringify(s));
     check("…and is the skybox", s.sky == "hdrSkyBox" && s.infinite, JSON.stringify(s));
+
+    // environment="default": Babylon's createDefaultEnvironment (needs its assets online).
+    await page.evaluate(() => {
+        const sky = document.createElement("garden-sky");
+        sky.setAttribute("environment", "default");
+        sky.id = "default-sky";
+        document.querySelector("garden-scene").appendChild(sky);
+    });
+    await page.waitForFunction(() => document.getElementById("default-sky").environmentHelper);
+    const d = await page.evaluate(() => { const h = document.getElementById("default-sky").environmentHelper; return { sky: !!h.skybox, ground: !!h.ground, mesh: document.getElementById("default-sky").mesh == h.skybox }; });
+    check("environment=\"default\": Babylon's default environment (sky and ground)", d.sky && d.ground && d.mesh, JSON.stringify(d));
 });

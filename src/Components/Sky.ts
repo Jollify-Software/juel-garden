@@ -6,6 +6,7 @@ import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import { Tools } from "@babylonjs/core/Misc/tools";
 import { customElement, property } from "lit/decorators.js";
 import { GardenMesh } from "../GardenMesh";
+import { GardenElement } from "../GardenElement";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { PanoramaSky } from "../Nature/PanoramaSky";
 import { tween } from "../Utils/tween";
@@ -35,7 +36,10 @@ import "@babylonjs/core/Helpers/sceneHelpers";
  * Babylon's tools make them) is both the sky and the light that physically-based
  * materials reflect -- a glTF model's metal and gloss look right only with one.
  * `blur` (0 sharp … 1, default 0) softens the sky; `lighting="false"` keeps it
- * as a backdrop only. `size` as below (default 1000).
+ * as a backdrop only. `size` as below (default 1000). `environment="default"` is
+ * Babylon's own (`scene.createDefaultEnvironment()`): a soft backdrop, a ground
+ * fading out round the origin (`ground="false"` for none) and its light --
+ * a model viewer in one line. `element.environmentHelper` is Babylon's helper.
  *
  * **A photographed sky:** `panorama` (an equirectangular, 2:1 sky image) puts it on a dome round
  * the camera ({@link PanoramaSky}); `panorama-to` adds a second behind it, and `blend` (0 the
@@ -111,6 +115,27 @@ export class GardenSky extends GardenMesh {
         let scene = this.getScene();
         if (this.panorama) {
             this.buildPanorama();
+            return;
+        }
+        if (this.environment == "default") {
+            // Babylon's own: a soft backdrop sky, a ground that fades out round the
+            // origin (`ground="false"` for none) and its environment for PBR light.
+            let options = {
+                createGround: this.getAttribute("ground") != "false",
+                skyboxSize: Number(this.getAttribute("size")) || undefined,
+            };
+            let helper = scene.createDefaultEnvironment(options);
+            (<any>this).environmentHelper = helper;
+            this.setMesh(helper.skybox);
+            // Babylon sizes the ground and sky to what's in the scene when they're made:
+            // fit them again once the page's models have loaded, so the ground sits
+            // under them rather than through them.
+            GardenElement.whenDocumentReady().then(async () => {
+                let models = Array.from(document.querySelectorAll("garden-mesh-model")) as GardenMesh[];
+                await Promise.all(models.map(m => m.whenReady?.catch(() => null)));
+                if ((<any>this).environmentHelper == helper)
+                    helper.updateOptions(options);
+            });
             return;
         }
         if (this.environment) {
