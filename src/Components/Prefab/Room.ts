@@ -78,7 +78,9 @@ const WALL_SIDES: WallSide[] = ["north", "east", "south", "west"];
  * When any side is curved, the floor is generated from the actual wall loop
  * (triangulated with `earcut`) rather than the `width` x `depth` slab.
  *
- * Attributes: `width`, `height`, `depth`, `thickness`, `type` (`"rect"` default,
+ * Attributes: `width`, `height`, `depth`, `thickness` (walls and floor slab),
+ * `wall-thickness` (the walls alone, when they differ: they grow inward from the
+ * outline), `type` (`"rect"` default,
  * `"rotunda"`, or `"polygon"`), `points` (polygon only: `"x z, x z, ..."`, at
  * least three corners in room-local space, tracing the walls' *outer* face as
  * `width`/`depth` do for a box room; `width`/`depth` are then ignored), `floor-color`/`north-color`/`east-color`/`south-color`/
@@ -141,6 +143,13 @@ export class GardenRoom extends GardenMesh {
     @property({ type: Number }) height: number;
     @property({ type: Number }) depth: number;
     @property({ type: Number }) thickness: number;
+    /**
+     * The walls' thickness when it differs from the floor slab's: a venue map's
+     * 1.5 m walls without a 1.5 m floor. Unset, the walls are `thickness` thick.
+     * The outer face stays on the outline (`width`/`depth`, `points`), so a
+     * thicker wall grows inward.
+     */
+    @property({ type: Number, attribute: "wall-thickness" }) wallThickness?: number;
     @property() type = "rect";
     /** `type="polygon"` only: the footprint's corners -- see {@link PolygonPointsConverter}. */
     @property({ converter: PolygonPointsConverter }) points: Vector3[] = [];
@@ -249,11 +258,17 @@ export class GardenRoom extends GardenMesh {
         return mat;
     }
 
+    /** How thick the walls are: `wall-thickness`, else `thickness`. */
+    get walls(): number {
+        return this.wallThickness ?? this.thickness;
+    }
+
     /** The classic rectangular room: floor slab + four wall boxes, inset so they don't overlap at the corners. */
     private buildBox(scene: Scene, colors: Record<string, Color3>): Mesh {
         this.wallLoop = undefined; // box rooms use <garden-structure>'s bounding-box join
         let hh = this.height / 2;
-        let dt = this.thickness * 2;
+        let wt = this.walls;
+        let dt = wt * 2;
 
         let floor = MeshBuilder.CreateBox("floor", {
             width: this.width,
@@ -265,33 +280,33 @@ export class GardenRoom extends GardenMesh {
         let wallN = MeshBuilder.CreateBox("wall-north", {
             width: this.width,
             height: this.height - this.thickness,
-            depth: this.thickness
+            depth: wt
         }, scene);
-        wallN.position = new Vector3(0, hh, (this.depth / 2) - (this.thickness / 2));
+        wallN.position = new Vector3(0, hh, (this.depth / 2) - (wt / 2));
         wallN.material = this.matte("mat-north", colors.north, scene);
 
         let wallE = MeshBuilder.CreateBox("wall-east", {
-            width: this.thickness,
+            width: wt,
             height: this.height - this.thickness,
             depth: this.depth - dt
         }, scene);
-        wallE.position = new Vector3((this.width / 2) - (this.thickness / 2), hh, 0);
+        wallE.position = new Vector3((this.width / 2) - (wt / 2), hh, 0);
         wallE.material = this.matte("mat-east", colors.east, scene);
 
         let wallS = MeshBuilder.CreateBox("wall-south", {
             width: this.width,
             height: this.height - this.thickness,
-            depth: this.thickness
+            depth: wt
         }, scene);
-        wallS.position = new Vector3(0, hh, -(this.depth / 2) + (this.thickness / 2));
+        wallS.position = new Vector3(0, hh, -(this.depth / 2) + (wt / 2));
         wallS.material = this.matte("mat-south", colors.south, scene);
 
         let wallW = MeshBuilder.CreateBox("wall-west", {
-            width: this.thickness,
+            width: wt,
             height: this.height - this.thickness,
             depth: this.depth - dt
         }, scene);
-        wallW.position = new Vector3(-(this.width / 2) + (this.thickness / 2), hh, 0);
+        wallW.position = new Vector3(-(this.width / 2) + (wt / 2), hh, 0);
         wallW.material = this.matte("mat-west", colors.west, scene);
 
         // [floor, north, east, south, west] -- the order fixMaterialIndices /
@@ -316,7 +331,7 @@ export class GardenRoom extends GardenMesh {
         // Pull the centreline in by half a wall thickness so the *outer* face
         // lands at +-width/2 -- the same outer extent a plain box room has, so
         // the two still meet flush for <garden-structure>'s bounding-box join.
-        let inset = this.thickness / 2;
+        let inset = this.walls / 2;
         let hw = this.width / 2 - inset;
         let hd = this.depth / 2 - inset;
         // Endpoint order per side is chosen so a positive `curve` (sagitta) bows
@@ -353,7 +368,7 @@ export class GardenRoom extends GardenMesh {
 
         // `sink` overlaps the wall base into the floor slab so they don't share the
         // y = 0 plane (z-fighting -- see createWall).
-        let wall = createWall("wall", loop, this.height, this.thickness, scene, false, this.thickness * 2)!;
+        let wall = createWall("wall", loop, this.height, this.walls, scene, false, this.thickness * 2)!;
         wall.material = this.matte("mat-wall", colors.north, scene, true);
 
         let floor = this.buildFloorPolygon(scene, loop);
@@ -383,8 +398,8 @@ export class GardenRoom extends GardenMesh {
 
         // Pull the centreline in by half the thickness so the outer face sits at
         // roughly `width` x `depth`.
-        let wallRx = Math.max(width / 2 - this.thickness / 2, 0.01);
-        let wallRz = Math.max(depth / 2 - this.thickness / 2, 0.01);
+        let wallRx = Math.max(width / 2 - this.walls / 2, 0.01);
+        let wallRz = Math.max(depth / 2 - this.walls / 2, 0.01);
         let ring: Vector3[] = [];
         for (let i = 0; i <= tess; i++) {
             let ang = (i / tess) * Math.PI * 2;
@@ -393,7 +408,7 @@ export class GardenRoom extends GardenMesh {
         // Open ring (drop the repeated closing point) for <garden-structure>'s join.
         this.wallLoop = ring.slice(0, tess).map(p => p.clone());
         // `sink` overlaps the wall base into the floor slab -- see buildWithWallSlots.
-        let wall = createWall("wall", ring, this.height, this.thickness, scene, false, this.thickness * 2)!;
+        let wall = createWall("wall", ring, this.height, this.walls, scene, false, this.thickness * 2)!;
         wall.material = this.matte("mat-wall", colors.north, scene, true);
 
         // [floor, wall] -- rotunda's own two-slot order (see applyMaterialSlots).
@@ -410,10 +425,10 @@ export class GardenRoom extends GardenMesh {
      */
     private buildPolygon(scene: Scene, colors: Record<string, Color3>, corners: Vector3[]): Mesh {
         let outline = GardenRoom.clockwise(corners);
-        this.wallLoop = GardenRoom.insetPolygon(outline, this.thickness / 2);
+        this.wallLoop = GardenRoom.insetPolygon(outline, this.walls / 2);
 
         // `sink` overlaps the wall base into the floor slab -- see buildWithWallSlots.
-        let inner = GardenRoom.insetPolygon(outline, this.thickness);
+        let inner = GardenRoom.insetPolygon(outline, this.walls);
         let wall = createPolygonWall("wall", outline, inner, this.height, scene, this.thickness * 2);
         wall.material = this.matte("mat-wall", colors.north, scene, true);
 

@@ -114,6 +114,7 @@ want to route it themselves. See
 | `width`, `depth` | `rect`, `rotunda` | 8, 16 (a `rotunda` without `depth` is round: `depth` = `width`) | outer size in metres (ignored by `polygon`) |
 | `points` | `polygon` | none | the corners, `"x z, x z, ..."` (at least three; `x y z` also accepted, `y` ignored), in the room's own space (relative to `position`), tracing the walls' **outer** face. Concave shapes (an L, a U) work; either winding. A repeated corner (or a closing point equal to the first) is dropped; fewer than three distinct corners warns and builds a box. A `<garden-roof>` child (or a structure's roof) sizes to the points' bounds, and a flat one is trimmed to the outline unless `clip="false"`. |
 | `height`, `thickness` | all | 6, 0.2 | wall height and wall/floor thickness |
+| `wall-thickness` | all | `thickness` | the walls' thickness alone, when it differs from the floor slab's (a venue's 1.5 m walls). The outer face stays on the outline, so a thicker wall grows inward; a `<garden-structure>` join cuts through both rooms' walls however thick. |
 | `floor-color`, `north-color`, `east-color`, `south-color`, `west-color` | all | floor `#9c968c`, walls `#e0dcd3` | surface colours; a `rotunda`, a `polygon` room or one with `<garden-wall slot>` sides has one wall colour, `north-color` |
 | `debug-colors` | all | off | the per-face black/green/red/blue/yellow palette |
 

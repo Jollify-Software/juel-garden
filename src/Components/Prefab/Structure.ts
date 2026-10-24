@@ -452,7 +452,10 @@ export class GardenStructure extends GardenElement {
         let size = { x: 0, y: 0, z: 0 };
         let center = { x: 0, y: 0, z: 0 };
 
-        size[touchAxis] = this.openingDepth;
+        // Through both rooms' walls, however thick (a venue's 1.5 m walls), never less than opening-depth.
+        let walls = (el: GardenMesh) => el instanceof GardenRoom ? el.walls : 0;
+        let through = walls(a) + walls(b);
+        size[touchAxis] = through > this.openingDepth ? through + 0.02 : this.openingDepth;
         center[touchAxis] = (overlap[touchAxis].lo + overlap[touchAxis].hi) / 2;
 
         for (let axis of otherAxes) {
