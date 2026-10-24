@@ -1,7 +1,8 @@
 // Browser test of <garden-room wall-thickness>: the walls grow inward from the outline
 // (a ray from the centre meets the inner face width/2 - wall-thickness away), the floor
 // slab keeps `thickness` (its top doesn't move), polygon and round rooms follow, and a
-// <garden-structure> join cuts a doorway through two thick walls. Serves a small inline
+// <garden-structure> join cuts a doorway through two thick walls; a dome still roofs a
+// thick-walled rotunda. Serves a small inline
 // page. Run after a build: npm run test:wall-thickness. Same harness as opening.js.
 const fs = require("fs");
 const path = require("path");
@@ -40,7 +41,7 @@ const near = (a, b, tol = 0.03) => a != null && Math.abs(a - b) <= tol;
   <garden-room id="thin" width="10" depth="10" height="4" position="0 0 0"></garden-room>
   <garden-room id="thick" width="10" depth="10" height="4" wall-thickness="1.5" position="20 0 0"></garden-room>
   <garden-room id="poly" type="polygon" points="-5 -5, 5 -5, 5 5, -5 5" height="4" wall-thickness="1.5" position="40 0 0"></garden-room>
-  <garden-room id="round" type="rotunda" width="10" height="4" wall-thickness="1.5" position="60 0 0"></garden-room>
+  <garden-room id="round" type="rotunda" width="10" height="4" wall-thickness="1.5" position="60 0 0"><garden-roof type="dome"></garden-roof></garden-room>
   <garden-structure>
     <garden-room id="ja" width="10" depth="10" height="4" wall-thickness="1.5" position="-5 0 40"></garden-room>
     <garden-room id="jb" width="10" depth="10" height="4" wall-thickness="1.5" position="5 0 40"></garden-room>
@@ -64,6 +65,8 @@ const near = (a, b, tol = 0.03) => a != null && Math.abs(a - b) <= tol;
         check("the floor top doesn't move with wall-thickness", near(await floorTop(20), await floorTop(0)), `${await floorTop(20)} vs ${await floorTop(0)}`);
         check("a polygon room's walls thicken inward too", near(await east(40), 3.5), String(await east(40)));
         check("so do a rotunda's", near(await east(60), 3.5), String(await east(60)));
+        // Its wall loop now lies inside the dome's inner rim, so the dome's flat base ring is empty: still a dome.
+        check("a dome on a thick-walled rotunda still builds", await page.evaluate(() => !!document.querySelector("#round garden-roof").mesh));
         // From ja's centre (x -5) east: through the doorway, jb's far wall's inner face is at x 8.5.
         const joined = await east(-5, 40);
         check("a structure join cuts through two 1.5 m walls", near(joined, 13.5), String(joined));
