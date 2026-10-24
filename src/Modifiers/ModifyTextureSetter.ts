@@ -27,7 +27,7 @@ export var ModifyTextureSetter = (prefix: string = "diffuse", attribute?: string
                 (<any>el).setMaterial(material);
             }
             if (value == "html") {
-                let htmlTexture = new HtmlTexture(<GardenMesh><unknown>el);
+                let htmlTexture = new HtmlTexture(<GardenMesh><unknown>el, prefix);
                 material[`${prefix}Texture`] = htmlTexture.texture;
             } else {
                 material[`${prefix}Texture`] = new Texture(value, scene);

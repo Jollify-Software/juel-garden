@@ -53,6 +53,8 @@
     "test:ground": "node tests/ground.js",
     "test:animation": "node tests/animation.js",
     "test:waypoint": "node tests/waypoint.js",
+    "test:html-texture": "node tests/html-texture.js",
+    "test:waypoint-look": "node tests/waypoint-look.js",
     "test:opening": "node tests/opening.js",
     "test:doorways": "node tests/doorways.js",
     "test:wall-thickness": "node tests/wall-thickness.js",
