@@ -36,7 +36,8 @@ import "@babylonjs/core/Helpers/sceneHelpers";
  * Babylon's tools make them) is both the sky and the light that physically-based
  * materials reflect -- a glTF model's metal and gloss look right only with one.
  * `blur` (0 sharp … 1, default 0) softens the sky; `lighting="false"` keeps it
- * as a backdrop only. `size` as below (default 1000). `environment="default"` is
+ * as a backdrop only; `backdrop="false"` uses it as light only (the background
+ * is then `colour`); `turn` (degrees) turns it round the vertical. `size` as below (default 1000). `environment="default"` is
  * Babylon's own (`scene.createDefaultEnvironment()`): a soft backdrop, a ground
  * fading out round the origin (`ground="false"` for none) and its light --
  * a model viewer in one line. `element.environmentHelper` is Babylon's helper.
@@ -142,6 +143,15 @@ export class GardenSky extends GardenMesh {
             let texture = new CubeTexture(this.environment, scene);
             if (this.getAttribute("lighting") != "false")
                 scene.environmentTexture = texture;
+            let turn = Number(this.getAttribute("turn"));
+            if (Number.isFinite(turn) && turn)
+                texture.rotationY = Tools.ToRadians(turn);
+            if (this.getAttribute("backdrop") == "false") {
+                // Light only: the background is the sky's `colour` (or the scene's).
+                let colour = this.getAttribute("colour");
+                if (colour) this.fadeTo(colour, 0);
+                return;
+            }
             let size = Number(this.getAttribute("size")) || 1000;
             let blur = Number(this.getAttribute("blur")) || 0;
             let skybox = scene.createDefaultSkybox(texture, true, size, blur);

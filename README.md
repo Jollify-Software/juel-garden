@@ -215,8 +215,9 @@ and walk-throughs with guides and talking exhibits (the plan is
 | Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
 | `<garden-camera type="arc">` | `alpha`/`beta`/`radius` (radians, as Babylon's ArcRotateCamera), `target="x y z"` or an element to follow, `beta-lower`/`beta-upper`/`radius-lower`/`radius-upper` |
 | `<garden-camera type="device">` | Turns with the phone or tablet it's on (a phone in a viewer); a free camera on a desktop. `target="x y z"` aims a free or device camera too |
-| `<garden-sky environment>` | A prefiltered `.env`/`.dds` cube as the sky and the light PBR materials (glTF models) reflect; `blur`, `lighting="false"`. `environment="default"`: Babylon's default environment (backdrop, ground fitted under the models once they load, and light) |
-| `<garden-material node>` | A node material (the Node Material Editor's output) from a JSON file or `#ID` on Babylon's snippet server: shaders, water, anti-tiling grounds |
+| `<garden-sky environment>` | A prefiltered `.env`/`.dds` cube as the sky and the light PBR materials (glTF models) reflect; `blur`, `lighting="false"`, `backdrop="false"` (light only: the background is `colour`), `turn` (degrees). `environment="default"`: Babylon's default environment (backdrop, ground fitted under the models once they load, and light) |
+| `<garden-material node>` | A node material (the Node Material Editor's output) from a JSON file or `#ID` on Babylon's snippet server: shaders, water, anti-tiling grounds; `<garden-texture block="name">` fills a texture block, `input-<name>` sets an input block |
+| `<garden-node-geometry>` | A mesh from a node geometry (JSON or `#ID`), `input-<name>` for its inputs |
 | `<garden-pipeline>` | The finish: `samples`, `fxaa`, `bloom` (+ `bloom-threshold`, `bloom-kernel`), `sharpen`, `grain`, `vignette`, `chromatic-aberration`, `depth-of-field` (+ `focal-length`, `f-stop`), `tone-mapping="aces"`, `exposure`, `contrast`; each off unless given; live |
 | `<garden-animation type="vector3">` | Keyframes with several parts: `"0 (0 0 0), 60 ((Math.PI) 0 1.2)"` or `"0 0 0 0, 60 4 0 -2"`; also `vector2`, `quaternion`, `color3`, `color4` |
 | `<garden-marker>` | An icon over a target, or an edge-of-screen arrow to it |
