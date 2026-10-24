@@ -434,6 +434,17 @@ This revives an idea first prototyped years ago as
 `Api/Services/Generators/VirtualLayout`, which emitted A-Frame markup; the
 target is now a first-party library.
 
+## Games
+
+Juel Garden is also the engine of games, not only venues and presentations:
+a zero-gravity pool game built on its Havok physics (pocket cameras, an aim
+guide, bodies coming to rest), and a third-person story game whose
+characters, poses, held props, terrain, sky and water pieces now live here.
+So physics, ragdolls, raycasts, extra cameras, shaders and post-processing
+are in scope, and a change can break a game as well as Parterre: those games
+build their scene markup from the same elements and call into the scene
+directly (`window.BABYLON`, `camera.show()`, `garden-rest`).
+
 # Contribution
 
 Contribution would be greatly appreciated.  
