@@ -1,6 +1,7 @@
 import { Material } from "@babylonjs/core/Materials/material";
 import { MultiMaterial } from "@babylonjs/core/Materials/multiMaterial";
 import { GardenTexture } from "./Components/Texture";
+import { HtmlTexture } from "./HtmlTexture";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { PhysicsAggregate } from "@babylonjs/core/Physics/v2/physicsAggregate";
 import { PhysicsEventType, PhysicsMotionType, PhysicsShapeType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
@@ -106,6 +107,15 @@ export abstract class GardenMesh extends GardenElement {
     }
     setScale(scale: Vector3) {
         this.mesh.scaling = scale;
+    }
+
+    /**
+     * Draws a `texture="html"` surface again from its content (see {@link HtmlTexture}):
+     * after a stylesheet change, say (changes to the content itself redraw it on their own).
+     * Resolves once it's drawn; at once when the element has no HTML texture.
+     */
+    renderHtml(): Promise<void> {
+        return HtmlTexture.of(this)?.render() ?? Promise.resolve();
     }
 
     getMaterial() {

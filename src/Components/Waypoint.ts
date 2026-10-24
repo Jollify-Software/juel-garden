@@ -36,6 +36,10 @@ import { GardenMesh } from "../GardenMesh";
  * turns it off; keys typed into a form field or editable text, or pressed
  * with Ctrl, Alt or Meta, are left alone).
  *
+ * A stop with a `look-at` attribute (a selector, or an `"x y z"` point) is faced on
+ * arrival, the camera turning as it flies; without one the camera aims at the
+ * scene's origin as it sets off (Parterre's slide platforms look at their panels).
+ *
  * Methods: {@link next} and {@link previous} fly along the order;
  * {@link go} flies to a stop by its index. Each move fires
  * `waypoint-changed` with `{ index }`.
@@ -238,7 +242,7 @@ export class GardenWaypoint extends GardenElement {
             if ('enter' in wp) {
                 (<any>wp).enter((<Camera>(<any>this.parentElement).camera));
             }
-        }, () => wp.getPosition());
+        }, () => wp.getPosition(), this.lookPointOf(wp));
         this.index = index;
         this.placeNextRing();
         this.dispatchEvent(new CustomEvent("waypoint-changed", { detail: { index }, bubbles: true, composed: true }));
@@ -249,12 +253,25 @@ export class GardenWaypoint extends GardenElement {
      * end of the fly is moved to `follow()` every frame, so a stop that moves while you fly (an
      * orbiting platform) is where you land, not where it was when the fly began.
      */
-    moveToPosition(position: Vector3, onComplete?: () => void, follow?: () => Vector3 | undefined) {
-        this.lookAtOrigin();
+    moveToPosition(position: Vector3, onComplete?: () => void, follow?: () => Vector3 | undefined, lookAt?: Vector3) {
         let scene = this.getScene();
         let camera = (<Camera>(<any>this.parentElement).camera);
         // Unset `offset` means no offset, as in setPosition.
         let offset = this.offset ?? Vector3.Zero();
+        // A stop with `look-at`: turn to face it while flying (not in a headset, whose head decides).
+        let turn: Animation | null = null;
+        let free = camera as any;
+        if (lookAt && free.rotation && !free.rotationQuaternion) {
+            let dir = lookAt.subtract(position.add(offset));
+            let from = (free.rotation as Vector3).clone();
+            let to = new Vector3(Math.atan2(-dir.y, Math.sqrt(dir.x * dir.x + dir.z * dir.z)), Math.atan2(dir.x, dir.z), 0);
+            // Turn the short way round.
+            to.y = from.y + Math.atan2(Math.sin(to.y - from.y), Math.cos(to.y - from.y));
+            turn = new Animation("turn", "rotation", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE, false);
+            turn.setKeys([{ frame: 0, value: from }, { frame: 100, value: to }]);
+        } else {
+            this.lookAtOrigin();
+        }
         let anime = new Animation("anime", "position", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE, false);
         anime.setKeys([
             {
@@ -268,6 +285,8 @@ export class GardenWaypoint extends GardenElement {
         ]);
         camera.animations = [];
         camera.animations.push(anime);
+        if (turn)
+            camera.animations.push(turn);
         let speedRatio = this.speed > 0 ? this.speed : 1.0;
         let tracking: Observer<Scene> | null = null;
         if (follow) {
@@ -281,6 +300,20 @@ export class GardenWaypoint extends GardenElement {
             if (tracking) scene.onBeforeRenderObservable.remove(tracking);
             onComplete?.();
         });
+    }
+
+    /**
+     * Where to face on arriving at `stop`: its `look-at` attribute, a selector (an element's
+     * position) or an `"x y z"` point; undefined without one (the camera aims at the origin).
+     */
+    lookPointOf(stop: Element): Vector3 | undefined {
+        let value = stop?.getAttribute("look-at")?.trim();
+        if (!value)
+            return undefined;
+        if (/^[-+\d.eE\s]+$/.test(value))
+            return Vector3Convert.fromString(value);
+        let target = document.querySelector(value) as any;
+        return target?.getPosition?.() ?? undefined;
     }
 
     setPosition(pos: Vector3) {

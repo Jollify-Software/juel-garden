@@ -328,6 +328,37 @@ returns true from `handlesChanges`. A script or behaviour ties per-frame work to
 build with `element.observe(scene.onBeforeRenderObservable, fn)` or `element.whenDisposed(fn)`:
 it stops when the element rebuilds or goes.
 
+## HTML on a surface (`texture="html"`)
+
+A mesh with `texture="html"` wears its first child element, rasterised with html2canvas and
+styled by the page's CSS like any other element (`npm run test:html-texture`):
+
+```html
+<style>.sign { width: 100%; height: 100%; padding: 40px; border-radius: 32px; background: #fbfaf6; font: 32px sans-serif; }</style>
+<garden-plane width="1.8" height="1.2" position="0 1.5 3" texture="html"
+    html-size="960 640" html-background="transparent" html-unlit>
+  <div class="sign"><h1>Welcome</h1><p>Some <em>styled</em> text.</p></div>
+</garden-plane>
+```
+
+- `html-size="w h"`: the CSS-pixel box the content is laid out in (else its own size).
+- `html-resolution`: texture pixels per CSS pixel (default 1.5); the texture is that rounded to a
+  power of two, at most `html-max-size` (default 2048) a side, mipmapped, so text stays sharp.
+- `html-background`: the colour behind the content (default white); `transparent` lets rounded
+  corners and cut-outs show the scene through.
+- `html-unlit`: the content shows in its own colours whatever the lights.
+
+The content moves into a hidden `<div class="garden-html-host">` at the top of `<body>` (inside
+the scene it would push the canvas down), so select it by its own classes, not through the
+`garden-*` element. Editing it redraws the texture (debounced); after a stylesheet change call
+`element.renderHtml()`. Each draw fires `garden-html-rendered`. Draws are queued one at a time.
+html2canvas is not a browser: it supports most CSS (gradients, rounded corners, web fonts once
+loaded), but not filters, blend modes or some newer layout features, and images must be
+same-origin or CORS-enabled.
+
+A `<garden-waypoint>` stop with `look-at` (a selector or `"x y z"`) turns the camera to face it
+while flying there (`npm run test:waypoint-look`); Parterre's slide platforms look at their panels.
+
 ## Parterre
 
 [Parterre](../parterre) (`@C:\Jollify\parterre`) is a **generator that targets
