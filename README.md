@@ -276,6 +276,48 @@ The test characters are Quaternius's CC0 RobotExpressive and Mannequin (the Univ
 Animation Library's, cut down by `Tools/slim-glb.py`) and the Khronos Fox
 (see [examples/assets/characters/LICENCES.md](examples/assets/characters/LICENCES.md)).
 
+## Physics for games: joints, forces, raycasts, ragdolls
+
+On top of `<garden-physics>` and a mesh's `physics` attribute (Havok), the pieces a physics game
+needs, all declared (together in [examples/Physics/joints.html](examples/Physics/joints.html)):
+
+```html
+<garden-physics debug="moving"></garden-physics>
+<!-- A gate on a hinge, a ball on a rope, a wheel on a motor. -->
+<garden-joint type="hinge" between="#post #gate" pivot-a="0.15 0 0" pivot-b="-1 0 0" axis-a="0 1 0" limits="angular-x -1.57 1.57"></garden-joint>
+<garden-joint type="distance" between="#beam #ball" min-distance="0" max-distance="3"></garden-joint>
+<garden-joint type="hinge" between="#axle #wheel" axis-a="0 0 1" axis-b="0 1 0" motor="1.5"></garden-joint>
+<!-- 120 bricks as one mesh, each its own body; an explosion to knock them down. -->
+<garden-box width="0.9" height="0.45" depth="0.45" grid="12 5 2" grid-spacing="1 0.45 0.5" physics mass="0.5"></garden-box>
+<garden-force id="blast" type="explosion" position="0 1 3" radius="6" strength="4" falloff="linear"></garden-force>
+<!-- A character that falls as a ragdoll when knocked over. -->
+<garden-mesh-model src="guy.glb" play="Idle">
+  <garden-ragdoll><garden-ragdoll-bone bones="Hips" size="0.25"></garden-ragdoll-bone>...</garden-ragdoll>
+</garden-mesh-model>
+```
+
+| Piece | What it does |
+|---|---|
+| `<garden-joint>` | A joint between two bodies (`between="#a #b"`): `ball`, `distance` (a rod; a rope with `min-distance`), `hinge`, `slider`, `prismatic`, `lock`, `spring`, `six-dof`; `pivot-a`/`-b`, `axis-a`/`-b`, `limits="angular-x 0 1.57, ..."`, `motor` (speed, live) and `motor-force`, `collisions`. Joins rebuilt bodies again (`test:joint`) |
+| `<garden-force>` | `explosion` (once), `gravity`, `updraft`, `vortex` (fields): `position`, `radius`, `strength`, `height`, `falloff`; `event="load"`, `delay`, `duration`, `show`; `fire()`/`stop()`, `garden-force` event (`test:force`) |
+| `physics.raycast(from, to, { ignore, triggers })` | The first body on a line: `{ element, point, normal, distance, instance }`, or null. Aim lines, line of sight, what's under the pointer (`test:raycast`) |
+| `grid="nx ny nz"` | Any mesh repeated as GPU thin instances, `grid-spacing` apart, `instance-colours` (`random` or a list); with `physics` each copy is a body; picking and raycasts say which copy (`test:raycast`) |
+| `<garden-ragdoll>` | In a rigged `<garden-mesh-model>`, with a `<garden-ragdoll-bone>` per bone group (`bones`, `size`/`width`/`height`/`depth`, `box-offset`, `rotation-axis`, `min`/`max`, `joint`): boxes ride the animation until `limp` (or `limp()`), then it falls; `impulse(v, bone)`; `garden-ragdoll` event. The skeleton's top bone must have a box (`test:ragdoll`) |
+| `<garden-physics debug>` | Wireframes of every body (`debug="moving"`: not the static ones) |
+
+**Extra cameras** (`test:viewport`): a second `<garden-camera viewport="x y w h">` (fractions,
+from the bottom-left) is drawn over the main one -- a picture-in-picture view, a rear-view mirror,
+an overhead map. It takes no input unless it has `controls`. `layer-mask` on cameras and meshes
+says which camera sees what (a roof hidden from the overhead camera). `rotation` (degrees) turns a
+`free` camera, and the meshes inside a `<garden-camera parent>` ride with it.
+
+**Sprites** (`test:sprite`): `<garden-sprite cells="0 40" cell-delay="100">` plays a sprite
+sheet's cells in turn (`cell-loop="false"` once); `cell="5"` shows one, still.
+
+**`<garden-environment>`** (`test:environment`): Babylon's default environment, the lighting map
+PBR models need plus an optional ground and sky (`ground`, `sky`, `colour`, `ground-shadow`,
+`ground-size`, `ground-y`, `texture`).
+
 # Building and using it
 
 `npm run dev` builds `dist/juel-garden.js` (with esbuild), the global bundle
@@ -406,7 +448,7 @@ I should also say that this is the first Open Source project I have created, so 
 ## What I would like to achieve
 
 * More examples and improvements.
-  * ~~The positioning on the basic example is not quite right...~~ Fixed 2026-08-25 by giving the basic example's camera an explicit starting `position` -- the default arc camera starts at radius 3 around the origin, far too close to actually frame that example's group of shapes. `rotation` genuinely isn't implemented on `<garden-camera>` though (`GardenCamera.updated()` never reads it) -- still open if a future example specifically needs to *start* rotated rather than just repositioned.
+  * ~~The positioning on the basic example is not quite right...~~ Fixed 2026-08-25 by giving the basic example's camera an explicit starting `position` -- the default arc camera starts at radius 3 around the origin, far too close to actually frame that example's group of shapes. `rotation` (degrees) now turns a `free` camera; an orbiting `arc` camera still takes only a `position`.
   * The temple example is my favourite but it need some improvement.
     * The rooms really need to touch the ground not be floating in the air. Perhaps we could add a ground level variable?
     * I would like the temple to have more rooms and also a roof, like an Aztec or Greek temple.

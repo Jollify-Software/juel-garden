@@ -82,7 +82,14 @@
     "test:characters": "node tests/characters.js",
     "test:nature": "node tests/nature.js",
     "test:nature-elements": "node tests/nature-elements.js",
-    "test:model-skinned": "node tests/model-skinned.js"
+    "test:model-skinned": "node tests/model-skinned.js",
+    "test:joint": "node tests/joint.js",
+    "test:force": "node tests/force.js",
+    "test:sprite": "node tests/sprite.js",
+    "test:viewport": "node tests/viewport.js",
+    "test:raycast": "node tests/raycast.js",
+    "test:ragdoll": "node tests/ragdoll.js",
+    "test:environment": "node tests/environment.js"
   },
   "repository": {
     "type": "git",
