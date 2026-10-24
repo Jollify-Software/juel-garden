@@ -69,13 +69,13 @@ function check(name, ok, info = "") {
         check("the rotated room's floor is 10 x 6 = 60 m2", Math.abs(turned.floorArea - 60) < 0.05, String(turned.floorArea));
 
         // The hall (box) and the L (polygon) share the plan's x = 100 wall: a ray
-        // east from the hall's centre line at plan y = 30 (scene z = -8) goes
+        // east from the hall's centre line at plan y = 30 (scene z = 8: plan north is +z) goes
         // through the doorway and on to the L's east wall (inner face x = 8.8).
         const ray = await page.evaluate(() => {
             const scene = document.querySelector("garden-scene").scene;
             const V = scene.activeCamera.position.constructor;
             const Ray = scene.activeCamera.getForwardRay().constructor;
-            const hit = scene.pickWithRay(new Ray(new V(-8, 1.2, -8), new V(1, 0, 0), 100), m => m.isVisible && m.isPickable);
+            const hit = scene.pickWithRay(new Ray(new V(-8, 1.2, 8), new V(1, 0, 0), 100), m => m.isVisible && m.isPickable);
             return hit?.hit ? +hit.distance.toFixed(2) : null;
         });
         check("hall -> L doorway cut by the structure (16.8 m, not 4.8)", Math.abs(ray - 16.8) < 0.05, String(ray));

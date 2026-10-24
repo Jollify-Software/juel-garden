@@ -137,6 +137,20 @@ floor level and notches the top of the floor slab: an existing quirk, not new.)
 See [examples/Structures/polygon-room.html](examples/Structures/polygon-room.html);
 `npm run test:polygon` checks it in Chrome.
 
+A `<garden-structure>` cuts a doorway (`opening-width` wide, 3 m by default) in the
+middle of every wall two of its rooms share. When the doors come from a plan instead
+(several doors in one wall, a wide arch, a wall with none), set `doorways="none"`:
+the structure then cuts no doorways of its own, only the floor openings its stairs
+need, and each door is a `<garden-opening>`.
+
+```html
+<garden-structure doorways="none">
+  <garden-room id="a" width="10" depth="10" position="-5 0 0"></garden-room>
+  <garden-room id="b" width="10" depth="10" position="5 0 0"></garden-room>
+  <garden-opening between="#a #b" position="0 0 2" width="0.6" depth="2" height="3"></garden-opening>
+</garden-structure>
+```
+
 ## Characters, guides and weather
 
 Building blocks for a third-person "follow the guide" game, and for museums

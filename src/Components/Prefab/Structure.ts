@@ -49,7 +49,11 @@ interface AxisOverlap {
  *
  * Attributes: `opening-width`, `opening-height`, `opening-depth` (the fixed
  * cut dimensions used at every detected join), `tolerance` (how close two
- * bounding boxes must be to count as touching).
+ * bounding boxes must be to count as touching), and `doorways`: `auto` (the
+ * default) cuts a doorway at every wall join as above; `none` cuts none, for a
+ * plan whose doors are all drawn as `<garden-opening>`s (a museum map: several
+ * doors in one wall, a wide arch, a wall with no door at all). Stairs still
+ * punch their floor openings either way.
  *
  * @example
  * ```html
@@ -73,6 +77,8 @@ export class GardenStructure extends GardenElement {
     @property({ type: Number, attribute: "opening-height" }) openingHeight: number;
     @property({ type: Number, attribute: "opening-depth" }) openingDepth: number;
     @property({ type: Number }) tolerance: number;
+    /** `auto` (default): a doorway at every wall join; `none`: only floor openings for stairs, the doors are drawn. */
+    @property() doorways: "auto" | "none";
 
     constructor() {
         super();
@@ -80,6 +86,7 @@ export class GardenStructure extends GardenElement {
         this.openingHeight = GardenRoom.WallHeight - 1;
         this.openingDepth = GardenRoom.WallThickness * 2;
         this.tolerance = 0.05;
+        this.doorways = "auto";
     }
 
     async updated() {
@@ -124,6 +131,10 @@ export class GardenStructure extends GardenElement {
         b.mesh.computeWorldMatrix(true);
 
         if (this.tryFloorOpening(a, b))
+            return;
+
+        // Drawn doors only: no wall joins at all (stairs above still cut their floors).
+        if (this.doorways === "none")
             return;
 
         if (this.tryWallCrossing(a, b))
