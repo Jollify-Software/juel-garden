@@ -212,6 +212,8 @@ and walk-throughs with guides and talking exhibits (the plan is
 | `<garden-light pool>` | Lights carried by meshes; a pool of light on the ground; live `intensity`/`range`; `shadows` (everything casts but grounds and height maps; a mesh's `cast-shadows`/`receive-shadows` overrides it); a spot light's `exponent` |
 | Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
 | `<garden-camera type="arc">` | `alpha`/`beta`/`radius` (radians, as Babylon's ArcRotateCamera), `target="x y z"` or an element to follow, `beta-lower`/`beta-upper`/`radius-lower`/`radius-upper` |
+| `<garden-camera type="device">` | Turns with the phone or tablet it's on (a phone in a viewer); a free camera on a desktop. `target="x y z"` aims a free or device camera too |
+| `<garden-sky environment>` | A prefiltered `.env`/`.dds` cube as the sky and the light PBR materials (glTF models) reflect; `blur`, `lighting="false"` |
 | `<garden-animation type="vector3">` | Keyframes with several parts: `"0 (0 0 0), 60 ((Math.PI) 0 1.2)"` or `"0 0 0 0, 60 4 0 -2"`; also `vector2`, `quaternion`, `color3`, `color4` |
 | `<garden-marker>` | An icon over a target, or an edge-of-screen arrow to it |
 | `<garden-sound>` | Spatial audio on Babylon's audio engine: `play()`/`stop()`, `play-on="garden-near"`, cones, roll-off |

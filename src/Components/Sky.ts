@@ -9,6 +9,7 @@ import { GardenMesh } from "../GardenMesh";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { PanoramaSky } from "../Nature/PanoramaSky";
 import { tween } from "../Utils/tween";
+import "@babylonjs/core/Helpers/sceneHelpers";
 
 /**
  * A skybox: a large inward-facing cube with a cubemap reflection texture.
@@ -29,6 +30,12 @@ import { tween } from "../Utils/tween";
  * sets `fog-colour`, so distant things fade into the sky. `colour-to` and
  * `duration` (seconds) fade it once the page opens -- dusk to night -- and
  * {@link fadeTo} does the same from code.
+ *
+ * **An environment:** `environment` (a prefiltered `.env` or `.dds` cube, as
+ * Babylon's tools make them) is both the sky and the light that physically-based
+ * materials reflect -- a glTF model's metal and gloss look right only with one.
+ * `blur` (0 sharp … 1, default 0) softens the sky; `lighting="false"` keeps it
+ * as a backdrop only. `size` as below (default 1000).
  *
  * **A photographed sky:** `panorama` (an equirectangular, 2:1 sky image) puts it on a dome round
  * the camera ({@link PanoramaSky}); `panorama-to` adds a second behind it, and `blend` (0 the
@@ -52,6 +59,7 @@ import { tween } from "../Utils/tween";
 @customElement("garden-sky")
 export class GardenSky extends GardenMesh {
     @property() root: string;
+    @property() environment: string;
     @property({ type: Number, attribute: "scroll-speed" }) scrollSpeed: number;
     @property() panorama: string;
     @property({ attribute: "panorama-to" }) panoramaTo: string;
@@ -103,6 +111,16 @@ export class GardenSky extends GardenMesh {
         let scene = this.getScene();
         if (this.panorama) {
             this.buildPanorama();
+            return;
+        }
+        if (this.environment) {
+            let texture = new CubeTexture(this.environment, scene);
+            if (this.getAttribute("lighting") != "false")
+                scene.environmentTexture = texture;
+            let size = Number(this.getAttribute("size")) || 1000;
+            let blur = Number(this.getAttribute("blur")) || 0;
+            let skybox = scene.createDefaultSkybox(texture, true, size, blur);
+            this.setMesh(skybox);
             return;
         }
         let colour = this.getAttribute("colour");

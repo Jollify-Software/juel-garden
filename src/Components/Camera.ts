@@ -17,6 +17,8 @@ import { GardenScene } from "./Scene";
  *   ({@link "CameraTypes/FreeCameraStrategy"!FreeCameraStrategy}).
  * - `"follow"` -- a spring-damped third-person chase camera locked to
  *   `target` ({@link "CameraTypes/FollowCameraStrategy"!FollowCameraStrategy}).
+ * - `"device"` -- turns with the phone or tablet it's on (a phone in a viewer);
+ *   a free camera on a desktop ({@link "CameraTypes/DeviceCameraStrategy"!DeviceCameraStrategy}).
  *
  * Attributes: `type`, `position`, `speed`, `target` (an element selector, for
  * `type="follow"` or any type exposing `chaseTarget`; for `type="arc"`, the
@@ -120,14 +122,19 @@ export class GardenCamera extends GardenElement {
             this.wasActive = false;
         }
 
-        // An arc camera's target as a point: set before `position`, which is taken
-        // round it (setPosition keeps the target and derives alpha, beta and radius).
+        // A target point. An arc camera takes it before `position`, which is then taken
+        // round it (setPosition keeps the target and derives alpha, beta and radius);
+        // a free or device camera moves first, then turns to look at it.
         let target = this.getAttribute("target");
         let point = target ? GardenCamera.point(target) : null;
-        if (point && "setTarget" in this.camera && !("chaseTarget" in this.camera))
+        let aims = point && "setTarget" in this.camera && !("chaseTarget" in this.camera);
+        let orbits = "setPosition" in this.camera;
+        if (aims && orbits)
             (<any>this.camera).setTarget(point);
 
         this.applyTransform();
+        if (aims && !orbits)
+            (<any>this.camera).setTarget(point);
 
         let opt = this.buildOptions();
         this.camera = Object.assign(this.camera, opt);
