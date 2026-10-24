@@ -23,7 +23,7 @@ function check(name, ok, info = "") {
         args: ["--enable-gpu", "--ignore-gpu-blocklist", "--use-angle=d3d11", "--enable-webgl"] });
     try {
         const errors = [];
-        const read = async (attr) => {
+        const read = async (attr, extra = "") => {
             const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
             page.on("pageerror", e => errors.push(e.message));
             await page.route(ORIGIN + "/**", route => {
@@ -38,6 +38,7 @@ function check(name, ok, info = "") {
   <garden-camera type="arc" position="0 10 -20"></garden-camera>
   <garden-light></garden-light>
   <garden-ground width="10" height="10"></garden-ground>
+  ${extra}
   <garden-webxr ${attr}></garden-webxr>
 </garden-scene></body></html>` }));
             await page.goto(ORIGIN + "/webxr-test.html", { waitUntil: "load" });
@@ -45,7 +46,8 @@ function check(name, ok, info = "") {
             await page.waitForTimeout(1500);
             const got = await page.evaluate(() => {
                 const el = document.querySelector("garden-webxr");
-                return { prop: el.teleportation, xr: !!el.xr, teleport: el.xr ? !!el.xr.teleportation : null };
+                return { prop: el.teleportation, xr: !!el.xr, teleport: el.xr ? !!el.xr.teleportation : null,
+                         floors: el.floorMeshes.map(m => m.name) };
             });
             await page.close();
             return got;
@@ -56,6 +58,8 @@ function check(name, ok, info = "") {
         check("unset: teleportation is on", unset.prop === true && unset.teleport !== false, JSON.stringify(unset));
         check("bare attribute: teleportation is on", bare.prop === true && bare.teleport !== false, JSON.stringify(bare));
         check("teleportation=\"false\": teleportation is off", off.prop === false && !off.teleport, JSON.stringify(off));
+        const env = await read("", '<garden-sky environment="default"></garden-sky>');
+        check("floors: every garden-ground, and a default environment's ground", unset.floors.length == 1 && env.floors.length == 2 && env.floors.includes("BackgroundPlane"), JSON.stringify([unset.floors, env.floors]));
         check("no page errors", errors.length == 0, JSON.stringify(errors));
     } finally {
         await browser.close();
