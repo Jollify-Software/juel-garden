@@ -258,6 +258,16 @@ export class GardenRoom extends GardenMesh {
         return mat;
     }
 
+    /**
+     * How far a swept (curved, round or polygon) wall reaches down into the floor slab,
+     * so its base overlaps the slab instead of z-fighting the floor's top. Within the
+     * slab (it's `thickness` deep): at twice that, the wall poked out under the floor,
+     * through the ceiling of the room below.
+     */
+    get wallSink(): number {
+        return this.thickness * 0.75;
+    }
+
     /** How thick the walls are: `wall-thickness`, else `thickness`. */
     get walls(): number {
         return this.wallThickness ?? this.thickness;
@@ -368,7 +378,7 @@ export class GardenRoom extends GardenMesh {
 
         // `sink` overlaps the wall base into the floor slab so they don't share the
         // y = 0 plane (z-fighting -- see createWall).
-        let wall = createWall("wall", loop, this.height, this.walls, scene, false, this.thickness * 2)!;
+        let wall = createWall("wall", loop, this.height, this.walls, scene, false, this.wallSink)!;
         wall.material = this.matte("mat-wall", colors.north, scene, true);
 
         let floor = this.buildFloorPolygon(scene, loop);
@@ -408,7 +418,7 @@ export class GardenRoom extends GardenMesh {
         // Open ring (drop the repeated closing point) for <garden-structure>'s join.
         this.wallLoop = ring.slice(0, tess).map(p => p.clone());
         // `sink` overlaps the wall base into the floor slab -- see buildWithWallSlots.
-        let wall = createWall("wall", ring, this.height, this.walls, scene, false, this.thickness * 2)!;
+        let wall = createWall("wall", ring, this.height, this.walls, scene, false, this.wallSink)!;
         wall.material = this.matte("mat-wall", colors.north, scene, true);
 
         // [floor, wall] -- rotunda's own two-slot order (see applyMaterialSlots).
@@ -429,7 +439,7 @@ export class GardenRoom extends GardenMesh {
 
         // `sink` overlaps the wall base into the floor slab -- see buildWithWallSlots.
         let inner = GardenRoom.insetPolygon(outline, this.walls);
-        let wall = createPolygonWall("wall", outline, inner, this.height, scene, this.thickness * 2);
+        let wall = createPolygonWall("wall", outline, inner, this.height, scene, this.wallSink);
         wall.material = this.matte("mat-wall", colors.north, scene, true);
 
         let floor = this.buildFloorPolygon(scene, outline);

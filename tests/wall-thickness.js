@@ -70,6 +70,13 @@ const near = (a, b, tol = 0.03) => a != null && Math.abs(a - b) <= tol;
         // From ja's centre (x -5) east: through the doorway, jb's far wall's inner face is at x 8.5.
         const joined = await east(-5, 40);
         check("a structure join cuts through two 1.5 m walls", near(joined, 13.5), String(joined));
+        // A swept wall sinks into the floor slab, not through it: nothing below the slab's bottom.
+        const lowest = await page.evaluate(() => Object.fromEntries(["poly", "round"].map(id => {
+            const el = document.getElementById(id);
+            el.mesh.computeWorldMatrix(true);
+            return [id, +(el.mesh.getBoundingInfo().boundingBox.minimumWorld.y + el.thickness).toFixed(3)];
+        })));
+        check("polygon and round walls stay inside the floor slab", lowest.poly >= -0.001 && lowest.round >= -0.001, JSON.stringify(lowest));
         check("no page errors", errors.length == 0, JSON.stringify(errors));
     } finally {
         await browser.close();
