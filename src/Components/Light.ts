@@ -30,7 +30,8 @@ import { GardenAnimation } from "./Animation";
  *
  * Attributes: `type`, `position` (default `0 1 0`; relative to the
  * carrying mesh), `direction` (spot/directional), `diffuse` or `colour`
- * (see {@link Color3Convert}, or `#rrggbb`), `intensity`, `range` (how far a
+ * (see {@link Color3Convert}, or `#rrggbb`), `specular` (the colour of its
+ * highlights, the same way), `intensity`, `range` (how far a
  * point/spot light reaches), `angle` (spot cone, degrees, default 60),
  * `exponent` (spot: how fast the light fades towards the cone's edge, default
  * 2; 16 leaves no visible rim), `pool`, `shadows` (meshes cast and receive
@@ -183,6 +184,9 @@ export class GardenLight extends GardenElement {
         let colour = this.getAttribute("colour") ?? this.getAttribute("diffuse");
         if (colour)
             light.diffuse = colour.startsWith("#") ? Color3.FromHexString(colour) : Color3Convert.fromString(colour);
+        let specular = this.getAttribute("specular");
+        if (specular)
+            light.specular = specular.startsWith("#") ? Color3.FromHexString(specular) : Color3Convert.fromString(specular);
         if (this.position && !(light instanceof HemisphericLight))
             (<any>light).position = this.position.clone();
         if (this.direction && (light instanceof SpotLight || light instanceof DirectionalLight))
