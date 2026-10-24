@@ -1,7 +1,7 @@
 // Browser test of <garden-structure doorways>: by default two rooms sharing a wall get
 // a doorway cut in the middle of it; with doorways="none" they get none, and a drawn
 // <garden-opening> still cuts its door. Rays along x at the wall's middle and at the
-// drawn door tell which. Serves a small inline page. Run after a build:
+// drawn door tell which; a ray down through each threshold must find a floor. Serves a small inline page. Run after a build:
 // npm run test:doorways. Same harness as opening.js.
 const fs = require("fs");
 const path = require("path");
@@ -43,6 +43,11 @@ const pair = (dz, a, b) => `
   <garden-light></garden-light>
   <garden-structure>${pair(0, "auto-a", "auto-b")}
   </garden-structure>
+  <garden-ground id="lawn" width="200" height="200" position="0 0 0"></garden-ground>
+  <garden-structure>
+    <garden-room id="mix-box" width="10" depth="10" height="4" position="-5 0 80"></garden-room>
+    <garden-room id="mix-poly" type="polygon" points="-5 -5, 5 -5, 5 5, -5 5" height="4" position="5 0 80"></garden-room>
+  </garden-structure>
   <garden-structure doorways="none">${pair(40, "none-a", "none-b")}
     <garden-opening between="#none-a #none-b" position="0 0 43" width="0.6" depth="2" height="3"></garden-opening>
   </garden-structure>
@@ -63,6 +68,20 @@ const pair = (dz, a, b) => `
         check("doorways auto (default): the shared wall has a doorway in its middle", auto > 9, String(auto));
         check("doorways=\"none\": no doorway in the middle", none != null && none < 5, String(none));
         check("doorways=\"none\": the drawn <garden-opening> is a door", drawn > 9, String(drawn));
+        // Straight down through each doorway's threshold: a floor, never the ground under it
+        // (the cut used to start at the slabs' bottoms and go right through the box's floor).
+        const down = (x, z) => page.evaluate(([x, z]) => {
+            const scene = document.querySelector("garden-scene").scene;
+            const V = scene.activeCamera.position.constructor;
+            const Ray = scene.activeCamera.getForwardRay().constructor;
+            const owner = m => { while (m && !m.element) m = m.parent; return m?.element?.id; };
+            const hit = scene.pickWithRay(new Ray(new V(x, 3, z), new V(0, -1, 0), 10), m => m.isVisible && m.isPickable);
+            return hit?.hit ? owner(hit.pickedMesh) : null;
+        }, [x, z]);
+        for (const [name, x, z] of [["box | box", -0.1, 0], ["box | polygon, box side", -0.1, 80], ["box | polygon, polygon side", 0.1, 80]]) {
+            const under = await down(x, z);
+            check(`${name}: the threshold has a floor under it`, under != null && under != "lawn", String(under));
+        }
         check("no page errors", errors.length == 0, JSON.stringify(errors));
     } finally {
         await browser.close();

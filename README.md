@@ -128,8 +128,8 @@ room does: along its actual wall line, not its bounding box, so a shared edge ge
 doorway at any angle (a diagonal wall between two triangles works) and against a box
 room too. A hand-placed `<garden-opening>` is an axis-aligned box, so it cuts cleanly
 only through an edge that runs along x or z; for a slanted edge, rely on the
-structure's join. (Every structure doorway, box or polygon, starts 0.1 m below
-floor level and notches the top of the floor slab: an existing quirk, not new.)
+structure's join. (Every structure doorway, box or polygon, starts 5 cm below the
+higher room's floor top: a shallow groove at the threshold, never through the slab.)
 
 ```html
 <garden-room type="polygon" height="4" points="-6 -4, 6 -4, 6 0, 0 0, 0 4, -6 4"></garden-room>

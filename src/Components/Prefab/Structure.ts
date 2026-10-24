@@ -405,7 +405,7 @@ export class GardenStructure extends GardenElement {
         if (doorways.length === 0)
             return true;
 
-        let floorY = Math.max(aBox.minimumWorld.y, bBox.minimumWorld.y);
+        let floorY = this.doorwayBase(curved, aBox.minimumWorld.y, other, bBox.minimumWorld.y);
         for (let at of doorways)
             this.cutDoorway(curved, other, at, floorY);
         return true;
@@ -446,6 +446,27 @@ export class GardenStructure extends GardenElement {
         cutter.dispose();
     }
 
+    /**
+     * How far below a room's floor top a doorway's cut goes: a shallow groove at the
+     * threshold, inside the slab, so the cut never shows the ground through the floor.
+     */
+    static readonly THRESHOLD_GROOVE = 0.05;
+
+    /**
+     * Where a doorway between `a` and `b` starts: just under the higher of their floor
+     * tops (a box room's slab is centred on its floor level, so its top is half a
+     * thickness up; a rotunda's, polygon's or slotted room's top is at its level). For
+     * anything that isn't a room (stairs) its lowest point, as before. It used to be
+     * the slabs' bottoms, which cut the higher slab right through: a slot to the
+     * ground under every doorway.
+     */
+    private doorwayBase(a: GardenMesh, aMinY: number, b: GardenMesh, bMinY: number): number {
+        let top = (el: GardenMesh, minY: number) => el instanceof GardenRoom
+            ? (el.position?.y ?? 0) + (el.wallLoop ? 0 : el.thickness / 2) - GardenStructure.THRESHOLD_GROOVE
+            : minY;
+        return Math.max(top(a, aMinY), top(b, bMinY));
+    }
+
     private cut(a: GardenMesh, b: GardenMesh, touchAxis: Axis, otherAxes: Axis[],
         overlap: Record<Axis, AxisOverlap>, aMin: Vector3, bMin: Vector3) {
         let scene = this.getScene();
@@ -460,7 +481,7 @@ export class GardenStructure extends GardenElement {
 
         for (let axis of otherAxes) {
             if (axis === "y") {
-                let floor = Math.max(aMin.y, bMin.y);
+                let floor = this.doorwayBase(a, aMin.y, b, bMin.y);
                 size.y = this.openingHeight;
                 center.y = floor + this.openingHeight / 2;
             } else {
