@@ -48,6 +48,7 @@
     "test:lean": "npm run build:lean && node tests/examples.js --lean",
     "test:boolean": "node tests/boolean.js",
     "test:replicate": "node tests/replicate.js",
+    "test:torus-knot-replicate": "node tests/torus-knot-replicate.js",
     "test:action": "node tests/action.js",
     "test:gizmo": "node tests/gizmo.js",
     "test:ground": "node tests/ground.js",

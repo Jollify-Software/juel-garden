@@ -4,6 +4,7 @@ import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { Light } from "@babylonjs/core/Lights/light";
 import { PointLight } from "@babylonjs/core/Lights/pointLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
+import { CascadedShadowGenerator } from "@babylonjs/core/Lights/Shadows/cascadedShadowGenerator";
 import { ShadowLight } from "@babylonjs/core/Lights/shadowLight";
 import { SpotLight } from "@babylonjs/core/Lights/spotLight";
 import { Tools } from "@babylonjs/core/Misc/tools";
@@ -39,7 +40,10 @@ import { GardenAnimation } from "./Animation";
  * leave it off for phones). Every mesh casts except grounds and height maps,
  * which only receive (a terrain shading itself shows stripes of shadow acne);
  * a mesh's own `cast-shadows="false"` or `"true"`, or `receive-shadows="false"`,
- * overrides that.
+ * overrides that. `cascades` (directional lights: 2–4, default 4 when given
+ * without a number) splits the shadow map into cascades, sharp near the camera
+ * and still there far off -- for big outdoor scenes, where one map is either
+ * blurred or cut short.
  *
  * `intensity`, `range`, `pool` and `diffuse` can be set from code, or
  * animated by a `<garden-animation property="intensity">` (or `range`)
@@ -93,7 +97,7 @@ export class GardenLight extends GardenElement {
     async updated() {
         let scene = this.getScene();
         let type = this.pool > 0 && this.type != "directional" ? "spot" : this.type;
-        let key = [type, this.hasAttribute("shadows"), this.shadows].join("|");
+        let key = [type, this.hasAttribute("shadows"), this.shadows, this.getAttribute("cascades")].join("|");
         if (this.light && key == this._builtKey) {
             this.apply();
             return;
@@ -132,7 +136,17 @@ export class GardenLight extends GardenElement {
 
         if (this.hasAttribute("shadows") && this.light instanceof ShadowLight) {
             let size = Number(this.shadows) || 1024;
-            let generator = this.shadowGenerator = new ShadowGenerator(size, this.light);
+            let cascades = this.hasAttribute("cascades") && this.light instanceof DirectionalLight;
+            let generator: ShadowGenerator;
+            if (cascades) {
+                let csm = new CascadedShadowGenerator(size, <DirectionalLight>this.light);
+                csm.numCascades = Math.min(4, Math.max(2, Number(this.getAttribute("cascades")) || 4));
+                (<DirectionalLight>this.light).autoCalcShadowZBounds = true;
+                generator = csm;
+            } else {
+                generator = new ShadowGenerator(size, this.light);
+            }
+            this.shadowGenerator = generator;
             generator.usePercentageCloserFiltering = true;
             let add = (mesh: any) => {
                 if (mesh.infiniteDistance || !mesh.isVisible) return; // not the sky
