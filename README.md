@@ -209,8 +209,17 @@ and walk-throughs with guides and talking exhibits (the plan is
 | `follow`, `follow-wait` | Followers that keep apart; a leader that stops for stragglers (`garden-wait` / `garden-resume`) |
 | `play()`, `anim-*` | Named GLB animations with cross-fades; idle/walk/run picked by speed; one-shots fire `garden-animation-end` |
 | `near` | `garden-near` / `garden-far` when something (or `camera`) comes close |
-| `<garden-light pool>` | Lights carried by meshes; a pool of light on the ground; live `intensity`/`range`; `shadows` |
+| `<garden-torus-knot>` | `radius`, `tube`, `p`, `q`, `radial-segments`, `tubular-segments` |
+| `grab` | Pick a mesh or model up and move it in six directions (a controller or hand turns it over); `grab="scale"` pinches it bigger or smaller; `grab-box` draws a bounding box with handles; `garden-grab` / `garden-release` |
+| `<garden-light pool>` | Lights carried by meshes; a pool of light on the ground; live `intensity`/`range`; `shadows` (everything casts but grounds and height maps; a mesh's `cast-shadows`/`receive-shadows` overrides it); a spot light's `exponent`; `cascades` (cascaded shadow maps for big outdoor scenes); `specular` |
 | Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
+| `<garden-camera type="arc">` | `alpha`/`beta`/`radius` (radians, as Babylon's ArcRotateCamera), `target="x y z"` or an element to follow, `beta-lower`/`beta-upper`/`radius-lower`/`radius-upper` |
+| `<garden-camera type="device">` | Turns with the phone or tablet it's on (a phone in a viewer); a free camera on a desktop. `target="x y z"` aims a free or device camera too |
+| `<garden-sky environment>` | A prefiltered `.env`/`.dds` cube as the sky and the light PBR materials (glTF models) reflect; `blur`, `lighting="false"`, `backdrop="false"` (light only: the background is `colour`), `turn` (degrees). `environment="default"`: Babylon's default environment (backdrop, ground fitted under the models once they load, and light) |
+| `<garden-material node>` | A node material (the Node Material Editor's output) from a JSON file or `#ID` on Babylon's snippet server: shaders, water, anti-tiling grounds; `<garden-texture block="name">` fills a texture block, `input-<name>` sets an input block |
+| `<garden-node-geometry>` | A mesh from a node geometry (JSON or `#ID`), `input-<name>` for its inputs |
+| `<garden-pipeline>` | The finish: `samples`, `fxaa`, `bloom` (+ `bloom-threshold`, `bloom-kernel`), `sharpen`, `grain`, `vignette`, `chromatic-aberration`, `depth-of-field` (+ `focal-length`, `f-stop`), `tone-mapping="aces"`, `exposure`, `contrast`; each off unless given; live |
+| `<garden-animation type="vector3">` | Keyframes with several parts: `"0 (0 0 0), 60 ((Math.PI) 0 1.2)"` or `"0 0 0 0, 60 4 0 -2"`; also `vector2`, `quaternion`, `color3`, `color4` |
 | `<garden-marker>` | An icon over a target, or an edge-of-screen arrow to it |
 | `<garden-sound>` | Spatial audio on Babylon's audio engine: `play()`/`stop()`, `play-on="garden-near"`, cones, roll-off |
 | `<garden-thumbstick>` | On-screen thumbsticks for touch screens: one `controls` a walker, one the `camera` |

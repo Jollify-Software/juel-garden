@@ -10,7 +10,8 @@ import { GardenMesh } from "../GardenMesh";
  * positions/rotations, for repeating a shape many times efficiently (e.g. a
  * field of identical rocks).
  *
- * Attributes: `instances` (ids of the source elements, indexed by position in
+ * Attributes: `instances` (ids of the source elements, space-separated or a JSON
+ * array, indexed by position in
  * `positions`' `name:` prefix), `positions` (keyed `Vector3` list, e.g.
  * `"0: 1 0 1, 0: 3 0 1"` -- each entry's name is the index into `instances`),
  * `rotations` (keyed rotation list, same convention).
@@ -24,7 +25,9 @@ import { GardenMesh } from "../GardenMesh";
 @customElement("garden-replicate")
 export class GardenReplicate extends GardenElement {
 
-    @property({ type: Array }) instances: string[];
+    /** The source ids: `"rock"`, `"house semi"`, or as JSON, `'["house","semi"]'`. */
+    @property({ converter: (value: string) => value?.trim().startsWith("[") ? JSON.parse(value) : (value ?? "").split(/[\s,]+/).filter(Boolean) })
+    instances: string[];
     @property() positions: string;
     @property() rotations: string;
 

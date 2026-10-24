@@ -4,6 +4,7 @@ import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { Light } from "@babylonjs/core/Lights/light";
 import { PointLight } from "@babylonjs/core/Lights/pointLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
+import { CascadedShadowGenerator } from "@babylonjs/core/Lights/Shadows/cascadedShadowGenerator";
 import { ShadowLight } from "@babylonjs/core/Lights/shadowLight";
 import { SpotLight } from "@babylonjs/core/Lights/spotLight";
 import { Tools } from "@babylonjs/core/Misc/tools";
@@ -30,10 +31,19 @@ import { GardenAnimation } from "./Animation";
  *
  * Attributes: `type`, `position` (default `0 1 0`; relative to the
  * carrying mesh), `direction` (spot/directional), `diffuse` or `colour`
- * (see {@link Color3Convert}, or `#rrggbb`), `intensity`, `range` (how far a
+ * (see {@link Color3Convert}, or `#rrggbb`), `specular` (the colour of its
+ * highlights, the same way), `intensity`, `range` (how far a
  * point/spot light reaches), `angle` (spot cone, degrees, default 60),
- * `pool`, `shadows` (meshes cast and receive shadows from this light; the
- * value is the shadow-map size, default 1024 -- leave it off for phones).
+ * `exponent` (spot: how fast the light fades towards the cone's edge, default
+ * 2; 16 leaves no visible rim), `pool`, `shadows` (meshes cast and receive
+ * shadows from this light; the value is the shadow-map size, default 1024 --
+ * leave it off for phones). Every mesh casts except grounds and height maps,
+ * which only receive (a terrain shading itself shows stripes of shadow acne);
+ * a mesh's own `cast-shadows="false"` or `"true"`, or `receive-shadows="false"`,
+ * overrides that. `cascades` (directional lights: 2–4, default 4 when given
+ * without a number) splits the shadow map into cascades, sharp near the camera
+ * and still there far off -- for big outdoor scenes, where one map is either
+ * blurred or cut short.
  *
  * `intensity`, `range`, `pool` and `diffuse` can be set from code, or
  * animated by a `<garden-animation property="intensity">` (or `range`)
@@ -59,6 +69,7 @@ export class GardenLight extends GardenElement {
     @property({ type: Number }) intensity: number;
     @property({ type: Number }) range: number;
     @property({ type: Number }) angle: number;
+    @property({ type: Number }) exponent: number;
     @property({ type: Number }) pool: number;
     @property() shadows: string;
 
@@ -86,7 +97,7 @@ export class GardenLight extends GardenElement {
     async updated() {
         let scene = this.getScene();
         let type = this.pool > 0 && this.type != "directional" ? "spot" : this.type;
-        let key = [type, this.hasAttribute("shadows"), this.shadows].join("|");
+        let key = [type, this.hasAttribute("shadows"), this.shadows, this.getAttribute("cascades")].join("|");
         if (this.light && key == this._builtKey) {
             this.apply();
             return;
@@ -125,12 +136,30 @@ export class GardenLight extends GardenElement {
 
         if (this.hasAttribute("shadows") && this.light instanceof ShadowLight) {
             let size = Number(this.shadows) || 1024;
-            let generator = this.shadowGenerator = new ShadowGenerator(size, this.light);
+            let cascades = this.hasAttribute("cascades") && this.light instanceof DirectionalLight;
+            let generator: ShadowGenerator;
+            if (cascades) {
+                let csm = new CascadedShadowGenerator(size, <DirectionalLight>this.light);
+                csm.numCascades = Math.min(4, Math.max(2, Number(this.getAttribute("cascades")) || 4));
+                (<DirectionalLight>this.light).autoCalcShadowZBounds = true;
+                generator = csm;
+            } else {
+                generator = new ShadowGenerator(size, this.light);
+            }
+            this.shadowGenerator = generator;
             generator.usePercentageCloserFiltering = true;
             let add = (mesh: any) => {
                 if (mesh.infiniteDistance || !mesh.isVisible) return; // not the sky
-                generator.addShadowCaster(mesh, false);
-                mesh.receiveShadows = true;
+                // A mesh learns its element after it's made (GardenMesh.setMesh): decide
+                // what it casts and receives on the next frame, once it knows.
+                scene.onBeforeRenderObservable.addOnce(() => {
+                    if (mesh.isDisposed?.()) return;
+                    let el = GardenLight.elementOf(mesh);
+                    let cast = el?.getAttribute("cast-shadows");
+                    if (cast != null ? cast != "false" : !el?.matches("garden-ground, garden-height-map"))
+                        generator.addShadowCaster(mesh, false);
+                    mesh.receiveShadows = el?.getAttribute("receive-shadows") != "false";
+                });
             };
             scene.meshes.forEach(add);
             scene.onNewMeshAddedObservable.add(add);
@@ -154,6 +183,13 @@ export class GardenLight extends GardenElement {
     }
 
     /** The live-settable attributes. */
+    /** The element a mesh was built for: its own, else its nearest parent node's. */
+    static elementOf(mesh: any): HTMLElement | undefined {
+        for (let node = mesh; node; node = node.parent)
+            if (node.element) return node.element;
+        return undefined;
+    }
+
     private apply() {
         let light = this.light;
         if (!light) return;
@@ -162,6 +198,9 @@ export class GardenLight extends GardenElement {
         let colour = this.getAttribute("colour") ?? this.getAttribute("diffuse");
         if (colour)
             light.diffuse = colour.startsWith("#") ? Color3.FromHexString(colour) : Color3Convert.fromString(colour);
+        let specular = this.getAttribute("specular");
+        if (specular)
+            light.specular = specular.startsWith("#") ? Color3.FromHexString(specular) : Color3Convert.fromString(specular);
         if (this.position && !(light instanceof HemisphericLight))
             (<any>light).position = this.position.clone();
         if (this.direction && (light instanceof SpotLight || light instanceof DirectionalLight))
@@ -177,6 +216,8 @@ export class GardenLight extends GardenElement {
             } else if (this.angle != null) {
                 light.angle = Tools.ToRadians(this.angle);
             }
+            if (this.exponent != null && !(this.pool > 0))
+                light.exponent = this.exponent;
         }
     }
 

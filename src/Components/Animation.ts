@@ -68,7 +68,7 @@ export class GardenAnimation extends GardenElement {
                 if (!this.animation) {
                     this.animation = new Animation("animation", this.property, this.speed ?? GardenAnimation.DefaultFramesPerSecond,
                         StaticConvert.animationType(this.type), this.loopmode);
-                    this.animation.setKeys(ObjectConverter.keyframeRay(this.keyframes));
+                    this.animation.setKeys(ObjectConverter.keyframeRay(this.keyframes, this.type));
                 }
                 // A light (or anything else with an animationTarget) animates that instead of a mesh.
                 target = (<any>targetEl).animationTarget ?? targetEl.mesh;

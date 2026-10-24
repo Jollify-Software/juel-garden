@@ -1,3 +1,4 @@
+import { NodeMaterial } from "@babylonjs/core/Materials/Node/nodeMaterial";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { customElement, property } from "lit/decorators.js";
@@ -29,7 +30,12 @@ const colourConverter = {
  * `<garden-roof>`/`<garden-room>` that have more than one), `colour`,
  * `spec-colour`, `emissive-colour`, `opacity` (0 clear to 1 solid: below 1
  * the material is see-through and both faces draw -- glass, water, a
- * glazed roof).
+ * glazed roof), `node` (a node material instead -- the Node Material Editor's
+ * output, as a JSON file's URL or `#ID` on Babylon's snippet server: shaders,
+ * water, anti-tiling grounds, effects; a `<garden-texture block="name">` child
+ * fills its texture block of that name (and then the textures saved in it aren't
+ * loaded), and `input-<name>="value"` sets its input block of that name: a
+ * number, or 2–4 numbers for a vector or colour).
  *
  * @example
  * ```html
@@ -49,6 +55,8 @@ export class GardenMaterial extends GardenElement {
     @property({ attribute: "spec-colour", converter: colourConverter }) specColour: Color3;
     @property({ attribute: "emissive-colour", converter: colourConverter }) emissiveColour: Color3;
     @property({ type: Number }) opacity: number;
+    /** A node material instead: a JSON file's URL, or `#ID` for one on Babylon's snippet server. */
+    @property({ attribute: "node" }) nodeSource: string;
 
     material: StandardMaterial;
 
@@ -65,6 +73,11 @@ export class GardenMaterial extends GardenElement {
         // GardenElement.whenDocumentReady for why a child's own updated() isn't otherwise
         // guaranteed to have run yet.
         await GardenMaterial.whenDocumentReady();
+
+        if (this.nodeSource) {
+            await this.buildNode();
+            return;
+        }
 
         let material = new StandardMaterial("material", this.getScene());
         GardenMaterial.owned.add(material);
@@ -83,7 +96,12 @@ export class GardenMaterial extends GardenElement {
         for (let textureEl of this.getTextures())
             material[`${textureEl.type ?? "diffuse"}Texture`] = textureEl.texture;
 
-        // Rebuilt for a change: whatever wore the old material wears this one.
+        this.wear(material);
+        this.endBuild();
+    }
+
+    /** Rebuilt for a change: whatever wore the old material wears this one. */
+    private wear(material: any) {
         let old = this.material;
         this.material = material;
         if (old && old != material) {
@@ -91,6 +109,51 @@ export class GardenMaterial extends GardenElement {
                 mesh.material = material;
             old.dispose(false, false); // the textures belong to their <garden-texture>s
         }
+    }
+
+    /**
+     * `node`: a node material (Babylon's Node Material Editor's output) from a JSON
+     * file or the snippet server, instead of the standard one. Its texture blocks load
+     * the textures saved in it; `<garden-texture>` children and the colours don't apply.
+     */
+    private async buildNode() {
+        let scene = this.getScene();
+        let material: NodeMaterial;
+        try {
+            // Textures given as children replace the ones saved in it: don't load those.
+            let blockTextures = this.getTextures().filter(t => t.hasAttribute("block"));
+            let ignore = NodeMaterial.IgnoreTexturesAtLoadTime;
+            NodeMaterial.IgnoreTexturesAtLoadTime = blockTextures.length > 0;
+            try {
+                if (this.nodeSource.startsWith("#")) {
+                    material = await NodeMaterial.ParseFromSnippetAsync(this.nodeSource.slice(1), scene);
+                } else {
+                    let response = await fetch(this.nodeSource);
+                    let json = await response.json();
+                    let rootUrl = this.nodeSource.substring(0, this.nodeSource.lastIndexOf("/") + 1);
+                    material = NodeMaterial.Parse(json, scene, rootUrl);
+                }
+            } finally {
+                NodeMaterial.IgnoreTexturesAtLoadTime = ignore;
+            }
+            for (let t of blockTextures) {
+                let block: any = material.getBlockByName(t.getAttribute("block"));
+                if (block && "texture" in block) block.texture = t.texture;
+                else console.warn(`<garden-material node>: no texture block "${t.getAttribute("block")}"`);
+            }
+            setNodeInputs(this, material, "<garden-material node>");
+            material.build();
+        } catch (e) {
+            console.warn(`<garden-material> couldn't load the node material "${this.nodeSource}": ${e}`);
+            this.endBuild();
+            return;
+        }
+        GardenMaterial.owned.add(material);
+        if (this.opacity != null && this.opacity < 1) {
+            material.alpha = Math.max(0, this.opacity);
+            material.backFaceCulling = false;
+        }
+        this.wear(material);
         this.endBuild();
     }
 
@@ -102,5 +165,36 @@ export class GardenMaterial extends GardenElement {
 
     getTexture(type: string = "diffuse"): GardenTexture | null {
         return this.getTextures().find(el => (el.type ?? "diffuse") === type) ?? null;
+    }
+}
+
+/**
+ * Sets a node material's or node geometry's input blocks from the element's
+ * `input-<name>` attributes (the block's name, case as in the editor): one number,
+ * or 2–4 for a vector or a colour, matched to the block's current value.
+ */
+export function setNodeInputs(el: HTMLElement, graph: { getBlockByName(name: string): any }, who: string) {
+    for (let attr of Array.from(el.attributes)) {
+        if (!attr.name.startsWith("input-"))
+            continue;
+        let name = attr.name.slice("input-".length);
+        // HTML lowercases attribute names: find the block whatever its case.
+        let block = graph.getBlockByName(name)
+            ?? (<any>graph).attachedBlocks?.find((b: any) => b.name?.toLowerCase() == name)
+            ?? (<any>graph).getBlocks?.()?.find?.((b: any) => b.name?.toLowerCase() == name);
+        if (!block || !("value" in block)) {
+            console.warn(`${who}: no input block "${name}"`);
+            continue;
+        }
+        let n = attr.value.trim().split(/[\s,]+/).map(Number);
+        let current = block.value;
+        if (n.length == 1 || typeof current == "number")
+            block.value = n[0];
+        else if (current?.clone && current.constructor) {
+            let v = current.clone();
+            ["x", "y", "z", "w"].forEach((k, i) => { if (k in v && i < n.length) v[k] = n[i]; });
+            ["r", "g", "b", "a"].forEach((k, i) => { if (k in v && i < n.length) v[k] = n[i]; });
+            block.value = v;
+        }
     }
 }

@@ -17,9 +17,15 @@ import { GardenScene } from "./Scene";
  *   ({@link "CameraTypes/FreeCameraStrategy"!FreeCameraStrategy}).
  * - `"follow"` -- a spring-damped third-person chase camera locked to
  *   `target` ({@link "CameraTypes/FollowCameraStrategy"!FollowCameraStrategy}).
+ * - `"device"` -- turns with the phone or tablet it's on (a phone in a viewer);
+ *   a free camera on a desktop ({@link "CameraTypes/DeviceCameraStrategy"!DeviceCameraStrategy}).
  *
  * Attributes: `type`, `position`, `speed`, `target` (an element selector, for
- * `type="follow"` or any type exposing `chaseTarget`), `radius`,
+ * `type="follow"` or any type exposing `chaseTarget`; for `type="arc"`, the
+ * point it orbits, `"x y z"`, or an element to follow), `radius`,
+ * `alpha`/`beta` (`type="arc"`: its angles round and down from the top, in
+ * radians, as Babylon's ArcRotateCamera; with them `position` isn't needed),
+ * `beta-lower`/`beta-upper` and `radius-lower`/`radius-upper` (its limits),
  * `height-offset`, `rotation-offset`, `look-offset`, `camera-stiffness`,
  * `camera-damping`, `free-look`, `look-pad`, `look-speed` (the last eight are `type="follow"`-specific), `ellipsoid`/`touch`
  * (`type="free"`-specific).
@@ -47,6 +53,12 @@ export class GardenCamera extends GardenElement {
         this.speed = 0.4;
         this.ellipsoid = new Vector3(1, 1, 1);
         this.touch = 'true';
+    }
+
+    /** `"x y z"` as a point, or null for anything else (an element selector). */
+    static point(value: string): Vector3 | null {
+        let parts = value.trim().split(/[\s,]+/).map(Number);
+        return parts.length == 3 && parts.every(Number.isFinite) ? new Vector3(parts[0], parts[1], parts[2]) : null;
     }
 
     getPosition() {
@@ -110,7 +122,19 @@ export class GardenCamera extends GardenElement {
             this.wasActive = false;
         }
 
+        // A target point. An arc camera takes it before `position`, which is then taken
+        // round it (setPosition keeps the target and derives alpha, beta and radius);
+        // a free or device camera moves first, then turns to look at it.
+        let target = this.getAttribute("target");
+        let point = target ? GardenCamera.point(target) : null;
+        let aims = point && "setTarget" in this.camera && !("chaseTarget" in this.camera);
+        let orbits = "setPosition" in this.camera;
+        if (aims && orbits)
+            (<any>this.camera).setTarget(point);
+
         this.applyTransform();
+        if (aims && !orbits)
+            (<any>this.camera).setTarget(point);
 
         let opt = this.buildOptions();
         this.camera = Object.assign(this.camera, opt);
@@ -123,7 +147,18 @@ export class GardenCamera extends GardenElement {
 
         this.camera.attachControl(sceneEl.canvas, true);
 
-        let target = this.getAttribute("target");
+        if (target && !point && "setTarget" in this.camera && !("chaseTarget" in this.camera)) {
+            // An arc camera orbiting an element: it follows the mesh.
+            this.beginBuild();
+            try {
+                await GardenElement.whenDocumentReady();
+                let [targetEl] = await GardenElement.resolveReady<GardenMesh>(target);
+                if (targetEl?.mesh)
+                    (<any>this.camera).setTarget(targetEl.mesh);
+            } finally {
+                this.endBuild();
+            }
+        }
         if (target && "chaseTarget" in this.camera) {
             this.beginBuild();
             try {

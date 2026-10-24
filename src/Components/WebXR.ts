@@ -17,7 +17,8 @@ import { GardenScene } from "./Scene";
  * A sibling of <garden-camera> inside <garden-scene>, same as <garden-light>.
  *
  * Attributes: `mode` (`"vr"|"ar"`, default `"vr"`), `floor` (selector of
- * teleport-target meshes, defaults to every `<garden-ground>`), `teleportation`
+ * teleport-target meshes, defaults to every `<garden-ground>` and the ground of a
+ * `<garden-sky environment="default">`), `teleportation`
  * (default on; `teleportation="false"` turns it off).
  *
  * Arriving from another page that was in VR -- through a `<garden-link>` --
@@ -36,6 +37,8 @@ import { GardenScene } from "./Scene";
 export class GardenWebXR extends GardenElement {
     @property() mode: string;
     @property() floor: string;
+    /** The meshes you can teleport onto (from `floor`, or the defaults). */
+    floorMeshes: AbstractMesh[] = [];
     // Default-on toggle: any value other than the string "false" turns it on. (A plain
     // Boolean property reads any present attribute, teleportation="false" included, as
     // true, so it could never be turned off from markup.) Same idea as GardenRoof's `clip`.
@@ -76,6 +79,13 @@ export class GardenWebXR extends GardenElement {
                 ? await GardenElement.resolveReady<GardenMesh>(this.floor)
                 : await GardenElement.resolveReady<GardenMesh>("garden-ground");
             let floorMeshes: AbstractMesh[] = floorEls.map(el => el.mesh).filter(mesh => !!mesh);
+            // The ground of <garden-sky environment="default"> is a floor too (by default).
+            if (!this.floor)
+                for (let sky of Array.from(document.querySelectorAll("garden-sky"))) {
+                    let ground = (<any>sky).environmentHelper?.ground;
+                    if (ground) floorMeshes.push(ground);
+                }
+            this.floorMeshes = floorMeshes;
 
             try {
                 this.xr = await scene.createDefaultXRExperienceAsync({

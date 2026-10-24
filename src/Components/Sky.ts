@@ -6,9 +6,11 @@ import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import { Tools } from "@babylonjs/core/Misc/tools";
 import { customElement, property } from "lit/decorators.js";
 import { GardenMesh } from "../GardenMesh";
+import { GardenElement } from "../GardenElement";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { PanoramaSky } from "../Nature/PanoramaSky";
 import { tween } from "../Utils/tween";
+import "@babylonjs/core/Helpers/sceneHelpers";
 
 /**
  * A skybox: a large inward-facing cube with a cubemap reflection texture.
@@ -29,6 +31,16 @@ import { tween } from "../Utils/tween";
  * sets `fog-colour`, so distant things fade into the sky. `colour-to` and
  * `duration` (seconds) fade it once the page opens -- dusk to night -- and
  * {@link fadeTo} does the same from code.
+ *
+ * **An environment:** `environment` (a prefiltered `.env` or `.dds` cube, as
+ * Babylon's tools make them) is both the sky and the light that physically-based
+ * materials reflect -- a glTF model's metal and gloss look right only with one.
+ * `blur` (0 sharp … 1, default 0) softens the sky; `lighting="false"` keeps it
+ * as a backdrop only; `backdrop="false"` uses it as light only (the background
+ * is then `colour`); `turn` (degrees) turns it round the vertical. `size` as below (default 1000). `environment="default"` is
+ * Babylon's own (`scene.createDefaultEnvironment()`): a soft backdrop, a ground
+ * fading out round the origin (`ground="false"` for none) and its light --
+ * a model viewer in one line. `element.environmentHelper` is Babylon's helper.
  *
  * **A photographed sky:** `panorama` (an equirectangular, 2:1 sky image) puts it on a dome round
  * the camera ({@link PanoramaSky}); `panorama-to` adds a second behind it, and `blend` (0 the
@@ -52,6 +64,7 @@ import { tween } from "../Utils/tween";
 @customElement("garden-sky")
 export class GardenSky extends GardenMesh {
     @property() root: string;
+    @property() environment: string;
     @property({ type: Number, attribute: "scroll-speed" }) scrollSpeed: number;
     @property() panorama: string;
     @property({ attribute: "panorama-to" }) panoramaTo: string;
@@ -103,6 +116,46 @@ export class GardenSky extends GardenMesh {
         let scene = this.getScene();
         if (this.panorama) {
             this.buildPanorama();
+            return;
+        }
+        if (this.environment == "default") {
+            // Babylon's own: a soft backdrop sky, a ground that fades out round the
+            // origin (`ground="false"` for none) and its environment for PBR light.
+            let options = {
+                createGround: this.getAttribute("ground") != "false",
+                skyboxSize: Number(this.getAttribute("size")) || undefined,
+            };
+            let helper = scene.createDefaultEnvironment(options);
+            (<any>this).environmentHelper = helper;
+            this.setMesh(helper.skybox);
+            // Babylon sizes the ground and sky to what's in the scene when they're made:
+            // fit them again once the page's models have loaded, so the ground sits
+            // under them rather than through them.
+            GardenElement.whenDocumentReady().then(async () => {
+                let models = Array.from(document.querySelectorAll("garden-mesh-model")) as GardenMesh[];
+                await Promise.all(models.map(m => m.whenReady?.catch(() => null)));
+                if ((<any>this).environmentHelper == helper)
+                    helper.updateOptions(options);
+            });
+            return;
+        }
+        if (this.environment) {
+            let texture = new CubeTexture(this.environment, scene);
+            if (this.getAttribute("lighting") != "false")
+                scene.environmentTexture = texture;
+            let turn = Number(this.getAttribute("turn"));
+            if (Number.isFinite(turn) && turn)
+                texture.rotationY = Tools.ToRadians(turn);
+            if (this.getAttribute("backdrop") == "false") {
+                // Light only: the background is the sky's `colour` (or the scene's).
+                let colour = this.getAttribute("colour");
+                if (colour) this.fadeTo(colour, 0);
+                return;
+            }
+            let size = Number(this.getAttribute("size")) || 1000;
+            let blur = Number(this.getAttribute("blur")) || 0;
+            let skybox = scene.createDefaultSkybox(texture, true, size, blur);
+            this.setMesh(skybox);
             return;
         }
         let colour = this.getAttribute("colour");
