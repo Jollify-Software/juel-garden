@@ -42,6 +42,12 @@ Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anon
  * {@link fogTo} eases them for a storm that closes in and clears, and a
  * `<garden-animation property="fogDensity">` inside the scene animates them.
  *
+ * **Resolution** (phones and tablets): `scaling="2"` draws the scene at half the
+ * canvas's size (Babylon's hardware scaling level) and lets the browser stretch it,
+ * `"1.5"` at two thirds; below 1 it draws more finely than the canvas (sharper on a
+ * high-density screen, and slower). Live, so a game can drop it when frames are slow.
+ * `<garden-pipeline fsr>` upscales a smaller picture more sharply.
+ *
  * @example
  * ```html
  * <garden-scene>
@@ -62,6 +68,8 @@ export class GardenScene extends LitElement {
     @property({ attribute: "fog-colour" }) fogColour: string;
     @property({ type: Number, attribute: "fog-start" }) fogStart: number;
     @property({ type: Number, attribute: "fog-end" }) fogEnd: number;
+    /** How much smaller than the canvas the scene is drawn: Babylon's hardware scaling level. */
+    @property({ type: Number }) scaling: number;
 
     canvas: HTMLCanvasElement;
     engine: Engine;
@@ -126,6 +134,8 @@ export class GardenScene extends LitElement {
 
     updated() {
         this.applyFog();
+        if (this.engine && this.engine.getHardwareScalingLevel() != (this.scaling > 0 ? this.scaling : 1))
+            this.engine.setHardwareScalingLevel(this.scaling > 0 ? this.scaling : 1);
     }
 
     private applyFog() {
