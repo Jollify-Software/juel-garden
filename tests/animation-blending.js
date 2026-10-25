@@ -62,6 +62,16 @@ run(`
     check("play=\"...\" set later cross-fades to it, the mix stops", s.current == "Wave" && s.w.Wave == 1 && s.w.Walking == "stopped" && s.w.Idle == "stopped", JSON.stringify(s));
     check("changing play doesn't reload the model", await page.evaluate(() => robot.animationGroups.length > 5 && !!robot.mixer.group("Nod")));
 
+    // Weights put back, then taken off: back to the play animation (play itself unchanged).
+    await page.evaluate(() => robot.setAttribute("weights", "Idle 0.5, Walking 0.5"));
+    await page.waitForTimeout(500);
+    s = await state();
+    check("weights set again mix over the play animation", s.w.Idle == 0.5 && s.w.Walking == 0.5 && s.w.Wave == "stopped", JSON.stringify(s));
+    await page.evaluate(() => robot.removeAttribute("weights"));
+    await page.waitForTimeout(500);
+    s = await state();
+    check("weights removed: back to play=\"Wave\"", s.current == "Wave" && s.w.Wave == 1 && s.w.Idle == "stopped", JSON.stringify(s));
+
     // From code: setWeights with no blend.
     await page.evaluate(() => robot.setWeights({ Idle: 0.25, Running: 0.75 }, { blend: 0 }));
     s = await state();

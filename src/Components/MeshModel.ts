@@ -213,6 +213,12 @@ export class GardenMeshModel extends GardenSkeletonMesh {
      * it is) and after any change of them (cross-fading over `blend`).
      */
     private applyAnimations(blend = this.blendTime) {
+        let weights = this.getAttribute("weights");
+        let sync = this.getAttribute("sync");
+        let both = weights == null ? null : weights + "|" + (sync ?? "");
+        // `weights` taken off: back to the `play` animation, even if `play` itself didn't change.
+        if (both == null && this.playedWeights != null)
+            this.playedAnimation = undefined;
         let first = this.animation ?? this.getAttribute("play");
         if (first != this.playedAnimation) {
             this.playedAnimation = first;
@@ -223,9 +229,6 @@ export class GardenMeshModel extends GardenSkeletonMesh {
                 this.mixer?.play(first, { blend });
             }
         }
-        let weights = this.getAttribute("weights");
-        let sync = this.getAttribute("sync");
-        let both = weights == null ? null : weights + "|" + (sync ?? "");
         if (both != this.playedWeights) {
             this.playedWeights = both;
             if (weights != null)
