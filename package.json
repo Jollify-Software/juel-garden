@@ -103,7 +103,12 @@
     "test:fsr": "node tests/fsr.js",
     "test:hud": "node tests/hud.js",
     "test:particle-mask": "node tests/particle-mask.js",
-    "test:texture-options": "node tests/texture-options.js"
+    "test:texture-options": "node tests/texture-options.js",
+    "test:physics-filter": "node tests/physics-filter.js",
+    "test:model-physics": "node tests/model-physics.js",
+    "test:joint-motor": "node tests/joint-motor.js",
+    "test:grid-physics": "node tests/grid-physics.js",
+    "test:span": "node tests/span.js"
   },
   "repository": {
     "type": "git",
