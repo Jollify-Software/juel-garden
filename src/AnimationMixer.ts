@@ -1,4 +1,6 @@
+import { Animation } from "@babylonjs/core/Animations/animation";
 import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup";
+import { Skeleton } from "@babylonjs/core/Bones/skeleton";
 import { Observer } from "@babylonjs/core/Misc/observable";
 import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
@@ -11,6 +13,17 @@ export interface PlayOptions {
     loop?: boolean;
     /** Playback speed, 1 = as authored. */
     speed?: number;
+}
+
+/** Options for {@link AnimationMixer.setWeights}. */
+export interface WeightOptions {
+    /** Time to fade from the weights now to the new ones, seconds. Default 0.25; 0 jumps. */
+    blend?: number;
+    /**
+     * The animation the others keep in step with: each runs at the speed that makes it
+     * start and end its cycle with this one (a walk and a strafe of different lengths).
+     */
+    sync?: string;
 }
 
 /**
@@ -29,7 +42,8 @@ export class AnimationMixer {
     current: string = null;
 
     private groups = new Map<string, AnimationGroup>();
-    private fades: { group: AnimationGroup, from: number, to: number, t: number, length: number }[] = [];
+    /** Weights on their way somewhere; `keep` leaves a group playing at 0 (a weighted mix), else it stops there. */
+    private fades: { group: AnimationGroup, from: number, to: number, t: number, length: number, keep?: boolean }[] = [];
     private observer: Observer<Scene>;
     private oneShot = false;
     /** The one-shot whose end is being announced. */
@@ -58,6 +72,86 @@ export class AnimationMixer {
         return name ? this.groups.get(name.toLowerCase()) ?? null : null;
     }
 
+    /** Adds an animation (a clip cut from another, or retargeted from another file), stopped. A group already there by that name is replaced. */
+    add(group: AnimationGroup) {
+        let old = this.groups.get(group.name.toLowerCase());
+        if (old && old != group)
+            this.remove(old);
+        group.stop();
+        group.weight = 0;
+        this.groups.set(group.name.toLowerCase(), group);
+    }
+
+    /** Takes an animation out (stopping it), by group or name. */
+    remove(group: AnimationGroup | string) {
+        let found = typeof group == "string" ? this.group(group) : group;
+        if (!found || this.groups.get(found.name.toLowerCase()) != found)
+            return;
+        found.stop();
+        this.groups.delete(found.name.toLowerCase());
+        this.fades = this.fades.filter(f => f.group != found);
+        if (this.current?.toLowerCase() == found.name.toLowerCase())
+            this.current = null;
+    }
+
+    /**
+     * Plays several animations at once, each at its own weight: a walk blended half and half
+     * with a strafe, or idle, walk and run all running with sliders between them. Fades from
+     * the weights now to these over `blend` seconds; an animation named here keeps running at
+     * weight 0 (so it stays in step), any other one playing fades out and stops. Weights
+     * needn't add up to 1: Babylon shares the pose out in proportion.
+     */
+    setWeights(weights: Record<string, number>, options: WeightOptions = {}) {
+        let blend = Math.max(0, options.blend ?? 0.25);
+        let named = new Map<AnimationGroup, number>();
+        for (let name in weights) {
+            let group = this.group(name);
+            if (group)
+                named.set(group, Math.max(0, Number(weights[name]) || 0));
+            else
+                console.warn(`No animation "${name}"; this model has: ${this.names.join(", ")}`);
+        }
+        if (!named.size)
+            return;
+        let master = this.group(options.sync);
+        let heaviest = [...named.entries()].sort((a, b) => b[1] - a[1])[0][0];
+        this.current = (master ?? heaviest).name;
+        this.oneShot = false;
+        this.lastLoop = { name: this.current, speed: 1 };
+
+        this.fades = this.fades.filter(f => !named.has(f.group));
+        for (let [group, weight] of named) {
+            if (!group.isPlaying) {
+                group.onAnimationGroupEndObservable.clear();
+                group.start(true, group.speedRatio || 1);
+                group.weight = blend > 0 ? 0 : weight;
+            }
+            if (blend > 0)
+                this.fades.push({ group, from: group.weight, to: weight, t: 0, length: blend, keep: true });
+            else
+                group.weight = weight;
+        }
+        for (let other of this.groups.values()) {
+            if (named.has(other) || !other.isPlaying) continue;
+            this.fades = this.fades.filter(f => f.group != other);
+            if (blend > 0) this.fades.push({ group: other, from: other.weight, to: 0, t: 0, length: blend });
+            else { other.weight = 0; other.stop(); }
+        }
+
+        // In step: every animation's frame follows the master's progress through its cycle.
+        let root = master && named.has(master) ? master.animatables[0] ?? null : null;
+        for (let group of named.keys())
+            group.syncAllAnimationsWith(group == master ? null : root);
+    }
+
+    /** The weight each playing animation has now, by name. */
+    get weights(): Record<string, number> {
+        let out: Record<string, number> = {};
+        for (let group of this.groups.values())
+            if (group.isPlaying) out[group.name] = group.weight;
+        return out;
+    }
+
     /** Cross-fades to `name`. Returns false (with a warning) if there is no such animation. */
     play(name: string, options: PlayOptions = {}): boolean {
         let group = this.group(name);
@@ -76,7 +170,10 @@ export class AnimationMixer {
         let same = this.current?.toLowerCase() == group.name.toLowerCase();
         this.current = group.name;
         group.speedRatio = speed;
-        if (same && loop && group.isPlaying)
+        // Out of a weighted mix (setWeights): it runs at its own pace again.
+        group.syncAllAnimationsWith(null);
+        let mixed = this.fades.some(f => f.keep) || [...this.groups.values()].some(g => g != group && g.isPlaying);
+        if (same && loop && group.isPlaying && !mixed)
             return true;
 
         // A looping group still fading out carries on from where it is; a one-shot starts over.
@@ -169,7 +266,7 @@ export class AnimationMixer {
             fade.t = Math.min(fade.length, fade.t + dt);
             let k = fade.length > 0 ? fade.t / fade.length : 1;
             fade.group.weight = fade.from + (fade.to - fade.from) * k;
-            if (k >= 1 && fade.to == 0)
+            if (k >= 1 && fade.to == 0 && !fade.keep)
                 fade.group.stop();
         }
         this.fades = this.fades.filter(f => f.t < f.length);
@@ -178,6 +275,37 @@ export class AnimationMixer {
     dispose() {
         this.scene.onBeforeRenderObservable.remove(this.observer);
     }
+}
+
+/**
+ * An animation group playing frames `from` to `to` of a skeleton's own bone animations: how a
+ * `.babylon` file keeps its moves (one long take, with named ranges), made into something
+ * {@link AnimationMixer} can blend. The bones' animations are shared, not copied.
+ *
+ * @category Core
+ */
+export function skeletonClip(name: string, skeleton: Skeleton, from: number, to: number): AnimationGroup {
+    let group = new AnimationGroup(name, skeleton.getScene());
+    for (let bone of skeleton.bones) {
+        let animation = bone.animations[0];
+        if (!animation) continue;
+        // A .babylon rig keys whole matrices: without this, Babylon steps from key to key
+        // instead of interpolating (a global switch, but only matrix animations use it).
+        if (animation.dataType == Animation.ANIMATIONTYPE_MATRIX)
+            Animation.AllowMatricesInterpolation = true;
+        group.addTargetedAnimation(animation, bone);
+    }
+    // Sets the group's range; the keys are only added to if they don't reach from/to.
+    return group.normalize(from, to);
+}
+
+/** A clip per named range of each skeleton (`.babylon` files'), for a model with no animation groups of its own. */
+export function skeletonRangeClips(skeletons: Skeleton[]): AnimationGroup[] {
+    let groups: AnimationGroup[] = [];
+    for (let skeleton of skeletons)
+        for (let range of skeleton.getAnimationRanges())
+            if (range) groups.push(skeletonClip(range.name, skeleton, range.from, range.to));
+    return groups;
 }
 
 /**

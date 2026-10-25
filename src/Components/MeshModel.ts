@@ -15,7 +15,9 @@ import "@babylonjs/loaders/STL";
 import "../Decoders";
 import { customElement, property } from "lit/decorators.js";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
-import { AnimationMixer, PlayOptions, driveByMotion } from "../AnimationMixer";
+import { AnimationMixer, PlayOptions, WeightOptions, driveByMotion, skeletonRangeClips } from "../AnimationMixer";
+import { GardenElement } from "../GardenElement";
+import type { GardenClip } from "./Clip";
 import { toStandardMaterials } from "../Utils/StandardMaterials";
 
 /**
@@ -41,7 +43,15 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
  * - `base`: `"ground"` (default when `height`/`fit` is set) moves the model
  *   so it stands on its own `position`, centred; `"none"` keeps the file's origin.
  * - `animation` (or `play`): a glTF animation group to loop (by name, any
- *   case), or `"none"` to stop the loader's auto-play.
+ *   case), or `"none"` to stop the loader's auto-play. A `.babylon` file's named
+ *   skeleton ranges are animations too. Changed later, it cross-fades to the new one.
+ * - `blend`: the cross-fade time, seconds, when `animation`/`play` or `weights` change
+ *   (default 0.25; 0 cuts).
+ * - `weights`: several animations playing at once, each at its own weight,
+ *   `"walk 0.5, strafe 0.5"` (see {@link AnimationMixer.setWeights}); changed later, they
+ *   fade to the new weights over `blend`. `sync` names the one the others keep in step with.
+ * - `<garden-clip>` children add animations: cut by frame from the model's own, or
+ *   retargeted from another file (see {@link GardenClip}).
  * - `anim-idle`, `anim-walk`, `anim-run`: animations picked by how fast the
  *   model moves (a `walk`, `follow`, `track` or `wander`, or anything moving
  *   it), cross-fading between them and speeding walk/run to match.
@@ -98,6 +108,16 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     private loadedMeshes: AbstractMesh[] = [];
     private nearObserver: Nullable<Observer<Scene>>;
     private nearScene: Scene;
+    /** The `animation`/`play` and `weights` last applied, so a change of either cross-fades. */
+    private playedAnimation: string;
+    private playedWeights: string;
+    /** The groups its `<garden-clip>` children made. */
+    private clipGroups = new Map<GardenClip, AnimationGroup>();
+    private loadedHolder: Mesh;
+    /** Its animations are a `.babylon` skeleton's named ranges, cut from one take of the bones' own animation. */
+    fromRanges = false;
+    /** True once the model has loaded and built its clips: a clip changed after that builds again. */
+    clipsBuilt = false;
 
     /** Resolves once the model has loaded (or failed). */
     loaded: Promise<void>;
@@ -109,11 +129,14 @@ export class GardenMeshModel extends GardenSkeletonMesh {
 
     updated(changed?: Map<string, unknown>) {
         let key = [this.src, this.extension, this.root, this.filename, this.meshNames,
-            this.height, this.fit, this.base, this.animation].join("|");
+            this.height, this.fit, this.base].join("|");
         if (key == this.loadedKey) {
-            // Only position/rotation/scale etc. changed: no need to reload.
-            if (this.mesh)
+            // Only position/rotation/scale, or which animations play, changed: no need to reload.
+            if (this.mesh) {
                 this.applyTransform();
+                if (this.clipsBuilt)
+                    this.applyAnimations();
+            }
             return;
         }
         this.loadedKey = key;
@@ -160,6 +183,108 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         return this.mixer?.play(name, options) ?? false;
     }
 
+    /**
+     * Plays several animations at once at their own weights (`{ walk: 0.5, strafe: 0.5 }`),
+     * fading to them over `blend` seconds; `sync` keeps the others in step with one. See
+     * {@link AnimationMixer.setWeights}.
+     */
+    setWeights(weights: Record<string, number>, options?: WeightOptions) {
+        this.mixer?.setWeights(weights, options);
+    }
+
+    /** The `blend` attribute: seconds, default 0.25. */
+    private get blendTime(): number {
+        let value = Number(this.getAttribute("blend"));
+        return this.hasAttribute("blend") && Number.isFinite(value) ? value : 0.25;
+    }
+
+    /** `"walk 0.5, strafe 0.5"` as `{ walk: 0.5, strafe: 0.5 }` (a name may have spaces in it). */
+    static parseWeights(value: string): Record<string, number> {
+        let out: Record<string, number> = {};
+        for (let part of (value ?? "").split(",")) {
+            let match = part.trim().match(/^(.*\S)\s+(-?[\d.]+)$/);
+            if (match) out[match[1]] = Number(match[2]);
+        }
+        return out;
+    }
+
+    /**
+     * `animation`/`play` and `weights`, when either is new: at load (`blend` 0, it starts as
+     * it is) and after any change of them (cross-fading over `blend`).
+     */
+    private applyAnimations(blend = this.blendTime) {
+        let weights = this.getAttribute("weights");
+        let sync = this.getAttribute("sync");
+        let both = weights == null ? null : weights + "|" + (sync ?? "");
+        // `weights` taken off: back to the `play` animation, even if `play` itself didn't change.
+        if (both == null && this.playedWeights != null)
+            this.playedAnimation = undefined;
+        let first = this.animation ?? this.getAttribute("play");
+        if (first != this.playedAnimation) {
+            this.playedAnimation = first;
+            if (first == "none") {
+                if (this._mixer) this._mixer.stop(blend);
+                else for (let group of this.animationGroups) group.stop();
+            } else if (first) {
+                this.mixer?.play(first, { blend });
+            }
+        }
+        if (both != this.playedWeights) {
+            this.playedWeights = both;
+            if (weights != null)
+                this.mixer?.setWeights(GardenMeshModel.parseWeights(weights), { blend, sync: sync ?? undefined });
+        }
+    }
+
+    /** Builds a `<garden-clip>` again after it changed, replacing its old animation. */
+    async rebuildClip(clip: GardenClip) {
+        this.removeClip(clip);
+        if (!this.loadedHolder || clip.parentElement != this)
+            return;
+        let key = this.loadedKey;
+        let group = await clip.build(this, this.loadedHolder, this.ownGroups());
+        if (!group || key != this.loadedKey || clip.parentElement != this) {
+            group?.dispose();
+            return;
+        }
+        this.addClipGroup(clip, group);
+        // Asked for by `play` or `weights` (or playing before the change): play it now.
+        let name = group.name.toLowerCase();
+        let wanted = (this.animation ?? this.getAttribute("play"))?.toLowerCase() == name
+            || Object.keys(GardenMeshModel.parseWeights(this.getAttribute("weights"))).some(n => n.toLowerCase() == name);
+        if (wanted || this._mixer?.current?.toLowerCase() == name) {
+            this.playedAnimation = this.playedWeights = undefined;
+            this.applyAnimations(0);
+        }
+    }
+
+    /** Takes a `<garden-clip>`'s animation off the model. */
+    removeClip(clip: GardenClip) {
+        let group = this.clipGroups.get(clip);
+        if (!group)
+            return;
+        this.clipGroups.delete(clip);
+        this._mixer?.remove(group);
+        this.animationGroups = this.animationGroups.filter(g => g != group);
+        group.dispose();
+    }
+
+    /** The animations the file had (or its ranges made), not the clips. */
+    private ownGroups(): AnimationGroup[] {
+        let clips = new Set(this.clipGroups.values());
+        return this.animationGroups.filter(g => !clips.has(g));
+    }
+
+    private addClipGroup(clip: GardenClip, group: AnimationGroup) {
+        this.clipGroups.set(clip, group);
+        // A clip with an animation's name stands in for it.
+        let same = this.animationGroups.filter(g => g != group && g.name.toLowerCase() == group.name.toLowerCase());
+        for (let old of same) old.stop();
+        this.animationGroups = this.animationGroups.filter(g => !same.includes(g) && g != group).concat(group);
+        if (this._mixer) this._mixer.add(group);
+        group.stop();
+    }
+
     /** Stops the animations, fading out over `blend` seconds (default 0.25). */
     stopAnimation(blend?: number) {
         this.mixer?.stop(blend);
@@ -180,6 +305,10 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     private disposeLoaded() {
         for (let group of this.animationGroups) group.dispose();
         this.animationGroups = [];
+        this.clipGroups.clear();
+        this.clipsBuilt = false;
+        this.loadedHolder = null;
+        this.playedAnimation = this.playedWeights = undefined;
         this._mixer?.dispose();
         this._mixer = null;
         for (let mesh of this.loadedMeshes) if (!mesh.isDisposed()) mesh.dispose(false, true);
@@ -231,6 +360,10 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         this.motionObserver = null;
         this.disposeLoaded();
         this.animationGroups = result.animationGroups;
+        // A .babylon file keeps its moves as named ranges of the skeleton's own animation.
+        this.fromRanges = !this.animationGroups.length;
+        if (this.fromRanges)
+            this.animationGroups = skeletonRangeClips(result.skeletons);
         this.loadedMeshes = result.meshes;
 
         let holder = new Mesh(this.id || "garden-mesh-model", scene);
@@ -253,18 +386,27 @@ export class GardenMeshModel extends GardenSkeletonMesh {
             }
         }
 
-        let first = this.animation ?? this.getAttribute("play");
-        if (first == "none") {
-            for (let group of this.animationGroups) group.stop();
-        } else if (first) {
-            this.mixer?.play(first, { blend: 0 });
+        if (result.skeletons.length > 0)
+            this.skeleton = result.skeletons[0];
+
+        // <garden-clip> children: more animations, cut from these or retargeted from other files.
+        this.loadedHolder = holder;
+        await GardenElement.whenDocumentReady();
+        for (let clip of Array.from(this.children).filter(c => c.localName == "garden-clip") as GardenClip[]) {
+            let group = await clip.build(this, holder, this.ownGroups());
+            if (this.loadedKey != key) {
+                group?.dispose();
+                return;
+            }
+            if (group) this.addClipGroup(clip, group);
         }
+        this.clipsBuilt = true;
+
+        this.applyAnimations(0);
 
         if (this.getAttribute("materials") == "standard")
             toStandardMaterials(result.meshes, scene);
 
-        if (result.skeletons.length > 0)
-            this.skeleton = result.skeletons[0];
         this.setMesh(holder);
         this.applyTransform();
 

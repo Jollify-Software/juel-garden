@@ -29,9 +29,11 @@ import { GardenScene } from "./Scene";
  * `alpha`/`beta` (`type="arc"`: its angles round and down from the top, in
  * radians, as Babylon's ArcRotateCamera; with them `position` isn't needed),
  * `beta-lower`/`beta-upper` and `radius-lower`/`radius-upper` (its limits),
+ * `bounce` (`type="arc"`: zoomed to a radius limit, it springs back a little,
+ * as Babylon's `useBouncingBehavior`),
  * `height-offset`, `rotation-offset`, `look-offset`, `camera-stiffness`,
  * `camera-damping`, `free-look`, `look-pad`, `look-speed` (the last eight are `type="follow"`-specific), `ellipsoid`/`touch`
- * (`type="free"`-specific).
+ * and `keys` (`"arrows"` or `"none"`: not W/A/S/D) (`type="free"`-specific).
  *
  * `rotation` (degrees, `"x y z"`) turns a `free` (or other non-orbiting)
  * camera: `"0 90 0"` looks along +x, `"90 0 0"` straight down.
@@ -216,6 +218,9 @@ export class GardenCamera extends GardenElement {
             (<any>this.camera).freeLook = this.hasAttribute("free-look");
         if ("lookPad" in this.camera && this.hasAttribute("look-pad"))
             (<any>this.camera).lookPad = this.getAttribute("look-pad");
+        // An arc camera springs back a little from its zoom limits (Babylon's BouncingBehavior).
+        if ("useBouncingBehavior" in this.camera)
+            (<any>this.camera).useBouncingBehavior = this.hasAttribute("bounce") && this.getAttribute("bounce") != "false";
         if ("lookSpeed" in this.camera && this.hasAttribute("look-speed"))
             (<any>this.camera).lookSpeed = Number(this.getAttribute("look-speed"));
 

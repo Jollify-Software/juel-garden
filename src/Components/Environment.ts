@@ -71,6 +71,10 @@ export class GardenEnvironment extends GardenElement {
             if (options[key] === undefined) delete options[key];
         this.builtIn = scene;
         this.helper = scene.createDefaultEnvironment(options);
+        // Its ground and sky are the element's: a light's `shadows` lets them receive, not cast
+        // (a sky casting would stretch the shadow map over the whole backdrop).
+        if (this.helper?.rootMesh)
+            (<any>this.helper.rootMesh).element = this;
         let colour = this.getAttribute("colour");
         if (colour && this.helper)
             this.helper.setMainColor(Color3.FromHexString(colour));
