@@ -15,7 +15,13 @@ import { GardenElement } from "../GardenElement";
  *
  * Attributes: `type` (which slot on the parent `<garden-material>` this fills,
  * default `"diffuse"`), `src`, `center` (a `Vector2`-ish offset), `rotation`
- * (degrees), `u-scale`/`v-scale` (repeat count across the mesh face).
+ * (degrees), `u-scale`/`v-scale` (repeat count across the mesh face),
+ * `sampling` (`nearest` for crisp texels -- pixel art, or a lookup table a shader
+ * reads -- `bilinear`, or `trilinear`, Babylon's default), `wrap` (`repeat`, the
+ * default, `clamp` or `mirror`; two words for u and v), `mipmaps="false"`,
+ * `invert-y="false"` (the image the right way up for a glTF-style UV layout, or a
+ * lookup table). `uniform` (instead of `type`) gives it to a shader material's
+ * sampler of that name.
  *
  * @category Components
  */
@@ -33,7 +39,18 @@ export class GardenTexture extends GardenElement {
     @property({ type: Number, attribute: "u-scale" }) uScale: number;
     @property({ type: Number, attribute: "v-scale" }) vScale: number;
 
+    @property() sampling: string;
+    @property() wrap: string;
+
     texture: Texture;
+
+    /** Babylon's sampling modes and address modes by name. */
+    private static samplingModes: { [name: string]: number } = {
+        nearest: Texture.NEAREST_SAMPLINGMODE, bilinear: Texture.BILINEAR_SAMPLINGMODE, trilinear: Texture.TRILINEAR_SAMPLINGMODE,
+    };
+    private static wrapModes: { [name: string]: number } = {
+        repeat: Texture.WRAP_ADDRESSMODE, clamp: Texture.CLAMP_ADDRESSMODE, mirror: Texture.MIRROR_ADDRESSMODE,
+    };
 
     get centerU(): number {
         return this.center?.x ?? 0.5;
@@ -52,8 +69,15 @@ export class GardenTexture extends GardenElement {
     static owned = new WeakSet<object>();
 
     updated() {
-        let texture = new Texture(this.src, this.getScene());
+        let sampling = GardenTexture.samplingModes[(this.sampling ?? "").trim().toLowerCase()] ?? Texture.TRILINEAR_SAMPLINGMODE;
+        let texture = new Texture(this.src, this.getScene(), this.getAttribute("mipmaps") == "false",
+            this.getAttribute("invert-y") != "false", sampling);
         GardenTexture.owned.add(texture);
+        if (this.wrap) {
+            let [u, v = u] = this.wrap.trim().toLowerCase().split(/[\s,]+/).map(w => GardenTexture.wrapModes[w] ?? Texture.WRAP_ADDRESSMODE);
+            texture.wrapU = u;
+            texture.wrapV = v;
+        }
         if (this.uScale)
             texture.uScale = this.uScale;
         if (this.vScale)

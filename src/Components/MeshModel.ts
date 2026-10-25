@@ -1,6 +1,7 @@
 import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup";
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Material } from "@babylonjs/core/Materials/material";
 import { Nullable } from "@babylonjs/core/types";
 import { Observer } from "@babylonjs/core/Misc/observable";
 import { Scene } from "@babylonjs/core/scene";
@@ -57,6 +58,9 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
  * - `loading-screen`: `"false"` to skip Babylon's loading screen, which
  *   otherwise covers the canvas while any model is loading. A model with
  *   `load-distance` loads quietly unless this is `"true"`.
+ *
+ * A `<garden-material>` child (a node or shader material, say) dresses every
+ * part of the model that has geometry, in place of the file's materials.
  *
  * Script API: {@link play}`(name, { blend, loop, speed })` cross-fades to a
  * named animation (`loop: false` plays it once, then goes back to the
@@ -163,6 +167,13 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     /** Stops the animations, fading out over `blend` seconds (default 0.25). */
     stopAnimation(blend?: number) {
         this.mixer?.stop(blend);
+    }
+
+    /** A `<garden-material>` child dresses every part of the model that has geometry. */
+    setMaterial(material: Material) {
+        for (let mesh of this.loadedMeshes)
+            if (mesh.getTotalVertices() > 0)
+                mesh.material = material;
     }
 
     /** Removed for good: the loaded meshes, skeletons and animations go; added back, it loads again. */
