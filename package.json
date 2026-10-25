@@ -92,7 +92,8 @@
     "test:environment": "node tests/environment.js",
     "test:animation-blending": "node tests/animation-blending.js",
     "test:camera-bounce": "node tests/camera-bounce.js",
-    "test:key-action": "node tests/key-action.js"
+    "test:key-action": "node tests/key-action.js",
+    "test:sound-sync": "node tests/sound-sync.js"
   },
   "repository": {
     "type": "git",

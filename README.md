@@ -225,7 +225,7 @@ and walk-throughs with guides and talking exhibits (the plan is
 | `<garden-pipeline>` | The finish: `samples`, `fxaa`, `bloom` (+ `bloom-threshold`, `bloom-kernel`), `sharpen`, `grain`, `vignette`, `chromatic-aberration`, `depth-of-field` (+ `focal-length`, `f-stop`), `tone-mapping="aces"`, `exposure`, `contrast`; each off unless given; live |
 | `<garden-animation type="vector3">` | Keyframes with several parts: `"0 (0 0 0), 60 ((Math.PI) 0 1.2)"` or `"0 0 0 0, 60 4 0 -2"`; also `vector2`, `quaternion`, `color3`, `color4` |
 | `<garden-marker>` | An icon over a target, or an edge-of-screen arrow to it |
-| `<garden-sound>` | Spatial audio on Babylon's audio engine: `play()`/`stop()`, `play-on="garden-near"`, cones, roll-off |
+| `<garden-sound>` | Spatial audio on Babylon's audio engine: `play()`/`stop()`, `play-on="garden-near"`, cones, roll-off. `sync="name"`: a group that plays together, sample-accurately, `autoplay` waiting until all have loaded; `play()`/`stop()` on one act on the group (`test:sound-sync`) |
 | `<garden-thumbstick>` | On-screen thumbsticks for touch screens: one `controls` a walker, one the `camera` |
 | `camera.show(what)` | A cutaway: the follow camera swings round to look past the player at something happening, then `unshow()` swings it back to exactly where it was (`swingTo(place)`; `test:cutaway`) |
 | `materials="standard"` | A GLB's PBR materials swapped for StandardMaterials, for scenes without an environment map (`toStandardMaterials()` from code) |

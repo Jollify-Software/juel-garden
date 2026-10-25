@@ -29,8 +29,13 @@ import { GardenElement } from "../GardenElement";
  *   {@link Proximity}), so an exhibit talks when you walk up to it with no
  *   code at all.
  * - `ambient` -- never spatial, even inside a mesh.
+ * - `sync` -- a group name: sounds with the same `sync` (in the same scene) play
+ *   together, sample-accurately -- parts of one piece of music, layers of an engine
+ *   noise. With `autoplay` they wait until every one in the group has loaded, then
+ *   start at once; `play()`, `stop()`, `pause()` and `resume()` on any one of them act
+ *   on the whole group.
  *
- * Script API: {@link play}, {@link stop}, {@link pause}, {@link resume},
+ * Script API: {@link play}, {@link stop}, {@link pause}, {@link resume}, {@link group},
  * {@link attachTo} (re-parent it to another element or node), `playing`,
  * and the underlying Babylon {@link sound}. Fires `garden-sound-end`
  * (bubbling) when the sound finishes or is stopped.
@@ -139,8 +144,38 @@ export class GardenSound extends GardenElement {
         this.listen("play-on", () => this.play());
         this.listen("stop-on", () => this.stop());
 
-        if (this.autoplay)
+        if (this.syncGroup) {
+            // The last of the group to load starts the ones that autoplay, all at once.
+            let group = this.group();
+            if (group.every(el => el.sound))
+                GardenSound.together(group.filter(el => el.autoplay), el => el.playOne());
+        } else if (this.autoplay) {
             this.play();
+        }
+    }
+
+    /** The `sync` group's name, or null. */
+    private get syncGroup(): string {
+        return this.getAttribute("sync")?.trim() || null;
+    }
+
+    /** Every `<garden-sound>` with the same `sync` in its scene (this one too); just this one without `sync`. */
+    group(): GardenSound[] {
+        let name = this.syncGroup;
+        let scene = this.closest("garden-scene");
+        if (!name || !scene)
+            return [this];
+        return (Array.from(scene.querySelectorAll("garden-sound")) as GardenSound[])
+            .filter(el => el.syncGroup == name);
+    }
+
+    /**
+     * Runs `act` on each sound in the same moment of the audio clock: Web Audio schedules
+     * them against one `currentTime`, which doesn't move during a task, so they line up.
+     */
+    private static together(sounds: GardenSound[], act: (el: GardenSound) => void) {
+        for (let el of sounds)
+            if (el.sound) act(el);
     }
 
     private listen(attr: string, handler: () => void) {
@@ -163,23 +198,27 @@ export class GardenSound extends GardenElement {
 
     /** Plays from the start (or, with `loop`, keeps looping). Plays once audio is unlocked if it isn't yet. */
     play() {
+        GardenSound.together(this.group(), el => el.playOne());
+    }
+
+    stop() {
+        GardenSound.together(this.group(), el => { if (el.playing) el.sound.stop(); });
+    }
+
+    pause() {
+        GardenSound.together(this.group(), el => el.sound.pause());
+    }
+
+    resume() {
+        GardenSound.together(this.group(), el => el.sound.resume());
+    }
+
+    /** Plays this one sound from the start, whatever its group. */
+    private playOne() {
         if (!this.sound)
             return;
         this.sound.stop();
         this.sound.play();
-    }
-
-    stop() {
-        if (this.playing)
-            this.sound.stop();
-    }
-
-    pause() {
-        this.sound?.pause();
-    }
-
-    resume() {
-        this.sound?.resume();
     }
 
     protected dispose() {
