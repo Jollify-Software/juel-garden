@@ -89,7 +89,13 @@
     "test:viewport": "node tests/viewport.js",
     "test:raycast": "node tests/raycast.js",
     "test:ragdoll": "node tests/ragdoll.js",
-    "test:environment": "node tests/environment.js"
+    "test:environment": "node tests/environment.js",
+    "test:shader-material": "node tests/shader-material.js",
+    "test:post-process": "node tests/post-process.js",
+    "test:fsr": "node tests/fsr.js",
+    "test:hud": "node tests/hud.js",
+    "test:particle-mask": "node tests/particle-mask.js",
+    "test:texture-options": "node tests/texture-options.js"
   },
   "repository": {
     "type": "git",
