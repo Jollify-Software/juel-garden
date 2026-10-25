@@ -32,6 +32,7 @@ export * from "./src/Components/Action";
 export * from "./src/Components/Camera";
 export type { CameraPlace, ShowOptions } from "./src/CameraTypes/FollowCameraStrategy";
 export * from "./src/Components/WebXR";
+export * from "./src/Components/Launcher";
 export * from "./src/Components/Waypoint";
 export * from "./src/Components/Link";
 export * from "./src/Components/Light";

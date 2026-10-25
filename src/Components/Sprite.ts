@@ -27,8 +27,16 @@ import { GardenElement } from "../GardenElement";
  * character or a flapping bird): `cells="from to"` plays the sheet's cells
  * `from` to `to` (indices left to right, top to bottom) on every sprite,
  * `cell-delay` milliseconds a cell (default 100), looping unless
- * `cell-loop="false"`. `cell` alone shows one cell, still. Each sprite is
- * {@link sprites}, for `playAnimation()` from code.
+ * `cell-loop="false"`. `cell` alone shows one cell, still; several (`cell="0 18 44"`)
+ * are taken in turn, one per sprite -- three characters from one sheet. Each sprite is
+ * in {@link sprites}, for `playAnimation()` from code.
+ *
+ * `angle` turns the sprites in the screen's plane (degrees; several are taken in turn,
+ * like `cell`). **Picking:** `pickable` lets the pointer pick the sprites: pressing on
+ * one fires `garden-pick` on the element with `detail.sprite` (and `detail.index`, its
+ * place in {@link sprites}), and {@link GardenScene.pick} sees them -- e.g.
+ * `<garden-action trigger="garden-pick" type="increment" property="angle" value="0.5">`
+ * inside turns whichever sprite is picked.
  *
  * Per-frame movement is delegated entirely to the generic `Behaviours` --
  * see {@link BehaviourFlee} (`flee-target`/`flee-radius`/`flee-speed`),
@@ -85,7 +93,9 @@ export class GardenSprite extends GardenElement {
 
     updated() {
         let scene = this.getScene();
-        const manager = this.manager = new SpriteManager(this.id || "sprites", this.url, this.capacity ?? Math.max(1, this.count ?? 1), this.buildOptions(), scene);
+        // Room for every sprite placed (`count` per `positions` group) unless `capacity` says.
+        let groups = this.positions ? this.positions.split(',').filter(x => x.trim()).length : 1;
+        const manager = this.manager = new SpriteManager(this.id || "sprites", this.url, this.capacity ?? Math.max(1, (this.count ?? 1) * groups), this.buildOptions(), scene);
 
         let spriteWidth = Number(this.getAttribute("sprite-width") ?? 1);
         let spriteHeight = Number(this.getAttribute("sprite-height") ?? 1);
@@ -95,6 +105,7 @@ export class GardenSprite extends GardenElement {
             sprite.position = pos.clone();
             sprite.width = spriteWidth;
             sprite.height = spriteHeight;
+            (<any>sprite).element = this;
             return sprite;
         };
 
@@ -131,13 +142,20 @@ export class GardenSprite extends GardenElement {
         this.sprites = sprites;
         let num = (name: string) => this.hasAttribute(name) ? Number(this.getAttribute(name)) : undefined;
         let cells = (this.getAttribute("cells") ?? "").trim().split(/[\s,]+/).filter(x => x).map(Number);
-        let cell = num("cell");
-        for (let sprite of sprites) {
-            if (cell != null)
-                sprite.cellIndex = cell;
+        let list = (name: string) => (this.getAttribute(name) ?? "").trim().split(/[\s,]+/).filter(x => x).map(Number);
+        let cell = list("cell");
+        let angle = list("angle");
+        let pickable = this.hasAttribute("pickable") && this.getAttribute("pickable") != "false";
+        manager.isPickable = pickable;
+        sprites.forEach((sprite, i) => {
+            sprite.isPickable = pickable;
+            if (angle.length)
+                sprite.angle = angle[i % angle.length] * Math.PI / 180;
+            if (cell.length)
+                sprite.cellIndex = cell[i % cell.length];
             if (cells.length == 2)
                 sprite.playAnimation(cells[0], cells[1], this.getAttribute("cell-loop") != "false", num("cell-delay") ?? 100);
-        }
+        });
 
         // Same generic Behaviours pipeline GardenMesh.modifyMesh applies to its
         // own single Mesh (see Behaviours.applyBehaviours) -- once per placed
@@ -148,7 +166,7 @@ export class GardenSprite extends GardenElement {
         for (let sprite of sprites) {
             let target = new SpriteBehaviourTarget(sprite);
             Behaviours.applyToTarget(this, target, collection);
-            target.attachRotationSync(scene);
+            target.attachRotationSync(scene, this);
         }
     }
 }

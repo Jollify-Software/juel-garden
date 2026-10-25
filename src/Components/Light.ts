@@ -43,7 +43,10 @@ import { GardenAnimation } from "./Animation";
  * overrides that. `cascades` (directional lights: 2–4, default 4 when given
  * without a number) splits the shadow map into cascades, sharp near the camera
  * and still there far off -- for big outdoor scenes, where one map is either
- * blurred or cut short.
+ * blurred or cut short. `shadow-filter` softens the edges another way: `pcf` (the
+ * default), `poisson`, `exponential`, `blur-exponential` (soft and blurred, good at a
+ * small map size), `close-exponential`, `blur-close-exponential`,
+ * `contact-hardening` (sharp near the caster, soft further off) or `none`.
  *
  * `intensity`, `range`, `pool` and `diffuse` can be set from code, or
  * animated by a `<garden-animation property="intensity">` (or `range`)
@@ -97,7 +100,7 @@ export class GardenLight extends GardenElement {
     async updated() {
         let scene = this.getScene();
         let type = this.pool > 0 && this.type != "directional" ? "spot" : this.type;
-        let key = [type, this.hasAttribute("shadows"), this.shadows, this.getAttribute("cascades")].join("|");
+        let key = [type, this.hasAttribute("shadows"), this.shadows, this.getAttribute("cascades"), this.getAttribute("shadow-filter")].join("|");
         if (this.light && key == this._builtKey) {
             this.apply();
             return;
@@ -147,7 +150,7 @@ export class GardenLight extends GardenElement {
                 generator = new ShadowGenerator(size, this.light);
             }
             this.shadowGenerator = generator;
-            generator.usePercentageCloserFiltering = true;
+            GardenLight.setFilter(generator, this.getAttribute("shadow-filter"));
             let add = (mesh: any) => {
                 if (mesh.infiniteDistance || !mesh.isVisible) return; // not the sky
                 // A mesh learns its element after it's made (GardenMesh.setMesh): decide
@@ -180,6 +183,23 @@ export class GardenLight extends GardenElement {
         for (let child of Array.from(this.children))
             if (child.matches("garden-animation") && (<GardenAnimation>child).event == "load")
                 (<GardenAnimation>child).playWhenReady(<any>this);
+    }
+
+    /** `shadow-filter`: how the shadow's edges are softened (PCF unless it says otherwise). */
+    private static setFilter(generator: ShadowGenerator, filter: string) {
+        switch ((filter ?? "pcf").trim().toLowerCase()) {
+            case "none": break;
+            case "poisson": generator.usePoissonSampling = true; break;
+            case "exponential": generator.useExponentialShadowMap = true; break;
+            case "blur-exponential": generator.useBlurExponentialShadowMap = true; break;
+            case "close-exponential": generator.useCloseExponentialShadowMap = true; break;
+            case "blur-close-exponential": generator.useBlurCloseExponentialShadowMap = true; break;
+            case "contact-hardening": generator.useContactHardeningShadow = true; break;
+            default:
+                if (filter && filter.trim().toLowerCase() != "pcf")
+                    console.warn(`<garden-light shadow-filter="${filter}"> is not a filter; using pcf.`);
+                generator.usePercentageCloserFiltering = true;
+        }
     }
 
     /** The live-settable attributes. */

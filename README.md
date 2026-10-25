@@ -210,7 +210,7 @@ and walk-throughs with guides and talking exhibits (the plan is
 | `play()`, `anim-*` | Named GLB animations with cross-fades; idle/walk/run picked by speed; one-shots fire `garden-animation-end` |
 | `near` | `garden-near` / `garden-far` when something (or `camera`) comes close |
 | `<garden-torus-knot>` | `radius`, `tube`, `p`, `q`, `radial-segments`, `tubular-segments` |
-| `grab` | Pick a mesh or model up and move it in six directions (a controller or hand turns it over); `grab="scale"` pinches it bigger or smaller; `grab-box` draws a bounding box with handles; `garden-grab` / `garden-release` |
+| `grab` | Pick a mesh or model up and move it in six directions (a controller or hand turns it over); `grab="scale"` pinches it bigger or smaller; `grab-box` draws a bounding box with handles; `garden-grab` / `garden-release`. A physics body is carried while held and thrown when let go, at the speed it was moving (`grab-throw` scales it, `0` drops it; `test:throw`) |
 | `<garden-light pool>` | Lights carried by meshes; a pool of light on the ground; live `intensity`/`range`; `shadows` (everything casts but grounds and height maps; a mesh's `cast-shadows`/`receive-shadows` overrides it); a spot light's `exponent`; `cascades` (cascaded shadow maps for big outdoor scenes); `specular` |
 | Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
 | `<garden-camera type="arc">` | `alpha`/`beta`/`radius` (radians, as Babylon's ArcRotateCamera), `target="x y z"` or an element to follow, `beta-lower`/`beta-upper`/`radius-lower`/`radius-upper` |
@@ -311,8 +311,43 @@ an overhead map. It takes no input unless it has `controls`. `layer-mask` on cam
 says which camera sees what (a roof hidden from the overhead camera). `rotation` (degrees) turns a
 `free` camera, and the meshes inside a `<garden-camera parent>` ride with it.
 
-**Sprites** (`test:sprite`): `<garden-sprite cells="0 40" cell-delay="100">` plays a sprite
-sheet's cells in turn (`cell-loop="false"` once); `cell="5"` shows one, still.
+**Sprites** (`test:sprite`, `test:picking`): `<garden-sprite cells="0 40" cell-delay="100">` plays a sprite
+sheet's cells in turn (`cell-loop="false"` once); `cell="5"` shows one, still, and
+`cell="0 18 44"` gives each sprite its own (taken in turn). `angle` turns them (degrees, a
+list taken in turn too); `pickable` lets the pointer pick them. Without `capacity`, the
+sheet has room for every sprite placed.
+
+**Picking, rays and touching** (`test:picking`, `test:overlap`): what's under the pointer, what a
+line meets, what touches what -- the questions a game asks every frame -- without physics.
+
+```html
+<garden-box id="turret" ray ray-length="50" ray-show="#ff0000" face-pointer></garden-box>
+<garden-sphere diameter="0.3" at-pointer emissive-colour="#00ff00"></garden-sphere>
+<garden-sphere overlap="#spikes" overlap-precise emissive-colour="#ffffff">
+  <garden-action trigger="garden-overlap" type="set" property="material.emissiveColor" value="#ff0000"></garden-action>
+</garden-sphere>
+<garden-sprite url="players.png" width="64" height="64" positions="0 0 0, 1 0 0" count="1" pickable>
+  <garden-action trigger="garden-pick" type="increment" property="angle" value="0.5"></garden-action>
+</garden-sprite>
+```
+
+| Piece | What it does |
+|---|---|
+| `sceneEl.pick(x, y, { ignore, sprites })`, `sceneEl.pickRay(origin, direction, length, options)` | The nearest mesh or pickable sprite under a screen point (default the pointer) or along a line: `{ element, mesh, sprite, index, point, normal, distance }`; a model's parts give the model's element; `index` is the sprite (or `grid` copy) |
+| `garden-pick` | Fired (bubbling) on the element pressed, mesh or sprite; `detail` is the hit, with `sprite` and `index` for a sprite |
+| `ray` | A ray out of the mesh along its own `"x y z"` (bare: straight ahead), turning with it: `element.rayHit`, `garden-ray-hit` / `garden-ray-miss` when what it meets changes; `ray-length` (100), `ray-show` (a line; `#rrggbb`), `ray-ignore` |
+| `face-pointer`, `at-pointer` | Turn about the vertical to face where the pointer meets the scene; put the mesh there (`at-pointer="0 0.5 0"`: an offset); `pointer-ignore`; `element.pointerHit` |
+| `overlap` | `garden-overlap` / `garden-overlap-end` when the mesh's box starts or stops touching another's (`overlap="#a, #b"`); `overlap-precise` uses their own turned boxes; `overlap-point="x y z"` a point; `element.overlapping` |
+| `<garden-launcher>` | A tap or click (in VR, a controller's trigger; `hand="right"` for one hand) throws a copy of its `<template>` along the pointer's ray: `speed`, `offset`, `max`; `garden-launch`, `fire(origin, direction)`, `clear()` (`test:throw`) |
+| `<garden-webxr physics-controllers physics-headset>` | Bodies on the VR controllers or hands (the value is their size, default 0.1 m) and on the head: knock things over, bat a ball, headbutt it (`test:throw` checks it stays quiet without WebXR) |
+| `<garden-action trigger="garden-...">` | On any DOM event from inside its parent: `type="set"` or `"increment"` a `property` path (`material.emissiveColor`, `position.y`, a sprite's `angle`) of the element the event came from (the sprite picked, its light, its mesh), or of `target`; `value` a colour, number, boolean or `"x y z"` |
+
+**Materials and light** (`test:overlap`): `<garden-material>` takes `wireframe`, `back-faces`
+(both sides drawn), `lighting="false"` (unlit, only its emissive colour) and `ambient-colour`
+(its share of the scene's `ambient-colour`, set on `<garden-scene>`, live).
+`<garden-light shadows shadow-filter="blur-exponential">` picks how the shadow's edges are
+softened: `pcf` (default), `poisson`, `exponential`, `blur-exponential`, `close-exponential`,
+`blur-close-exponential`, `contact-hardening` or `none` (live).
 
 **`<garden-environment>`** (`test:environment`): Babylon's default environment, the lighting map
 PBR models need plus an optional ground and sky (`ground`, `sky`, `colour`, `ground-shadow`,

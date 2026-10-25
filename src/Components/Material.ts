@@ -28,7 +28,10 @@ const colourConverter = {
  *
  * Attributes: `slot` (which named material slot this fills, on elements like
  * `<garden-roof>`/`<garden-room>` that have more than one), `colour`,
- * `spec-colour`, `emissive-colour`, `opacity` (0 clear to 1 solid: below 1
+ * `spec-colour`, `emissive-colour`, `ambient-colour` (how much of the scene's
+ * `ambient-colour` it takes), `lighting="false"` (unlit: only its emissive colour
+ * shows, a lamp's bulb), `wireframe` (drawn as its edges, a bounding box shown),
+ * `back-faces` (both sides drawn, a single sheet seen from behind), `opacity` (0 clear to 1 solid: below 1
  * the material is see-through and both faces draw -- glass, water, a
  * glazed roof), `node` (a node material instead -- the Node Material Editor's
  * output, as a JSON file's URL or `#ID` on Babylon's snippet server: shaders,
@@ -54,6 +57,7 @@ export class GardenMaterial extends GardenElement {
     @property({ converter: colourConverter }) colour: Color3;
     @property({ attribute: "spec-colour", converter: colourConverter }) specColour: Color3;
     @property({ attribute: "emissive-colour", converter: colourConverter }) emissiveColour: Color3;
+    @property({ attribute: "ambient-colour", converter: colourConverter }) ambientColour: Color3;
     @property({ type: Number }) opacity: number;
     /** A node material instead: a JSON file's URL, or `#ID` for one on Babylon's snippet server. */
     @property({ attribute: "node" }) nodeSource: string;
@@ -87,6 +91,15 @@ export class GardenMaterial extends GardenElement {
             material.specularColor = this.specColour;
         if (this.emissiveColour)
             material.emissiveColor = this.emissiveColour;
+        if (this.ambientColour)
+            material.ambientColor = this.ambientColour;
+        let flag = (name: string) => this.hasAttribute(name) && this.getAttribute(name) != "false";
+        if (this.getAttribute("lighting") == "false")
+            material.disableLighting = true;
+        if (flag("wireframe"))
+            material.wireframe = true;
+        if (flag("back-faces"))
+            material.backFaceCulling = false;
         if (this.opacity != null && this.opacity < 1) {
             material.alpha = Math.max(0, this.opacity);
             // See-through: the far side shows, so draw back faces too.
