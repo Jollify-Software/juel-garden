@@ -120,28 +120,46 @@ class PBRSplatPlugin extends MaterialPluginBase {
                 #ifdef PBRSPLAT_ARH
                 uniform sampler2D splatA1; uniform sampler2D splatA2; uniform sampler2D splatA3;
                 #endif
+                // WebGL 2 samples only what a pixel needs (branches, with explicit gradients so
+                // the mip level is right inside them); WebGL 1 samples everything.
+                #ifdef WEBGL2
+                #define SPLAT_TEX(s, uv, g) textureGrad(s, uv, g.xy, g.zw)
+                #define SPLAT_IF(c) if (c)
+                #else
+                #define SPLAT_TEX(s, uv, g) texture2D(s, uv)
+                #define SPLAT_IF(c)
+                #endif
                 vec3 gSplatAlbedo; vec4 gSplatNormal; float gSplatRough; float gSplatAO;
                 float splatHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
                 float splatNoise(vec2 p) {
                     vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
                     return mix(mix(splatHash(i), splatHash(i + vec2(1.0, 0.0)), u.x), mix(splatHash(i + vec2(0.0, 1.0)), splatHash(i + vec2(1.0, 1.0)), u.x), u.y);
                 }
-                // One layer's colour, normal and (AO, roughness, height), sampled once or (anti-tiling) twice.
-                void splatLayer(sampler2D D, sampler2D N, sampler2D A, bool hasA, vec2 uv, float k, out vec3 c, out vec3 n, out vec3 a) {
-                    c = toLinearSpace(texture2D(D, uv).rgb);
-                    n = texture2D(N, uv).xyz;
-                    a = hasA ? texture2D(A, uv).rgb : vec3(1.0, 0.0, 0.5);
+                // One layer's colour, normal and (AO, roughness, height) at uv (gradients g), and
+                // (anti-tiling) at a second, larger, turned place, mixed by k.
+                void splatLayer(sampler2D D, sampler2D N, sampler2D A, bool hasA, vec2 uv, vec4 g, float k, inout vec3 c, inout vec3 n, inout vec3 a) {
+                    vec3 c1 = vec3(0.0); vec3 n1 = vec3(0.5, 0.5, 1.0); vec3 a1 = vec3(1.0, 0.0, 0.5);
+                    SPLAT_IF(k < 0.999) {
+                        c1 = toLinearSpace(SPLAT_TEX(D, uv, g).rgb);
+                        n1 = SPLAT_TEX(N, uv, g).xyz;
+                        if (hasA) a1 = SPLAT_TEX(A, uv, g).rgb;
+                    }
                     #ifdef PBRSPLAT_ANTITILE
-                    vec2 uv2 = mat2(0.8, -0.6, 0.6, 0.8) * uv * 0.47 + vec2(0.37, 0.71);
-                    vec3 c2 = toLinearSpace(texture2D(D, uv2).rgb);
-                    vec3 n2 = texture2D(N, uv2).xyz;
-                    vec3 a2 = hasA ? texture2D(A, uv2).rgb : a;
-                    c = mix(c, c2, k); n = mix(n, n2, k); a = mix(a, a2, k);
+                    SPLAT_IF(k > 0.001) {
+                        mat2 r = mat2(0.8, -0.6, 0.6, 0.8) * 0.47;
+                        vec2 uv2 = r * uv + vec2(0.37, 0.71);
+                        vec4 g2 = vec4(r * g.xy, r * g.zw);
+                        vec3 c2 = toLinearSpace(SPLAT_TEX(D, uv2, g2).rgb);
+                        vec3 n2 = SPLAT_TEX(N, uv2, g2).xyz;
+                        vec3 a2 = hasA ? SPLAT_TEX(A, uv2, g2).rgb : a1;
+                        c1 = mix(c1, c2, k); n1 = mix(n1, n2, k); a1 = mix(a1, a2, k);
+                    }
                     #endif
+                    c = c1; n = n1; a = a1;
                 }
-                vec2 splatParallax(sampler2D A, vec2 uv, vec2 view) {
+                vec2 splatParallax(sampler2D A, vec2 uv, vec4 g, vec2 view) {
                     #ifdef PBRSPLAT_PARALLAX
-                    float h = texture2D(A, uv).b;
+                    float h = SPLAT_TEX(A, uv, g).b;
                     return uv + view * (h - 0.5) * splatParams.x;
                     #else
                     return uv;
@@ -153,6 +171,7 @@ class PBRSplatPlugin extends MaterialPluginBase {
                     vec2 uv = vAlbedoUV;
                     vec3 w = texture2D(albedoSampler, uv).rgb;
                     w /= max(w.r + w.g + w.b, 0.001);
+                    vec4 g0 = vec4(dFdx(uv), dFdy(uv));
                     vec2 view = vec2(0.0);
                     #ifdef PBRSPLAT_PARALLAX
                     {
@@ -162,30 +181,31 @@ class PBRSplatPlugin extends MaterialPluginBase {
                         view = vt.xy / max(vt.z, 0.25);
                     }
                     #endif
-                    // Anti-tiling: where the second, larger and turned sample shows (noise over tens of metres).
+                    // Anti-tiling: where the second, larger and turned sample shows (noise over tens of
+                    // metres); mostly all one or the other, so most pixels read one sample.
                     float k = 0.0;
                     #ifdef PBRSPLAT_ANTITILE
-                    k = smoothstep(0.3, 0.7, splatNoise(uv * 23.0) * 0.7 + splatNoise(uv * 61.0) * 0.3);
+                    k = smoothstep(0.35, 0.65, splatNoise(uv * 23.0) * 0.7 + splatNoise(uv * 61.0) * 0.3);
                     #endif
-                    vec3 c1, c2, c3, n1, n2, n3, a1, a2, a3;
+                    vec3 c1 = vec3(0.0), c2 = vec3(0.0), c3 = vec3(0.0);
+                    vec3 n1 = vec3(0.5, 0.5, 1.0), n2 = n1, n3 = n1;
+                    vec3 a1 = vec3(1.0, splatRough.x, 0.5), a2 = vec3(1.0, splatRough.y, 0.5), a3 = vec3(1.0, splatRough.z, 0.5);
+                    // Only the layers present here.
                     #ifdef PBRSPLAT_ARH
-                    vec2 l1 = splatParallax(splatA1, uv * splatTile.x, view);
-                    vec2 l2 = splatParallax(splatA2, uv * splatTile.y, view);
-                    vec2 l3 = splatParallax(splatA3, uv * splatTile.z, view);
-                    splatLayer(splatD1, bumpSampler, splatA1, true, l1, k, c1, n1, a1);
-                    splatLayer(splatD2, splatN2, splatA2, true, l2, k, c2, n2, a2);
-                    splatLayer(splatD3, splatN3, splatA3, true, l3, k, c3, n3, a3);
+                    SPLAT_IF(w.r > 0.002) { vec2 l = splatParallax(splatA1, uv * splatTile.x, g0 * splatTile.x, view); splatLayer(splatD1, bumpSampler, splatA1, true, l, g0 * splatTile.x, k, c1, n1, a1); }
+                    SPLAT_IF(w.g > 0.002) { vec2 l = splatParallax(splatA2, uv * splatTile.y, g0 * splatTile.y, view); splatLayer(splatD2, splatN2, splatA2, true, l, g0 * splatTile.y, k, c2, n2, a2); }
+                    SPLAT_IF(w.b > 0.002) { vec2 l = splatParallax(splatA3, uv * splatTile.z, g0 * splatTile.z, view); splatLayer(splatD3, splatN3, splatA3, true, l, g0 * splatTile.z, k, c3, n3, a3); }
                     #else
-                    splatLayer(splatD1, bumpSampler, splatD1, false, uv * splatTile.x, k, c1, n1, a1);
-                    splatLayer(splatD2, splatN2, splatD2, false, uv * splatTile.y, k, c2, n2, a2);
-                    splatLayer(splatD3, splatN3, splatD3, false, uv * splatTile.z, k, c3, n3, a3);
+                    SPLAT_IF(w.r > 0.002) splatLayer(splatD1, bumpSampler, splatD1, false, uv * splatTile.x, g0 * splatTile.x, k, c1, n1, a1);
+                    SPLAT_IF(w.g > 0.002) splatLayer(splatD2, splatN2, splatD2, false, uv * splatTile.y, g0 * splatTile.y, k, c2, n2, a2);
+                    SPLAT_IF(w.b > 0.002) splatLayer(splatD3, splatN3, splatD3, false, uv * splatTile.z, g0 * splatTile.z, k, c3, n3, a3);
                     a1.g = splatRough.x; a2.g = splatRough.y; a3.g = splatRough.z;
                     #endif
                     #ifdef PBRSPLAT_HEIGHTBLEND
                     // Height blending: the higher surface shows where two layers meet.
                     vec3 hw = w + vec3(a1.b, a2.b, a3.b) * 0.6;
                     float top = max(hw.r, max(hw.g, hw.b)) - 0.25;
-                    w = max(hw - vec3(top), vec3(0.0)) * step(0.001, w);
+                    w = max(hw - vec3(top), vec3(0.0)) * step(0.002, w);
                     w /= max(w.r + w.g + w.b, 0.001);
                     #endif
                     gSplatAlbedo = w.r * c1 + w.g * c2 + w.b * c3;
