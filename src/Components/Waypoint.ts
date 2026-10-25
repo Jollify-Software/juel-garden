@@ -65,6 +65,8 @@ export class GardenWaypoint extends GardenElement {
     private nextRing: Mesh;
     private looking: GardenMesh | undefined;
     private lookedMs = 0;
+    /** The stops are being resolved: a second update meanwhile (another property set before the document was ready) leaves them to it. */
+    private resolving = false;
 
     connectedCallback() {
         super.connectedCallback();
@@ -92,9 +94,13 @@ export class GardenWaypoint extends GardenElement {
     };
 
     async updated() {
-        if (typeof this.waypoints !== 'string')
+        if (typeof this.waypoints !== 'string' || this.resolving)
             return;
 
+        // Read before any await: by the time this one resumes, another update may have
+        // replaced the string with the resolved stops (the `n.trim is not a function` race).
+        const selector = this.waypoints;
+        this.resolving = true;
         this.beginBuild();
         try {
             // Waypoints are resolved by id from anywhere in the document, so we can't
@@ -105,7 +111,7 @@ export class GardenWaypoint extends GardenElement {
                 );
             }
 
-            this.waypoints = await GardenElement.resolveReady<GardenMesh>(<string>this.waypoints);
+            this.waypoints = await GardenElement.resolveReady<GardenMesh>(selector);
 
             let scene = this.getScene();
             this.setPosition(this.waypoints[this.index].getPosition());
@@ -124,6 +130,7 @@ export class GardenWaypoint extends GardenElement {
             this.buildMarkers();
             scene.onBeforeRenderObservable.add(() => this.onFrame());
         } finally {
+            this.resolving = false;
             this.endBuild();
         }
     }

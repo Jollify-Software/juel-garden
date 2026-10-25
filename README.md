@@ -410,6 +410,11 @@ same-origin or CORS-enabled.
 A `<garden-waypoint>` stop with `look-at` (a selector or `"x y z"`) turns the camera to face it
 while flying there (`npm run test:waypoint-look`); Parterre's slide platforms look at their panels.
 
+Its stops are resolved once, after the document is parsed: an update that arrives meanwhile (a
+property set by a script while the page is still loading) leaves them to the first, so they are
+never set up twice and the selector is never read after it has been resolved (the `n.trim is not
+a function` race; `npm run test:waypoint-race`).
+
 ## Parterre
 
 [Parterre](../parterre) (`@C:\Jollify\parterre`) is a **generator that targets

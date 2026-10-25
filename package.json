@@ -54,6 +54,7 @@
     "test:ground": "node tests/ground.js",
     "test:animation": "node tests/animation.js",
     "test:waypoint": "node tests/waypoint.js",
+    "test:waypoint-race": "node tests/waypoint-race.js",
     "test:html-texture": "node tests/html-texture.js",
     "test:waypoint-look": "node tests/waypoint-look.js",
     "test:opening": "node tests/opening.js",
