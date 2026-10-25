@@ -34,6 +34,8 @@ export interface RaycastHit {
     distance: number;
     /** For a mesh with a `grid` of copies, which copy; else undefined. */
     instance?: number;
+    /** For a `physics-shape="mesh"` body, which of its triangles; else undefined. */
+    triangle?: number;
 }
 
 /**
@@ -111,23 +113,29 @@ export class GardenPhysics extends GardenElement {
     /**
      * The first body the straight line from `from` to `to` hits (world space), or null.
      * `ignore` leaves out one element's body (the one doing the looking); `triggers`
-     * counts `physics="trigger"` sensors too. The hit gives the `element`, the `point` and
-     * surface `normal`, the `distance` from `from`, and for a `grid` of copies the
-     * `instance` index of the one hit.
+     * counts `physics="trigger"` sensors too; `collideWith` (bits) hits only bodies in those
+     * `physics-group`s (a shot that passes through glass, a sight line that sees only
+     * players). The hit gives the `element`, the `point` and surface `normal`, the
+     * `distance` from `from`, for a `grid` of copies the `instance` index of the one hit,
+     * and for a `physics-shape="mesh"` body the `triangle` hit.
      */
-    raycast(from: Vector3, to: Vector3, options: { ignore?: GardenElement, triggers?: boolean } = {}): RaycastHit | null {
+    raycast(from: Vector3, to: Vector3, options: { ignore?: GardenElement, triggers?: boolean, collideWith?: number } = {}): RaycastHit | null {
         let engine: any = this.getScene()?.getPhysicsEngine();
         if (!engine) return null;
         let result = new PhysicsRaycastResult();
         let ignoreBody = (<any>options.ignore)?.physicsAggregate?.body;
-        engine.raycastToRef(from, to, result, { shouldHitTriggers: !!options.triggers, ignoreBody });
+        let query: any = { shouldHitTriggers: !!options.triggers, ignoreBody };
+        if (options.collideWith != null) query.collideWith = options.collideWith >>> 0;
+        engine.raycastToRef(from, to, result, query);
         if (!result.hasHit) return null;
+        let triangle = result.triangleIndex;
         return {
             element: elementOfBody(result.body),
             point: result.hitPointWorld.clone(),
             normal: result.hitNormalWorld.clone(),
             distance: Vector3.Distance(from, result.hitPointWorld),
             instance: result.bodyIndex,
+            triangle: triangle != null && triangle >= 0 ? triangle : undefined,
         };
     }
 
