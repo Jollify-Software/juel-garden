@@ -51,6 +51,18 @@ import { GardenScene } from "./Scene";
  * With `parent`, the meshes inside a camera ride with it (a player's avatar
  * seen in the overhead view, a held lamp).
  *
+ * `ortho` makes it an orthographic camera (no perspective: a map, a 2D game, a
+ * HUD). Bare, one unit is one pixel of the canvas, centred, as Babylon's
+ * default; `ortho="5"` shows 5 units above and below the centre, and as many
+ * across as the canvas's shape allows, kept as it's resized.
+ *
+ * **A HUD** (a crosshair, a gun sight, a cockpit frame): a second camera with
+ * `viewport="0 0 1 1"`, `ortho` and its own `layer-mask` is drawn over the main
+ * one, and sees only the meshes on its layer -- give those the same `layer-mask`,
+ * and the main camera a mask without that bit (or leave both at their defaults:
+ * the default `layer-mask` of meshes and cameras is `0x0FFFFFFF`, so a HUD on
+ * `0x20000000` is seen by the HUD camera alone).
+ *
  * @example
  * ```html
  * <garden-camera type="follow" target="#car" radius="8" height-offset="3"></garden-camera>
@@ -151,6 +163,25 @@ export class GardenCamera extends GardenElement {
         (<any>this.camera).rotation = Vector3Convert.rotationString(value);
     }
 
+    /** `ortho`: orthographic, in canvas pixels (bare) or with a half-height in units. */
+    private applyOrtho(scene: Scene) {
+        let camera = this.camera;
+        camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
+        let half = Number(this.getAttribute("ortho"));
+        if (!this.getAttribute("ortho") || !(half > 0))
+            return; // Babylon's own: the render size in pixels
+        let engine = scene.getEngine();
+        let fit = () => {
+            let aspect = engine.getAspectRatio(camera) || 1;
+            camera.orthoTop = half;
+            camera.orthoBottom = -half;
+            camera.orthoLeft = -half * aspect;
+            camera.orthoRight = half * aspect;
+        };
+        fit();
+        this.observe(engine.onResizeObservable, fit);
+    }
+
     /** The `<garden-scene>` it was built in. */
     private sceneEl: Element;
 
@@ -226,6 +257,8 @@ export class GardenCamera extends GardenElement {
         }
         if (this.hasAttribute("layer-mask"))
             this.camera.layerMask = GardenCamera.mask(this.getAttribute("layer-mask"));
+        if (this.hasAttribute("ortho"))
+            this.applyOrtho(scene);
         GardenCamera.arrange(sceneEl, scene);
 
         let controls = this.getAttribute("controls");
