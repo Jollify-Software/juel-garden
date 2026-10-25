@@ -91,7 +91,8 @@
     "test:ragdoll": "node tests/ragdoll.js",
     "test:environment": "node tests/environment.js",
     "test:animation-blending": "node tests/animation-blending.js",
-    "test:camera-bounce": "node tests/camera-bounce.js"
+    "test:camera-bounce": "node tests/camera-bounce.js",
+    "test:key-action": "node tests/key-action.js"
   },
   "repository": {
     "type": "git",

@@ -4,6 +4,7 @@ import { IncrementValueAction, SetValueAction } from "@babylonjs/core/Actions/di
 import { InterpolateValueAction } from "@babylonjs/core/Actions/interpolateValueAction";
 import { TargetCamera } from "@babylonjs/core/Cameras/targetCamera";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Scene } from "@babylonjs/core/scene";
 import { customElement, property } from "lit/decorators.js";
 import { ActionInfo } from "../ActionInfo";
 import { Vector3Convert } from "../Converters/Vector3Convert";
@@ -20,10 +21,22 @@ import { GardenScene } from "./Scene";
  * event-action pattern.
  *
  * Attributes: `type` (`"beforeRender"|"set"|"increment"|"interpolate"`),
- * `trigger` (`"enter"|"exit"|"frame"|"pointerOut"|"pointerOver"|"pick"|"leftPick"`),
+ * `trigger` (`"enter"|"exit"|"frame"|"pointerOut"|"pointerOver"|"pick"|"leftPick"|"keydown"|"keyup"`),
+ * `key` (for `keydown`/`keyup`: the keys, separated by spaces, any case -- `"a ArrowLeft"`,
+ * `"space"`; empty for any key; a key held down repeats, as the browser repeats it),
  * `target`, `increment` (added to `i` each frame for `type="beforeRender"`, default 0), `parameter`, `property`, `value`, `duration`
  * (`type="interpolate"`-specific, milliseconds), `stop` (`type="interpolate"`-specific,
  * `"true"` to stop the mesh's other running animations when this one starts).
+ *
+ * A key action inside a mesh works on that mesh (keys go to the canvas, so it needs the focus,
+ * as Babylon's own keyboard input does):
+ *
+ * ```html
+ * <garden-sphere>
+ *   <garden-action type="increment" trigger="keydown" key="a" property="position.x" value="-0.1"></garden-action>
+ *   <garden-action type="increment" trigger="keydown" key="d" property="position.x" value="0.1"></garden-action>
+ * </garden-sphere>
+ * ```
  *
  * @category Components
  */
@@ -38,6 +51,10 @@ export class GardenAction extends GardenElement {
     @property() value: string;
     @property({ type: Number }) duration: number;
     @property() stop: string;
+    @property() key: string;
+
+    /** What it registered, to take off again when it's rebuilt or removed. */
+    private registered: [ActionManager, IAction][] = [];
 
     private resolveRegistered: () => void;
     /**
@@ -103,13 +120,9 @@ export class GardenAction extends GardenElement {
                         value: value,
                         action: (ownerMesh: Mesh, target: any, value: any) => {
                             if (ownerMesh == null) {
-                                console.log(this.getTrigger(this.trigger))
-                                return new SetValueAction(this.getTrigger(this.trigger), target, this.property, value);
+                                return new SetValueAction(this.triggerOptions(), target, this.property, value);
                             } else {
-                                return new SetValueAction({
-                                    trigger: this.getTrigger(this.trigger),
-                                    parameter: target
-                                }, ownerMesh, this.property, value);
+                                return new SetValueAction(this.triggerOptions(target), ownerMesh, this.property, value);
                             }
                         }
                     };
@@ -122,7 +135,7 @@ export class GardenAction extends GardenElement {
                             value: value,
                             action: (ownerMesh: Mesh, target: any, value: any) => {
                                 return new IncrementValueAction(
-                                    this.getTrigger(this.trigger), ownerMesh, this.property, value
+                                    this.triggerOptions(), ownerMesh, this.property, value
                                 )
                             }
                     };
@@ -134,14 +147,12 @@ export class GardenAction extends GardenElement {
                         action: (ownerMesh: Mesh, target: any, value: any) => {
                             if (ownerMesh == null) {
                                 return new InterpolateValueAction(
-                                    this.getTrigger(this.trigger), target, this.property, value,
+                                    this.triggerOptions(), target, this.property, value,
                                     this.duration, null, this.stop === "true"
                                 );
                             } else {
-                                return new InterpolateValueAction({
-                                    trigger: this.getTrigger(this.trigger),
-                                    parameter: target
-                                }, ownerMesh, this.property, value, this.duration, null, this.stop === "true");
+                                return new InterpolateValueAction(this.triggerOptions(target),
+                                    ownerMesh, this.property, value, this.duration, null, this.stop === "true");
                             }
                         }
                     };
@@ -149,18 +160,60 @@ export class GardenAction extends GardenElement {
             }
             if (action && 'mesh' in owner) {
                 let meshEl = owner as GardenMesh;
-                if (!meshEl.mesh.actionManager) {
-                    meshEl.mesh.actionManager = new ActionManager(scene);
-                }
-                meshEl.mesh.actionManager.registerAction(
-                    action.action(meshEl.mesh, (<GardenMesh>el).mesh, value) as IAction
-                );
+                await meshEl.whenReady;
+                let act = action.action(meshEl.mesh, (<GardenMesh>el)?.mesh, value) as IAction;
+                let manager = GardenAction.managerFor(act, meshEl.mesh, scene);
+                manager.registerAction(act);
+                this.registered.push([manager, act]);
             } else if (action && 'actions' in owner) {
                 let sceneEl = owner as GardenScene;
                 sceneEl.actions[this.id] = action;
             }
             this.resolveRegistered();
         });
+    }
+
+    /** Takes its actions off the meshes (or scene) they were registered on. */
+    private unregister() {
+        for (let [manager, act] of this.registered.splice(0))
+            manager.unregisterAction(act);
+    }
+
+    protected unbuild() {
+        this.unregister();
+        super.unbuild();
+    }
+
+    protected dispose() {
+        this.unregister();
+        super.dispose();
+    }
+
+    /** The trigger for a Babylon action: the key test for a key trigger, else `parameter` (an intersection's other mesh) if given. */
+    triggerOptions(parameter?: any): any {
+        let trigger = this.getTrigger(this.trigger);
+        if (GardenAction.isKeyTrigger(trigger)) {
+            let keys = (this.key ?? "").trim().split(/\s+/).filter(Boolean)
+                .map(k => k.toLowerCase() == "space" ? " " : k.toLowerCase());
+            return { trigger, parameter: (evt: any) => !keys.length || keys.includes(String(evt.sourceEvent.key).toLowerCase()) };
+        }
+        return parameter === undefined ? trigger : { trigger, parameter };
+    }
+
+    static isKeyTrigger(trigger: number): boolean {
+        return trigger == ActionManager.OnKeyDownTrigger || trigger == ActionManager.OnKeyUpTrigger;
+    }
+
+    /**
+     * Where an action goes: the mesh's action manager, or the scene's for a key action (Babylon
+     * only sends keys to the scene's). Made if there isn't one yet.
+     */
+    static managerFor(act: IAction, mesh: Mesh, scene: Scene): ActionManager {
+        let onScene = GardenAction.isKeyTrigger(act.trigger) || !mesh;
+        let host: { actionManager: any } = onScene ? scene : mesh;
+        if (!host.actionManager)
+            host.actionManager = new ActionManager(scene);
+        return host.actionManager;
     }
 
     getTrigger(str: string) {
@@ -179,6 +232,10 @@ export class GardenAction extends GardenElement {
                 return ActionManager.OnPickTrigger;
             case "leftPick":
                 return ActionManager.OnLeftPickTrigger;
+            case "keydown":
+                return ActionManager.OnKeyDownTrigger;
+            case "keyup":
+                return ActionManager.OnKeyUpTrigger;
         }
     }
 }
