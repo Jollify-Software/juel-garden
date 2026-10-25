@@ -357,6 +357,43 @@ softened: `pcf` (default), `poisson`, `exponential`, `blur-exponential`, `close-
 PBR models need plus an optional ground and sky (`ground`, `sky`, `colour`, `ground-shadow`,
 `ground-size`, `ground-y`, `texture`).
 
+## Shaders, screen effects and upscaling for games
+
+GLSL written in the page, for game effects (a force field, a pulse, a hit flash, under water),
+and the pieces that keep a phone's frame rate up:
+
+```html
+<!-- A shader material: a fragment shader alone gets a default vertex shader (vUV, vNormal, vPosition). -->
+<garden-box>
+  <garden-material id="shield" uniform-colour="#33ccff">
+    <script type="x-shader/x-fragment">
+      precision highp float;
+      varying vec2 vUV;
+      uniform vec3 colour;
+      uniform float time;   // seconds, filled in every frame
+      void main() { gl_FragColor = vec4(colour * (0.6 + 0.4 * sin(time * 4.0 + vUV.y * 20.0)), 1.0); }
+    </script>
+  </garden-material>
+</garden-box>
+<!-- A screen effect on the main camera, at a quarter size. -->
+<garden-post-process ratio="0.25" uniform-threshold="0.3" fragment="#threshold-shader"></garden-post-process>
+<!-- FSR 1 upscaling, and a HUD camera that sees only the crosshair's layer. -->
+<garden-pipeline fsr="performance"></garden-pipeline>
+<garden-camera type="free" position="0 0 -50" viewport="0 0 1 1" ortho layer-mask="0x20000000"></garden-camera>
+<garden-box size="50" scale="0.05 1 1" layer-mask="0x20000000"><garden-material emissive-colour="#00ff00"></garden-material></garden-box>
+```
+
+| Piece | What it does |
+|---|---|
+| `<garden-material vertex fragment>` | A shader material (Babylon's `ShaderMaterial`): each shader the `#id` of a `<script>`, a URL, or a child `<script type="x-shader/x-vertex">` / `"x-shader/x-fragment"`; a fragment shader alone gets a default vertex shader passing `vUV`, `vNormal` and `vPosition` (world). Attributes and uniforms are read from the source; Babylon fills the matrices, `uniform float time` gets seconds. `uniform-<name>` sets the rest (numbers, `#rrggbb`, an image URL for a sampler, or a `<garden-texture uniform="name">` child; `uniform-main-colour` is `mainColour`), live without a rebuild; `setUniform(name, value)` from a game every frame; `opacity` below 1 blends (`test:shader-material`) |
+| `<garden-post-process>` | A screen effect (Babylon's `PostProcess`) from a fragment shader (`fragment` or a child script) reading `textureSampler` at `vUV`: `ratio` (its size against the canvas), `sampling`, `camera` (default the main camera, so a HUD or inset is left alone), `disabled` (live, keeps its place in the chain); uniforms as above, `screenSize` and `time` filled in (`test:post-process`) |
+| `<garden-pipeline fsr>` | AMD's FidelityFX Super Resolution 1: the scene drawn smaller and upscaled with sharp edges, for phones and tablets: `ultra-quality`, `quality` (default), `balanced`, `performance` or a number; `fsr-sharpness`, `fsr-samples`; live; WebGL2 (`test:fsr`) |
+| `<garden-scene scaling>` | Babylon's hardware scaling level: `2` draws at half the canvas's size and lets the browser stretch it; live, for dropping resolution when frames are slow (`test:fsr`) |
+| `<garden-camera ortho>` | An orthographic camera: bare, one unit is a canvas pixel; `ortho="5"`, 5 units above and below the centre. With `viewport="0 0 1 1"` and a `layer-mask`, a HUD drawn over the main camera: a crosshair, a gun sight (`test:hud`) |
+| `<garden-particle texture-mask>` | Babylon's `textureMask` (`"r g b a"`, multiplies the image); a custom system directly in the scene plays with `event="load"`; a changed attribute rebuilds the system (`test:particle-mask`) |
+| `<garden-texture>` | `sampling` (`nearest`, `bilinear`, `trilinear`), `wrap` (`repeat`, `clamp`, `mirror`; two words for u and v), `mipmaps="false"`, `invert-y="false"`: crisp lookup tables for shaders, pixel art (`test:texture-options`) |
+| `<garden-mesh-model>` + `<garden-material>` | A material child dresses every part of the model: a node or shader material on a glTF's meshes |
+
 # Building and using it
 
 `npm run dev` builds `dist/juel-garden.js` (with esbuild), the global bundle

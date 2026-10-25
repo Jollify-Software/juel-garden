@@ -52,6 +52,12 @@ Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anon
  * `grid` copy. Pressing on something fires **`garden-pick`** on its element (it bubbles),
  * `detail` the same hit: a `<garden-action trigger="garden-pick">` reacts to it in markup.
  *
+ * **Resolution** (phones and tablets): `scaling="2"` draws the scene at half the
+ * canvas's size (Babylon's hardware scaling level) and lets the browser stretch it,
+ * `"1.5"` at two thirds; below 1 it draws more finely than the canvas (sharper on a
+ * high-density screen, and slower). Live, so a game can drop it when frames are slow.
+ * `<garden-pipeline fsr>` upscales a smaller picture more sharply.
+ *
  * @example
  * ```html
  * <garden-scene>
@@ -73,6 +79,8 @@ export class GardenScene extends LitElement {
     @property({ type: Number, attribute: "fog-start" }) fogStart: number;
     @property({ type: Number, attribute: "fog-end" }) fogEnd: number;
     @property({ attribute: "ambient-colour" }) ambientColour: string;
+    /** How much smaller than the canvas the scene is drawn: Babylon's hardware scaling level. */
+    @property({ type: Number }) scaling: number;
 
     canvas: HTMLCanvasElement;
     engine: Engine;
@@ -139,6 +147,8 @@ export class GardenScene extends LitElement {
         this.applyFog();
         if (this.scene && this.ambientColour)
             this.scene.ambientColor = this.ambientColour.startsWith("#") ? Color3.FromHexString(this.ambientColour) : Color3Convert.fromString(this.ambientColour);
+        if (this.engine && this.engine.getHardwareScalingLevel() != (this.scaling > 0 ? this.scaling : 1))
+            this.engine.setHardwareScalingLevel(this.scaling > 0 ? this.scaling : 1);
     }
 
     /**
