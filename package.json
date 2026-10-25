@@ -89,7 +89,12 @@
     "test:viewport": "node tests/viewport.js",
     "test:raycast": "node tests/raycast.js",
     "test:ragdoll": "node tests/ragdoll.js",
-    "test:environment": "node tests/environment.js"
+    "test:environment": "node tests/environment.js",
+    "test:physics-filter": "node tests/physics-filter.js",
+    "test:model-physics": "node tests/model-physics.js",
+    "test:joint-motor": "node tests/joint-motor.js",
+    "test:grid-physics": "node tests/grid-physics.js",
+    "test:span": "node tests/span.js"
   },
   "repository": {
     "type": "git",
