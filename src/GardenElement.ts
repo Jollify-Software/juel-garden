@@ -342,9 +342,9 @@ export class GardenElement extends LitElement {
         this.disposers.push(disposer);
     }
 
-    /** Adds `callback` to `observable` until the element's build is disposed: behaviours' per-frame work. */
-    observe<T>(observable: Observable<T>, callback: (data: T) => void): Observer<T> {
-        let observer = observable.add(callback);
+    /** Adds `callback` to `observable` (for the events in `mask`) until the element's build is disposed: behaviours' per-frame work. */
+    observe<T>(observable: Observable<T>, callback: (data: T) => void, mask?: number): Observer<T> {
+        let observer = observable.add(callback, mask);
         this.whenDisposed(() => observable.remove(observer));
         return observer;
     }

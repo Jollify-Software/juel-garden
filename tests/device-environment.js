@@ -55,4 +55,17 @@ run(`
     await page.waitForFunction(() => document.getElementById("default-sky").environmentHelper);
     const d = await page.evaluate(() => { const h = document.getElementById("default-sky").environmentHelper; return { sky: !!h.skybox, ground: !!h.ground, mesh: document.getElementById("default-sky").mesh == h.skybox }; });
     check("environment=\"default\": Babylon's default environment (sky and ground)", d.sky && d.ground && d.mesh, JSON.stringify(d));
+
+    // A prefiltered .dds is loaded as Babylon's helper does: linear, not gamma (else it's too dark).
+    const dds = await page.evaluate(() => {
+        const sky = document.createElement("garden-sky");
+        sky.setAttribute("environment", "/missing/environment.dds");
+        sky.setAttribute("backdrop", "false");
+        document.querySelector("garden-scene").appendChild(sky);
+        return new Promise(r => requestAnimationFrame(() => {
+            const t = document.querySelector("garden-scene").scene.environmentTexture;
+            r({ url: t?.url ?? t?.name, gamma: t?.gammaSpace });
+        }));
+    });
+    check("environment=\"x.dds\" is a prefiltered (linear) cube", /environment\.dds/.test(dds.url) && dds.gamma === false, JSON.stringify(dds));
 });

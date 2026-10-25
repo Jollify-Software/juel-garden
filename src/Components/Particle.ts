@@ -39,10 +39,17 @@ import { Weather } from "./Weather";
  * (`"all"` (default)|`"y"`|`"stretched"` -- stretched draws each particle as
  * a streak along its own current velocity instead of a flat sprite, e.g. for
  * stars rushing past a moving viewpoint: fast-moving particles read as long
- * comet-like lines rather than dots). Any attribute left unset keeps Babylon's
+ * comet-like lines rather than dots), `texture-mask` (`"r g b a"`: multiplies the
+ * image, so `"0.1 0.8 0.8 1"` keeps mostly its green and blue -- one white image
+ * as differently coloured sparks, or one channel of a packed image as the
+ * particle's shape). Any attribute left unset keeps Babylon's
  * own default for that property (e.g. angular speed 0), rather than NaN.
  * `capacity` has no Babylon default (the constructor needs one, and without it
  * the system grows without limit), so an unset one is {@link DefaultCapacity}.
+ *
+ * A custom system directly in the scene (not inside a mesh) emits from its
+ * `emitter` point, and plays at once with `event="load"`. A changed attribute
+ * builds the system again.
  *
  * @example
  * ```html
@@ -81,6 +88,7 @@ export class GardenParticle extends GardenElement {
     @property({ converter: Colour4Convert.fromString }) colour1: Color4;
     @property({ converter: Colour4Convert.fromString }) colour2: Color4;
     @property({ converter: Colour4Convert.fromString }) colourDead: Color4;
+    @property({ attribute: "texture-mask", converter: Colour4Convert.fromString }) textureMask: Color4;
 
     @property({ converter: Vector3Convert.fromString }) direction1: Vector3;
     @property({ converter: Vector3Convert.fromString }) direction2: Vector3;
@@ -172,14 +180,16 @@ export class GardenParticle extends GardenElement {
         set("maxAngularSpeed", this.maxAngularSpeed);
 
         set("gravity", this.gravity);
+        set("textureMask", this.textureMask);
 
 if (this.billboard)
     this.particleSystem.billboardMode = StaticConvert.particleBillboardMode(this.billboard);
 
         // play() can arrive before this first build (the parent GardenMesh's setTimeout(0)
-        // auto-play races the child's own update): start the system it asked for now.
-        if (this.isPlaying)
-            this.particleSystem.start();
+        // auto-play races the child's own update): start the system it asked for now. Directly
+        // in the scene, no mesh plays it: event="load" starts it here.
+        if (this.isPlaying || (this.event == "load" && !(this.parentElement && 'mesh' in this.parentElement)))
+            this.play();
         }
     }
 
@@ -209,6 +219,17 @@ if (this.billboard)
         if ((this.event ?? "load") == "load" || this.isPlaying)
             this.play();
         this.endBuild();
+    }
+
+    /** Before a rebuild for a changed attribute: the old system goes (a preset's rebuild replaces its own). */
+    protected unbuild() {
+        if (!this.weather) {
+            this.effectSet?.dispose();
+            this.effectSet = null;
+            this.particleSystem?.dispose();
+            this.particleSystem = null;
+        }
+        super.unbuild();
     }
 
     protected dispose() {

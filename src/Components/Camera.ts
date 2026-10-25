@@ -29,9 +29,11 @@ import { GardenScene } from "./Scene";
  * `alpha`/`beta` (`type="arc"`: its angles round and down from the top, in
  * radians, as Babylon's ArcRotateCamera; with them `position` isn't needed),
  * `beta-lower`/`beta-upper` and `radius-lower`/`radius-upper` (its limits),
+ * `bounce` (`type="arc"`: zoomed to a radius limit, it springs back a little,
+ * as Babylon's `useBouncingBehavior`),
  * `height-offset`, `rotation-offset`, `look-offset`, `camera-stiffness`,
  * `camera-damping`, `free-look`, `look-pad`, `look-speed` (the last eight are `type="follow"`-specific), `ellipsoid`/`touch`
- * (`type="free"`-specific).
+ * and `keys` (`"arrows"` or `"none"`: not W/A/S/D) (`type="free"`-specific).
  *
  * `rotation` (degrees, `"x y z"`) turns a `free` (or other non-orbiting)
  * camera: `"0 90 0"` looks along +x, `"90 0 0"` straight down.
@@ -50,6 +52,18 @@ import { GardenScene } from "./Scene";
  *
  * With `parent`, the meshes inside a camera ride with it (a player's avatar
  * seen in the overhead view, a held lamp).
+ *
+ * `ortho` makes it an orthographic camera (no perspective: a map, a 2D game, a
+ * HUD). Bare, one unit is one pixel of the canvas, centred, as Babylon's
+ * default; `ortho="5"` shows 5 units above and below the centre, and as many
+ * across as the canvas's shape allows, kept as it's resized.
+ *
+ * **A HUD** (a crosshair, a gun sight, a cockpit frame): a second camera with
+ * `viewport="0 0 1 1"`, `ortho` and its own `layer-mask` is drawn over the main
+ * one, and sees only the meshes on its layer -- give those the same `layer-mask`,
+ * and the main camera a mask without that bit (or leave both at their defaults:
+ * the default `layer-mask` of meshes and cameras is `0x0FFFFFFF`, so a HUD on
+ * `0x20000000` is seen by the HUD camera alone).
  *
  * @example
  * ```html
@@ -151,6 +165,25 @@ export class GardenCamera extends GardenElement {
         (<any>this.camera).rotation = Vector3Convert.rotationString(value);
     }
 
+    /** `ortho`: orthographic, in canvas pixels (bare) or with a half-height in units. */
+    private applyOrtho(scene: Scene) {
+        let camera = this.camera;
+        camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
+        let half = Number(this.getAttribute("ortho"));
+        if (!this.getAttribute("ortho") || !(half > 0))
+            return; // Babylon's own: the render size in pixels
+        let engine = scene.getEngine();
+        let fit = () => {
+            let aspect = engine.getAspectRatio(camera) || 1;
+            camera.orthoTop = half;
+            camera.orthoBottom = -half;
+            camera.orthoLeft = -half * aspect;
+            camera.orthoRight = half * aspect;
+        };
+        fit();
+        this.observe(engine.onResizeObservable, fit);
+    }
+
     /** The `<garden-scene>` it was built in. */
     private sceneEl: Element;
 
@@ -216,6 +249,9 @@ export class GardenCamera extends GardenElement {
             (<any>this.camera).freeLook = this.hasAttribute("free-look");
         if ("lookPad" in this.camera && this.hasAttribute("look-pad"))
             (<any>this.camera).lookPad = this.getAttribute("look-pad");
+        // An arc camera springs back a little from its zoom limits (Babylon's BouncingBehavior).
+        if ("useBouncingBehavior" in this.camera)
+            (<any>this.camera).useBouncingBehavior = this.hasAttribute("bounce") && this.getAttribute("bounce") != "false";
         if ("lookSpeed" in this.camera && this.hasAttribute("look-speed"))
             (<any>this.camera).lookSpeed = Number(this.getAttribute("look-speed"));
 
@@ -226,6 +262,8 @@ export class GardenCamera extends GardenElement {
         }
         if (this.hasAttribute("layer-mask"))
             this.camera.layerMask = GardenCamera.mask(this.getAttribute("layer-mask"));
+        if (this.hasAttribute("ortho"))
+            this.applyOrtho(scene);
         GardenCamera.arrange(sceneEl, scene);
 
         let controls = this.getAttribute("controls");

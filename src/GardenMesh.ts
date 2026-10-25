@@ -4,6 +4,7 @@ import { GardenTexture } from "./Components/Texture";
 import { HtmlTexture } from "./HtmlTexture";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { PhysicsAggregate } from "@babylonjs/core/Physics/v2/physicsAggregate";
+import { PhysicsShape } from "@babylonjs/core/Physics/v2/physicsShape";
 import { PhysicsEventType, PhysicsMotionType, PhysicsShapeType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
 import { PointerEventTypes } from "@babylonjs/core/Events/pointerEvents";
 import { Scene } from "@babylonjs/core/scene";
@@ -59,17 +60,30 @@ const shapeByTag: {[tag: string]: PhysicsShapeType} = {
  *   `garden-trigger-enter`/`-exit`).
  * - `physics-shape` -- `sphere`, `box`, `cylinder`, `capsule`, `convex` or
  *   `mesh` (exact triangles, static bodies only). Default: the tag's own
- *   shape, else `convex` (dynamic) or `mesh` (static).
+ *   shape, else `convex` (dynamic) or `mesh` (static). On a
+ *   `<garden-mesh-model>` the shape is the whole model's (every part, as
+ *   scaled): a convex hull round it, its triangles, or a box (sphere, ...)
+ *   round it.
+ * - `physics-group` -- the collision groups the body is in, as bits (a
+ *   number, `0x...` allowed; default all), and `physics-collides` -- the
+ *   groups it collides with (default all). Two bodies collide only when
+ *   each is in a group the other collides with; {@link GardenPhysics.raycast}'s
+ *   `collideWith` hits only bodies in those groups.
  * - `mass` (default 1; 0 for static/trigger), `friction`, `restitution`
  *   (bounciness, 0-1), `linear-damping`, `angular-damping` (slow a body down
  *   over time -- what stops balls rolling for ever when there's no floor).
  * - `velocity`, `angular-velocity` -- `Vector3`s set once the body exists.
+ * - `collide-events` -- `"false"` stops `garden-collide` events for this body
+ *   (Havok then needn't report its contacts: cheaper with many bodies). A
+ *   `grid` of copies has them only with `collide-events`.
  *
  * **Copies** (a wall of bricks, a stack of crates, a field of posts): `grid="nx ny nz"`
  * repeats the mesh nx x ny x nz times as GPU thin instances, `grid-spacing` apart (`"x y z"`,
  * default the mesh's own size) from its `position` along +x, +y and +z: one draw call
  * however many. `instance-colours` colours them: `random`, or colours (`#rrggbb`, by
- * spaces) taken in turn. With `physics` every copy is a body of its own (Havok's instanced
+ * spaces) taken in turn; `instance-rotations` turns each about its own centre: `random`, or
+ * `"x y z"` turns in degrees (by commas) taken in turn -- a heap of crates rather than a
+ * stack. With `physics` every copy is a body of its own (Havok's instanced
  * bodies, placed where the element's transform puts it (give a physics grid its size by
  * `width`/`height`/... rather than `scale`); {@link GardenPhysics.raycast} says which copy it
  * hit, and pointer picking sees each copy.
@@ -246,12 +260,15 @@ export abstract class GardenMesh extends GardenElement {
             mesh.rotationQuaternion = null;
             mesh.scaling = Vector3.One();
         }
+        let turns = this.instanceRotations(total);
         let index = 0;
         for (let k = 0; k < nz; k++)
             for (let j = 0; j < ny; j++)
-                for (let i = 0; i < nx; i++)
-                    Matrix.Translation(i * spacing.x, j * spacing.y, k * spacing.z).multiply(world)
-                        .copyToArray(matrices, index++ * 16);
+                for (let i = 0; i < nx; i++) {
+                    let place = Matrix.Translation(i * spacing.x, j * spacing.y, k * spacing.z);
+                    if (turns) place = turns[index].multiply(place);
+                    place.multiply(world).copyToArray(matrices, index++ * 16);
+                }
         // Physics writes the copies' matrices back every step: the GPU buffer must take updates.
         mesh.thinInstanceSetBuffer("matrix", matrices, 16, !this.hasAttribute("physics"));
         let colours = this.getAttribute("instance-colours")?.trim();
@@ -265,6 +282,32 @@ export abstract class GardenMesh extends GardenElement {
             mesh.thinInstanceSetBuffer("color", buffer, 4);
         }
         mesh.thinInstanceEnablePicking = true;
+        // Physics moves the copies without updating the mesh's bounds (refreshing them every
+        // step would cost as much as the copies), so a heap that has fallen out of where it
+        // started would be culled: a physics grid is always drawn.
+        if (this.hasAttribute("physics"))
+            mesh.alwaysSelectAsActiveMesh = true;
+    }
+
+    /**
+     * `instance-rotations`: each copy's turn about its own centre, `random` or `"x y z"`
+     * triples in degrees (by commas) taken in turn; null when unset.
+     */
+    private instanceRotations(total: number): Matrix[] {
+        let text = this.getAttribute("instance-rotations")?.trim();
+        if (!text) return null;
+        let random = text == "random";
+        let list = random ? [] : text.split(",").map(t => Vector3Convert.fromString(t.trim())).filter(v => v);
+        if (!random && !list.length) return null;
+        let turns: Matrix[] = [];
+        for (let n = 0; n < total; n++) {
+            let degrees = random ? new Vector3(Math.random(), Math.random(), Math.random()).scale(360) : list[n % list.length];
+            let radians = degrees.scale(Math.PI / 180);
+            let turn = new Matrix();
+            Quaternion.FromEulerAngles(radians.x, radians.y, radians.z).toRotationMatrix(turn);
+            turns.push(turn);
+        }
+        return turns;
     }
 
     private belongsToOther(node: TransformNode): boolean {
@@ -353,10 +396,23 @@ export abstract class GardenMesh extends GardenElement {
         for (let key in options)
             if (options[key] === undefined) delete options[key];
 
-        let aggregate = new PhysicsAggregate(mesh, shape, options, this.getScene());
+        // A model (an empty holder over its loaded meshes): the shape is the whole model's.
+        let shapeOrType: PhysicsShapeType | PhysicsShape = shape;
+        if (!mesh.getTotalVertices() && mesh.getChildMeshes(false).some(m => m.getTotalVertices() > 0))
+            shapeOrType = this.wholeShape(mesh, shape, options);
+
+        let aggregate = new PhysicsAggregate(mesh, shapeOrType, options, this.getScene());
         let body = aggregate.body;
         body.setMotionType(motion);
         this.physicsAggregate = aggregate;
+        if (shapeOrType instanceof PhysicsShape) {
+            // The aggregate leaves a shape it was given alone: it goes with the body here.
+            this.whenPhysicsRemoved(() => shapeOrType.dispose());
+        }
+
+        let group = num("physics-group"), collides = num("physics-collides");
+        if (group != null) aggregate.shape.filterMembershipMask = group >>> 0;
+        if (collides != null) aggregate.shape.filterCollideMask = collides >>> 0;
 
         let linearDamping = num("linear-damping");
         if (linearDamping != null) body.setLinearDamping(linearDamping);
@@ -368,8 +424,13 @@ export abstract class GardenMesh extends GardenElement {
         let spin = Vector3Convert.fromString(this.getAttribute("angular-velocity"));
         if (spin) body.setAngularVelocity(spin);
 
-        if (motion == PhysicsMotionType.DYNAMIC) {
+        // Havok reporting every contact costs physics time: a grid of copies (hundreds of
+        // bodies) reports only when asked to, and `collide-events="false"` turns it off.
+        let events = this.getAttribute("collide-events");
+        let reportCollisions = events != null ? events != "false" : !this.hasAttribute("grid");
+        if (motion == PhysicsMotionType.DYNAMIC)
             physicsEl.trackDynamic(body, true);
+        if (motion == PhysicsMotionType.DYNAMIC && reportCollisions) {
             body.setCollisionCallbackEnabled(true);
             body.getCollisionObservable().add(ev => {
                 if (ev.type != PhysicsEventType.COLLISION_STARTED)
@@ -387,12 +448,82 @@ export abstract class GardenMesh extends GardenElement {
         }
     }
 
-    /** Pushes the body: `impulse` is mass x change in velocity, applied at `point` (world space; default the centre). */
-    impulse(impulse: Vector3 | string, point?: Vector3) {
+    /**
+     * The shape of a model's whole hierarchy (its holder has no geometry of its own), in the
+     * holder's space with its scale baked in: a convex hull or mesh of every part's triangles,
+     * or a box, sphere, cylinder or capsule round them all.
+     */
+    private wholeShape(holder: Mesh, type: PhysicsShapeType, options: any): PhysicsShape {
+        let scene = this.getScene();
+        // The parts' world matrices may be from before the holder was placed and scaled
+        // (Babylon's accumulator doesn't recompute them).
+        holder.computeWorldMatrix(true);
+        for (let node of holder.getDescendants(false))
+            (<any>node).computeWorldMatrix?.(true);
+        if (type == PhysicsShapeType.CONVEX_HULL || type == PhysicsShapeType.MESH) {
+            delete options.mesh;
+            return new PhysicsShape({ type, parameters: { mesh: holder, includeChildMeshes: true } }, scene);
+        }
+        // The parts' bounds in the holder's (scaled) space.
+        let toHolder = holder.computeWorldMatrix(true).clone().invert();
+        let scale = holder.absoluteScaling;
+        let min = new Vector3(Infinity, Infinity, Infinity), max = min.scale(-1);
+        for (let part of holder.getChildMeshes(false)) {
+            if (!part.getTotalVertices()) continue;
+            part.computeWorldMatrix(true);
+            for (let corner of part.getBoundingInfo().boundingBox.vectorsWorld) {
+                let p = Vector3.TransformCoordinates(corner, toHolder).multiply(scale);
+                min.minimizeInPlace(p);
+                max.maximizeInPlace(p);
+            }
+        }
+        let size = max.subtract(min), center = min.add(max).scale(0.5);
+        let radius = Math.max(size.x, size.z) / 2;
+        let parameters: any = { center, rotation: Quaternion.Identity(), extents: size };
+        if (type == PhysicsShapeType.SPHERE)
+            parameters.radius = Math.max(size.x, size.y, size.z) / 2;
+        else if (type == PhysicsShapeType.CYLINDER) {
+            parameters.radius = radius;
+            parameters.pointA = new Vector3(center.x, min.y, center.z);
+            parameters.pointB = new Vector3(center.x, max.y, center.z);
+        } else if (type == PhysicsShapeType.CAPSULE) {
+            parameters.radius = radius;
+            parameters.pointA = new Vector3(center.x, min.y + radius, center.z);
+            parameters.pointB = new Vector3(center.x, Math.max(min.y + radius, max.y - radius), center.z);
+        }
+        return new PhysicsShape({ type, parameters }, scene);
+    }
+
+    private physicsDisposers: (() => void)[] = [];
+
+    /** Runs `disposer` when the body goes ({@link removePhysics}). */
+    private whenPhysicsRemoved(disposer: () => void) {
+        this.physicsDisposers.push(disposer);
+    }
+
+    /**
+     * Where copy `instance` of `mesh`'s thin instances is now, in world space (null if there's
+     * no such copy). Read from the matrix buffer, which physics updates every step (Babylon's
+     * `thinInstanceGetWorldMatrices` keeps the first answer it gave).
+     */
+    static copyPlace(mesh: Mesh, instance: number): Vector3 {
+        let data: Float32Array = (<any>mesh)?._thinInstanceDataStorage?.matrixData;
+        if (!data || instance < 0 || instance >= mesh.thinInstanceCount) return null;
+        let at = instance * 16;
+        return Vector3.TransformCoordinates(new Vector3(data[at + 12], data[at + 13], data[at + 14]), mesh.computeWorldMatrix());
+    }
+
+    /**
+     * Pushes the body: `impulse` is mass x change in velocity, applied at `point` (world space;
+     * default the centre). On a physics `grid`, `instance` pushes only that copy (default all).
+     */
+    impulse(impulse: Vector3 | string, point?: Vector3, instance?: number) {
         let body = this.physicsAggregate?.body;
         if (!body) return;
         let v = typeof impulse == "string" ? Vector3Convert.fromString(impulse) : impulse;
-        body.applyImpulse(v, point ?? this.mesh.getAbsolutePosition());
+        if (point == null && instance != null)
+            point = GardenMesh.copyPlace(this.mesh, instance);
+        body.applyImpulse(v, point ?? this.mesh.getAbsolutePosition(), instance);
     }
 
     getVelocity(): Vector3 {
@@ -439,6 +570,8 @@ export abstract class GardenMesh extends GardenElement {
         GardenPhysics.forElement(this)?.trackDynamic(this.physicsAggregate.body, false);
         this.physicsAggregate.dispose();
         this.physicsAggregate = null;
+        for (let disposer of this.physicsDisposers.splice(0))
+            disposer();
     }
 
     /**

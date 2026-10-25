@@ -8,6 +8,10 @@ import { BehaviourFollow } from "./BehaviourFollow";
 import { BehaviourGrab } from "./BehaviourGrab";
 import { BehaviourNear } from "./BehaviourNear";
 import { BehaviourOrbit } from "./BehaviourOrbit";
+import { BehaviourOverlap } from "./BehaviourOverlap";
+import { BehaviourPointer } from "./BehaviourPointer";
+import { BehaviourRay } from "./BehaviourRay";
+import { BehaviourSpan } from "./BehaviourSpan";
 import { BehaviourSuspension } from "./BehaviourSuspension";
 import { BehaviourTerrain } from "./BehaviourTerrain";
 import { BehaviourTrack } from "./BehaviourTrack";
@@ -25,7 +29,10 @@ import { BehaviourWander } from "./BehaviourWander";
  *   *or* one instance of a `<garden-sprite>` group (via
  *   {@link SpriteBehaviourTarget}), through {@link applyToTarget}.
  * - `meshOnly` -- `follow-wait` (see {@link BehaviourWait}), `near` (see
- *   {@link BehaviourNear}), `grab` (see {@link BehaviourGrab}), `orbit` (real
+ *   {@link BehaviourNear}), `grab` (see {@link BehaviourGrab}), `overlap` (see
+ *   {@link BehaviourOverlap}), `ray` (see {@link BehaviourRay}), `face-pointer`/
+ *   `at-pointer` (see {@link BehaviourPointer}), `span` (see
+ *   {@link BehaviourSpan}), `orbit` (real
  *   scene-graph `.parent` reparenting) and `action` (a Babylon
  *   `ActionManager`) -- none has a sprite
  *   equivalent, so these stay real-`Mesh`-only, wired only from
@@ -59,6 +66,13 @@ export module Behaviours {
         'orbit': BehaviourOrbit,
         'action': BehaviourAction,
         'grab': BehaviourGrab,
+        'overlap': BehaviourOverlap,
+        // Alone (with `overlap` as well, that one call sees to both).
+        'overlap-point': (el: GardenElement, mesh: Mesh) => { if (!el.hasAttribute("overlap")) BehaviourOverlap(el, mesh); },
+        'ray': BehaviourRay,
+        'face-pointer': BehaviourPointer,
+        'at-pointer': (el: GardenElement, mesh: Mesh) => { if (!el.hasAttribute("face-pointer")) BehaviourPointer(el, mesh); },
+        'span': BehaviourSpan,
     }
 
     /** The `GardenMesh` entry point -- every behaviour, generic and mesh-only alike. */

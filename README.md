@@ -207,13 +207,17 @@ and walk-throughs with guides and talking exhibits (the plan is
 |---|---|
 | `walk` | A walking player, camera-relative; Havok's character controller with `<garden-physics>`, else `terrain` or `collisions`. `element.walker` |
 | `follow`, `follow-wait` | Followers that keep apart; a leader that stops for stragglers (`garden-wait` / `garden-resume`) |
-| `play()`, `anim-*` | Named GLB animations with cross-fades; idle/walk/run picked by speed; one-shots fire `garden-animation-end` |
+| `play()`, `anim-*` | Named GLB animations with cross-fades; idle/walk/run picked by speed; one-shots fire `garden-animation-end`. `play` changed later cross-fades over `blend` seconds (default 0.25); a `.babylon` file's skeleton ranges are named animations too |
+| `weights`, `sync` | Several animations at once at their own weights, `weights="walk 0.5, strafe 0.5"` (live: fades to new weights over `blend`); `sync="walk"` keeps the others in step with one; `setWeights({ ... }, { blend, sync })` from code (`test:animation-blending`) |
+| `<garden-clip>` | One more animation for the model it's in, by `name`: cut by frame (`from`/`to`, from `group` or a `.babylon` file's one take), or retargeted from another file (`src`) made for another rig with the same bone names, e.g. Mixamo's (`ground-reference`, `fix-ground-reference`, `fix-root-position`, `root-node`, `map="from:to"`); live (`test:animation-blending`) |
 | `near` | `garden-near` / `garden-far` when something (or `camera`) comes close |
 | `<garden-torus-knot>` | `radius`, `tube`, `p`, `q`, `radial-segments`, `tubular-segments` |
-| `grab` | Pick a mesh or model up and move it in six directions (a controller or hand turns it over); `grab="scale"` pinches it bigger or smaller; `grab-box` draws a bounding box with handles; `garden-grab` / `garden-release` |
-| `<garden-light pool>` | Lights carried by meshes; a pool of light on the ground; live `intensity`/`range`; `shadows` (everything casts but grounds and height maps; a mesh's `cast-shadows`/`receive-shadows` overrides it); a spot light's `exponent`; `cascades` (cascaded shadow maps for big outdoor scenes); `specular` |
+| `grab` | Pick a mesh or model up and move it in six directions (a controller or hand turns it over); `grab="scale"` pinches it bigger or smaller; `grab-box` draws a bounding box with handles; `garden-grab` / `garden-release`. A physics body is carried while held and thrown when let go, at the speed it was moving (`grab-throw` scales it, `0` drops it; `test:throw`) |
+| `<garden-light pool>` | Lights carried by meshes; a pool of light on the ground; live `intensity`/`range`; `shadows` (everything casts but grounds, height maps and `<garden-environment>`'s backdrop; a mesh's `cast-shadows`/`receive-shadows` overrides it); `shadow-filter` (`pcf`, `poisson`, `exponential`, `blur-exponential`, `contact-hardening`, ...), `shadow-blur` (soft blurred exponential shadows, a kernel size); a spot light's `exponent`; `cascades` (cascaded shadow maps for big outdoor scenes); `specular` |
 | Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
-| `<garden-camera type="arc">` | `alpha`/`beta`/`radius` (radians, as Babylon's ArcRotateCamera), `target="x y z"` or an element to follow, `beta-lower`/`beta-upper`/`radius-lower`/`radius-upper` |
+| `<garden-camera type="arc">` | `alpha`/`beta`/`radius` (radians, as Babylon's ArcRotateCamera), `target="x y z"` or an element to follow, `beta-lower`/`beta-upper`/`radius-lower`/`radius-upper`; `bounce`: springs back a little from those limits (`test:camera-bounce`) |
+| `<garden-camera type="free" keys>` | `keys="arrows"` leaves W/A/S/D to the page (a game's own controls), `keys="none"` takes no keys |
+| `<garden-action trigger="keydown">` | Keyboard actions: `trigger="keydown"`/`"keyup"`, `key="a ArrowLeft"` (any case, `space`; empty for any key), e.g. `type="increment" property="position.x" value="-0.1"` inside a mesh; a held key repeats (`test:key-action`) |
 | `<garden-camera type="device">` | Turns with the phone or tablet it's on (a phone in a viewer); a free camera on a desktop. `target="x y z"` aims a free or device camera too |
 | `<garden-sky environment>` | A prefiltered `.env`/`.dds` cube as the sky and the light PBR materials (glTF models) reflect; `blur`, `lighting="false"`, `backdrop="false"` (light only: the background is `colour`), `turn` (degrees). `environment="default"`: Babylon's default environment (backdrop, ground fitted under the models once they load, and light) |
 | `<garden-material node>` | A node material (the Node Material Editor's output) from a JSON file or `#ID` on Babylon's snippet server: shaders, water, anti-tiling grounds; `<garden-texture block="name">` fills a texture block, `input-<name>` sets an input block |
@@ -221,7 +225,7 @@ and walk-throughs with guides and talking exhibits (the plan is
 | `<garden-pipeline>` | The finish: `samples`, `fxaa`, `bloom` (+ `bloom-threshold`, `bloom-kernel`), `sharpen`, `grain`, `vignette`, `chromatic-aberration`, `depth-of-field` (+ `focal-length`, `f-stop`), `tone-mapping="aces"`, `exposure`, `contrast`; each off unless given; live |
 | `<garden-animation type="vector3">` | Keyframes with several parts: `"0 (0 0 0), 60 ((Math.PI) 0 1.2)"` or `"0 0 0 0, 60 4 0 -2"`; also `vector2`, `quaternion`, `color3`, `color4` |
 | `<garden-marker>` | An icon over a target, or an edge-of-screen arrow to it |
-| `<garden-sound>` | Spatial audio on Babylon's audio engine: `play()`/`stop()`, `play-on="garden-near"`, cones, roll-off |
+| `<garden-sound>` | Spatial audio on Babylon's audio engine: `play()`/`stop()`, `play-on="garden-near"`, cones, roll-off. `sync="name"`: a group that plays together, sample-accurately, `autoplay` waiting until all have loaded; `play()`/`stop()` on one act on the group (`test:sound-sync`) |
 | `<garden-thumbstick>` | On-screen thumbsticks for touch screens: one `controls` a walker, one the `camera` |
 | `camera.show(what)` | A cutaway: the follow camera swings round to look past the player at something happening, then `unshow()` swings it back to exactly where it was (`swingTo(place)`; `test:cutaway`) |
 | `materials="standard"` | A GLB's PBR materials swapped for StandardMaterials, for scenes without an environment map (`toStandardMaterials()` from code) |
@@ -298,10 +302,14 @@ needs, all declared (together in [examples/Physics/joints.html](examples/Physics
 
 | Piece | What it does |
 |---|---|
-| `<garden-joint>` | A joint between two bodies (`between="#a #b"`): `ball`, `distance` (a rod; a rope with `min-distance`), `hinge`, `slider`, `prismatic`, `lock`, `spring`, `six-dof`; `pivot-a`/`-b`, `axis-a`/`-b`, `limits="angular-x 0 1.57, ..."`, `motor` (speed, live) and `motor-force`, `collisions`. Joins rebuilt bodies again (`test:joint`) |
+| `<garden-joint>` | A joint between two bodies (`between="#a #b"`): `ball`, `distance` (a rod; a rope with `min-distance`), `hinge`, `slider`, `prismatic`, `lock`, `spring`, `six-dof`; `pivot-a`/`-b`, `axis-a`/`-b`, `limits="angular-x 0 1.57, ..."`, `motor` (speed) with `motor-axis` and `motor-force`, or `motor-type="position"` (`motor` is then an angle, or metres, to drive to and hold: a servo, a self-closing door); all four live. `instance-a`/`instance-b` join copies of a physics `grid`; `collisions`. Joins rebuilt bodies again (`test:joint`, `test:joint-motor`) |
 | `<garden-force>` | `explosion` (once), `gravity`, `updraft`, `vortex` (fields): `position`, `radius`, `strength`, `height`, `falloff`; `event="load"`, `delay`, `duration`, `show`; `fire()`/`stop()`, `garden-force` event (`test:force`) |
-| `physics.raycast(from, to, { ignore, triggers })` | The first body on a line: `{ element, point, normal, distance, instance }`, or null. Aim lines, line of sight, what's under the pointer (`test:raycast`) |
-| `grid="nx ny nz"` | Any mesh repeated as GPU thin instances, `grid-spacing` apart, `instance-colours` (`random` or a list); with `physics` each copy is a body; picking and raycasts say which copy (`test:raycast`) |
+| `physics.raycast(from, to, { ignore, triggers, collideWith })` | The first body on a line: `{ element, point, normal, distance, instance, triangle }`, or null. Aim lines, line of sight, what's under the pointer; `collideWith` (bits) sees only those `physics-group`s, `triangle` is set for a `physics-shape="mesh"` hit (`test:raycast`, `test:physics-filter`) |
+| `physics-group`, `physics-collides` | On any physics mesh: the collision groups it's in and the ones it collides with, as bits (`0x...` allowed; default all). A ball that passes through glass but not walls, a ghost that only the floor stops (`test:physics-filter`) |
+| `grid="nx ny nz"` | Any mesh repeated as GPU thin instances, `grid-spacing` apart, `instance-colours` (`random` or a list), `instance-rotations` (`random`, or `"x y z"` degrees by commas, in turn: a heap, not a stack); with `physics` each copy is a body (always drawn: its bounds don't follow the copies; `garden-collide` only with `collide-events`), `impulse(v, point, instance)` pushes one; picking and raycasts say which copy (`test:raycast`, `test:grid-physics`) |
+| `physics` on `<garden-mesh-model>` | The model's body is shaped round the whole model, as scaled: a convex hull (dynamic, default), its triangles (static, default), or `physics-shape="box"` (sphere, cylinder, capsule) round it. A crate, a barrel, a statue from a glTF (`test:model-physics`) |
+| `span="#a #b"` | Keeps a mesh halfway between two elements, its y axis along them, every frame (after physics): a pendulum's rod, a rope, a tether, a laser; `span-stretch` scales it to reach (`test:span`) |
+| `collide-events="false"` | No `garden-collide` events for that body, so Havok needn't report its contacts: cheaper with many bodies |
 | `<garden-ragdoll>` | In a rigged `<garden-mesh-model>`, with a `<garden-ragdoll-bone>` per bone group (`bones`, `size`/`width`/`height`/`depth`, `box-offset`, `rotation-axis`, `min`/`max`, `joint`): boxes ride the animation until `limp` (or `limp()`), then it falls; `impulse(v, bone)`; `garden-ragdoll` event. The skeleton's top bone must have a box (`test:ragdoll`) |
 | `<garden-physics debug>` | Wireframes of every body (`debug="moving"`: not the static ones) |
 
@@ -311,12 +319,84 @@ an overhead map. It takes no input unless it has `controls`. `layer-mask` on cam
 says which camera sees what (a roof hidden from the overhead camera). `rotation` (degrees) turns a
 `free` camera, and the meshes inside a `<garden-camera parent>` ride with it.
 
-**Sprites** (`test:sprite`): `<garden-sprite cells="0 40" cell-delay="100">` plays a sprite
-sheet's cells in turn (`cell-loop="false"` once); `cell="5"` shows one, still.
+**Sprites** (`test:sprite`, `test:picking`): `<garden-sprite cells="0 40" cell-delay="100">` plays a sprite
+sheet's cells in turn (`cell-loop="false"` once); `cell="5"` shows one, still, and
+`cell="0 18 44"` gives each sprite its own (taken in turn). `angle` turns them (degrees, a
+list taken in turn too); `pickable` lets the pointer pick them. Without `capacity`, the
+sheet has room for every sprite placed.
+
+**Picking, rays and touching** (`test:picking`, `test:overlap`): what's under the pointer, what a
+line meets, what touches what -- the questions a game asks every frame -- without physics.
+
+```html
+<garden-box id="turret" ray ray-length="50" ray-show="#ff0000" face-pointer></garden-box>
+<garden-sphere diameter="0.3" at-pointer emissive-colour="#00ff00"></garden-sphere>
+<garden-sphere overlap="#spikes" overlap-precise emissive-colour="#ffffff">
+  <garden-action trigger="garden-overlap" type="set" property="material.emissiveColor" value="#ff0000"></garden-action>
+</garden-sphere>
+<garden-sprite url="players.png" width="64" height="64" positions="0 0 0, 1 0 0" count="1" pickable>
+  <garden-action trigger="garden-pick" type="increment" property="angle" value="0.5"></garden-action>
+</garden-sprite>
+```
+
+| Piece | What it does |
+|---|---|
+| `sceneEl.pick(x, y, { ignore, sprites })`, `sceneEl.pickRay(origin, direction, length, options)` | The nearest mesh or pickable sprite under a screen point (default the pointer) or along a line: `{ element, mesh, sprite, index, point, normal, distance }`; a model's parts give the model's element; `index` is the sprite (or `grid` copy) |
+| `garden-pick` | Fired (bubbling) on the element pressed, mesh or sprite; `detail` is the hit, with `sprite` and `index` for a sprite |
+| `ray` | A ray out of the mesh along its own `"x y z"` (bare: straight ahead), turning with it: `element.rayHit`, `garden-ray-hit` / `garden-ray-miss` when what it meets changes; `ray-length` (100), `ray-show` (a line; `#rrggbb`), `ray-ignore` |
+| `face-pointer`, `at-pointer` | Turn about the vertical to face where the pointer meets the scene; put the mesh there (`at-pointer="0 0.5 0"`: an offset); `pointer-ignore`; `element.pointerHit` |
+| `overlap` | `garden-overlap` / `garden-overlap-end` when the mesh's box starts or stops touching another's (`overlap="#a, #b"`); `overlap-precise` uses their own turned boxes; `overlap-point="x y z"` a point; `element.overlapping` |
+| `<garden-launcher>` | A tap or click (in VR, a controller's trigger; `hand="right"` for one hand) throws a copy of its `<template>` along the pointer's ray: `speed`, `offset`, `max`; `garden-launch`, `fire(origin, direction)`, `clear()` (`test:throw`) |
+| `<garden-webxr physics-controllers physics-headset>` | Bodies on the VR controllers or hands (the value is their size, default 0.1 m) and on the head: knock things over, bat a ball, headbutt it (`test:throw` checks it stays quiet without WebXR) |
+| `<garden-action trigger="garden-...">` | On any DOM event from inside its parent: `type="set"` or `"increment"` a `property` path (`material.emissiveColor`, `position.y`, a sprite's `angle`) of the element the event came from (the sprite picked, its light, its mesh), or of `target`; `value` a colour, number, boolean or `"x y z"` |
+
+**Materials and light** (`test:overlap`): `<garden-material>` takes `wireframe`, `back-faces`
+(both sides drawn), `lighting="false"` (unlit, only its emissive colour) and `ambient-colour`
+(its share of the scene's `ambient-colour`, set on `<garden-scene>`, live).
+`<garden-light shadows shadow-filter="blur-exponential">` picks how the shadow's edges are
+softened: `pcf` (default), `poisson`, `exponential`, `blur-exponential`, `close-exponential`,
+`blur-close-exponential`, `contact-hardening` or `none` (live).
 
 **`<garden-environment>`** (`test:environment`): Babylon's default environment, the lighting map
 PBR models need plus an optional ground and sky (`ground`, `sky`, `colour`, `ground-shadow`,
 `ground-size`, `ground-y`, `texture`).
+
+## Shaders, screen effects and upscaling for games
+
+GLSL written in the page, for game effects (a force field, a pulse, a hit flash, under water),
+and the pieces that keep a phone's frame rate up:
+
+```html
+<!-- A shader material: a fragment shader alone gets a default vertex shader (vUV, vNormal, vPosition). -->
+<garden-box>
+  <garden-material id="shield" uniform-colour="#33ccff">
+    <script type="x-shader/x-fragment">
+      precision highp float;
+      varying vec2 vUV;
+      uniform vec3 colour;
+      uniform float time;   // seconds, filled in every frame
+      void main() { gl_FragColor = vec4(colour * (0.6 + 0.4 * sin(time * 4.0 + vUV.y * 20.0)), 1.0); }
+    </script>
+  </garden-material>
+</garden-box>
+<!-- A screen effect on the main camera, at a quarter size. -->
+<garden-post-process ratio="0.25" uniform-threshold="0.3" fragment="#threshold-shader"></garden-post-process>
+<!-- FSR 1 upscaling, and a HUD camera that sees only the crosshair's layer. -->
+<garden-pipeline fsr="performance"></garden-pipeline>
+<garden-camera type="free" position="0 0 -50" viewport="0 0 1 1" ortho layer-mask="0x20000000"></garden-camera>
+<garden-box size="50" scale="0.05 1 1" layer-mask="0x20000000"><garden-material emissive-colour="#00ff00"></garden-material></garden-box>
+```
+
+| Piece | What it does |
+|---|---|
+| `<garden-material vertex fragment>` | A shader material (Babylon's `ShaderMaterial`): each shader the `#id` of a `<script>`, a URL, or a child `<script type="x-shader/x-vertex">` / `"x-shader/x-fragment"`; a fragment shader alone gets a default vertex shader passing `vUV`, `vNormal` and `vPosition` (world). Attributes and uniforms are read from the source; Babylon fills the matrices, `uniform float time` gets seconds. `uniform-<name>` sets the rest (numbers, `#rrggbb`, an image URL for a sampler, or a `<garden-texture uniform="name">` child; `uniform-main-colour` is `mainColour`), live without a rebuild; `setUniform(name, value)` from a game every frame; `opacity` below 1 blends (`test:shader-material`) |
+| `<garden-post-process>` | A screen effect (Babylon's `PostProcess`) from a fragment shader (`fragment` or a child script) reading `textureSampler` at `vUV`: `ratio` (its size against the canvas), `sampling`, `camera` (default the main camera, so a HUD or inset is left alone), `disabled` (live, keeps its place in the chain); uniforms as above, `screenSize` and `time` filled in (`test:post-process`) |
+| `<garden-pipeline fsr>` | AMD's FidelityFX Super Resolution 1: the scene drawn smaller and upscaled with sharp edges, for phones and tablets: `ultra-quality`, `quality` (default), `balanced`, `performance` or a number; `fsr-sharpness`, `fsr-samples`; live; WebGL2 (`test:fsr`) |
+| `<garden-scene scaling>` | Babylon's hardware scaling level: `2` draws at half the canvas's size and lets the browser stretch it; live, for dropping resolution when frames are slow (`test:fsr`) |
+| `<garden-camera ortho>` | An orthographic camera: bare, one unit is a canvas pixel; `ortho="5"`, 5 units above and below the centre. With `viewport="0 0 1 1"` and a `layer-mask`, a HUD drawn over the main camera: a crosshair, a gun sight (`test:hud`) |
+| `<garden-particle texture-mask>` | Babylon's `textureMask` (`"r g b a"`, multiplies the image); a custom system directly in the scene plays with `event="load"`; a changed attribute rebuilds the system (`test:particle-mask`) |
+| `<garden-texture>` | `sampling` (`nearest`, `bilinear`, `trilinear`), `wrap` (`repeat`, `clamp`, `mirror`; two words for u and v), `mipmaps="false"`, `invert-y="false"`: crisp lookup tables for shaders, pixel art (`test:texture-options`) |
+| `<garden-mesh-model>` + `<garden-material>` | A material child dresses every part of the model: a node or shader material on a glTF's meshes |
 
 # Building and using it
 

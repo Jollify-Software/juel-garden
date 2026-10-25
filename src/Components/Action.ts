@@ -4,12 +4,16 @@ import { IncrementValueAction, SetValueAction } from "@babylonjs/core/Actions/di
 import { InterpolateValueAction } from "@babylonjs/core/Actions/interpolateValueAction";
 import { TargetCamera } from "@babylonjs/core/Cameras/targetCamera";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Scene } from "@babylonjs/core/scene";
 import { customElement, property } from "lit/decorators.js";
 import { ActionInfo } from "../ActionInfo";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
 import { Utility } from "../Utility";
+import { resolveElements } from "../Utils/resolveElements";
 import { GardenScene } from "./Scene";
 
 /**
@@ -20,10 +24,22 @@ import { GardenScene } from "./Scene";
  * event-action pattern.
  *
  * Attributes: `type` (`"beforeRender"|"set"|"increment"|"interpolate"`),
- * `trigger` (`"enter"|"exit"|"frame"|"pointerOut"|"pointerOver"|"pick"|"leftPick"`),
+ * `trigger` (`"enter"|"exit"|"frame"|"pointerOut"|"pointerOver"|"pick"|"leftPick"|"keydown"|"keyup"`),
+ * `key` (for `keydown`/`keyup`: the keys, separated by spaces, any case -- `"a ArrowLeft"`,
+ * `"space"`; empty for any key; a key held down repeats, as the browser repeats it),
  * `target`, `increment` (added to `i` each frame for `type="beforeRender"`, default 0), `parameter`, `property`, `value`, `duration`
  * (`type="interpolate"`-specific, milliseconds), `stop` (`type="interpolate"`-specific,
  * `"true"` to stop the mesh's other running animations when this one starts).
+ *
+ * A key action inside a mesh works on that mesh (keys go to the canvas, so it needs the focus,
+ * as Babylon's own keyboard input does):
+ *
+ * ```html
+ * <garden-sphere>
+ *   <garden-action type="increment" trigger="keydown" key="a" property="position.x" value="-0.1"></garden-action>
+ *   <garden-action type="increment" trigger="keydown" key="d" property="position.x" value="0.1"></garden-action>
+ * </garden-sphere>
+ * ```
  *
  * @category Components
  */
@@ -38,6 +54,10 @@ export class GardenAction extends GardenElement {
     @property() value: string;
     @property({ type: Number }) duration: number;
     @property() stop: string;
+    @property() key: string;
+
+    /** What it registered, to take off again when it's rebuilt or removed. */
+    private registered: [ActionManager, IAction][] = [];
 
     private resolveRegistered: () => void;
     /**
@@ -61,6 +81,11 @@ export class GardenAction extends GardenElement {
             await GardenElement.whenDocumentReady();
 
             let scene = this.getScene();
+            if (this.trigger && this.getTrigger(this.trigger) == null) {
+                this.listen();
+                this.resolveRegistered();
+                return;
+            }
             let el = document.querySelector(this.parameter) as GardenElement;
             let owner = this.parentElement as HTMLElement;
             let i = 0;
@@ -103,13 +128,9 @@ export class GardenAction extends GardenElement {
                         value: value,
                         action: (ownerMesh: Mesh, target: any, value: any) => {
                             if (ownerMesh == null) {
-                                console.log(this.getTrigger(this.trigger))
-                                return new SetValueAction(this.getTrigger(this.trigger), target, this.property, value);
+                                return new SetValueAction(this.triggerOptions(), target, this.property, value);
                             } else {
-                                return new SetValueAction({
-                                    trigger: this.getTrigger(this.trigger),
-                                    parameter: target
-                                }, ownerMesh, this.property, value);
+                                return new SetValueAction(this.triggerOptions(target), ownerMesh, this.property, value);
                             }
                         }
                     };
@@ -122,7 +143,7 @@ export class GardenAction extends GardenElement {
                             value: value,
                             action: (ownerMesh: Mesh, target: any, value: any) => {
                                 return new IncrementValueAction(
-                                    this.getTrigger(this.trigger), ownerMesh, this.property, value
+                                    this.triggerOptions(), ownerMesh, this.property, value
                                 )
                             }
                     };
@@ -134,14 +155,12 @@ export class GardenAction extends GardenElement {
                         action: (ownerMesh: Mesh, target: any, value: any) => {
                             if (ownerMesh == null) {
                                 return new InterpolateValueAction(
-                                    this.getTrigger(this.trigger), target, this.property, value,
+                                    this.triggerOptions(), target, this.property, value,
                                     this.duration, null, this.stop === "true"
                                 );
                             } else {
-                                return new InterpolateValueAction({
-                                    trigger: this.getTrigger(this.trigger),
-                                    parameter: target
-                                }, ownerMesh, this.property, value, this.duration, null, this.stop === "true");
+                                return new InterpolateValueAction(this.triggerOptions(target),
+                                    ownerMesh, this.property, value, this.duration, null, this.stop === "true");
                             }
                         }
                     };
@@ -149,18 +168,117 @@ export class GardenAction extends GardenElement {
             }
             if (action && 'mesh' in owner) {
                 let meshEl = owner as GardenMesh;
-                if (!meshEl.mesh.actionManager) {
-                    meshEl.mesh.actionManager = new ActionManager(scene);
-                }
-                meshEl.mesh.actionManager.registerAction(
-                    action.action(meshEl.mesh, (<GardenMesh>el).mesh, value) as IAction
-                );
+                await meshEl.whenReady;
+                let act = action.action(meshEl.mesh, (<GardenMesh>el)?.mesh, value) as IAction;
+                let manager = GardenAction.managerFor(act, meshEl.mesh, scene);
+                manager.registerAction(act);
+                this.registered.push([manager, act]);
             } else if (action && 'actions' in owner) {
                 let sceneEl = owner as GardenScene;
                 sceneEl.actions[this.id] = action;
             }
             this.resolveRegistered();
         });
+    }
+
+    /** A DOM-event `trigger`: set or increment `property` on whatever the event came from. */
+    private listen() {
+        let owner = this.parentElement;
+        if (!owner) return;
+        let value = GardenAction.parseValue(this.value);
+        let handler = (event: Event) => {
+            let detail = (<CustomEvent>event).detail;
+            let from = event.target as HTMLElement;
+            let elements = this.target ? resolveElements<HTMLElement>(this.target) : [from];
+            for (let element of elements)
+                for (let object of GardenAction.objectsOf(element, element == from ? detail : null))
+                    GardenAction.applyValue(object, this.property, value, this.type == "increment");
+        };
+        owner.addEventListener(this.trigger, handler);
+        this.whenDisposed(() => owner.removeEventListener(this.trigger, handler));
+    }
+
+    /** What an event's element stands for, to change: the sprite picked, its sprites, its light, its mesh. */
+    private static objectsOf(el: any, detail: any): any[] {
+        if (detail?.sprite && detail.element == el) return [detail.sprite];
+        if (el.sprites?.length) return el.sprites;
+        let object = el.animationTarget ?? el.mesh ?? el.node;
+        return object ? [object] : [];
+    }
+
+    /** `value` as a colour, a boolean, a number or a `Vector3`; else the string. */
+    static parseValue(value: string): any {
+        let v = (value ?? "").trim();
+        if (/^#[0-9a-f]{6}$/i.test(v)) return Color3.FromHexString(v);
+        if (/^#[0-9a-f]{8}$/i.test(v)) return Color4.FromHexString(v);
+        if (v == "true" || v == "false") return v == "true";
+        let parts = v.split(/[\s,]+/).filter(x => x);
+        if (parts.length && parts.every(x => !isNaN(Number(x)))) {
+            if (parts.length == 1) return Number(parts[0]);
+            if (parts.length == 3) return new Vector3(Number(parts[0]), Number(parts[1]), Number(parts[2]));
+        }
+        return value;
+    }
+
+    /** Sets (or adds to) the property at `path` (`"material.emissiveColor"`, `"position.y"`). */
+    static applyValue(object: any, path: string, value: any, add: boolean) {
+        if (!object || !path) return;
+        let keys = path.split(".");
+        let last = keys.pop();
+        for (let key of keys) {
+            object = object[key];
+            if (object == null) return;
+        }
+        let current = object[last];
+        if (!add)
+            object[last] = typeof value?.clone == "function" ? value.clone() : value;
+        else if (typeof current == "number")
+            object[last] = current + Number(value);
+        else if (typeof current?.add == "function")
+            object[last] = current.add(value);
+    }
+
+    /** Takes its actions off the meshes (or scene) they were registered on. */
+    private unregister() {
+        for (let [manager, act] of this.registered.splice(0))
+            manager.unregisterAction(act);
+    }
+
+    protected unbuild() {
+        this.unregister();
+        super.unbuild();
+    }
+
+    protected dispose() {
+        this.unregister();
+        super.dispose();
+    }
+
+    /** The trigger for a Babylon action: the key test for a key trigger, else `parameter` (an intersection's other mesh) if given. */
+    triggerOptions(parameter?: any): any {
+        let trigger = this.getTrigger(this.trigger);
+        if (GardenAction.isKeyTrigger(trigger)) {
+            let keys = (this.key ?? "").trim().split(/\s+/).filter(Boolean)
+                .map(k => k.toLowerCase() == "space" ? " " : k.toLowerCase());
+            return { trigger, parameter: (evt: any) => !keys.length || keys.includes(String(evt.sourceEvent.key).toLowerCase()) };
+        }
+        return parameter === undefined ? trigger : { trigger, parameter };
+    }
+
+    static isKeyTrigger(trigger: number): boolean {
+        return trigger == ActionManager.OnKeyDownTrigger || trigger == ActionManager.OnKeyUpTrigger;
+    }
+
+    /**
+     * Where an action goes: the mesh's action manager, or the scene's for a key action (Babylon
+     * only sends keys to the scene's). Made if there isn't one yet.
+     */
+    static managerFor(act: IAction, mesh: Mesh, scene: Scene): ActionManager {
+        let onScene = GardenAction.isKeyTrigger(act.trigger) || !mesh;
+        let host: { actionManager: any } = onScene ? scene : mesh;
+        if (!host.actionManager)
+            host.actionManager = new ActionManager(scene);
+        return host.actionManager;
     }
 
     getTrigger(str: string) {
@@ -179,6 +297,10 @@ export class GardenAction extends GardenElement {
                 return ActionManager.OnPickTrigger;
             case "leftPick":
                 return ActionManager.OnLeftPickTrigger;
+            case "keydown":
+                return ActionManager.OnKeyDownTrigger;
+            case "keyup":
+                return ActionManager.OnKeyUpTrigger;
         }
     }
 }

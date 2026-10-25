@@ -60,8 +60,14 @@ const axisNames: { [name: string]: PhysicsConstraintAxis } = {
  *   that opens 90° only: `limits="angular-x 0 1.57"`).
  * - `motor` -- drives the joint at this speed (rad/s for a hinge, m/s for a
  *   slider or prismatic) along `motor-axis` (default `angular-x` for a hinge,
- *   else `linear-x`), with at most `motor-force` (default 1000). Change it
- *   from code to change the speed.
+ *   else `linear-x`), with at most `motor-force` (default 1000). With
+ *   `motor-type="position"`, `motor` is instead where to hold the joint (an
+ *   angle in radians, or metres along a slider) and the motor drives it there
+ *   and keeps it there: a servo, a flipper's rest, a door that closes itself.
+ *   `motor`, `motor-force`, `motor-type` and `motor-axis` all change live.
+ * - `instance-a`, `instance-b` -- on a physics `grid` (see {@link GardenMesh}),
+ *   which copy of A and of B is joined (`between="#links #links"` with
+ *   `instance-a="0" instance-b="1"` joins two copies of one grid: a chain).
  * - `collisions` -- the two bodies collide with each other too (by default
  *   jointed bodies pass through each other, so a hinge's leaf can swing
  *   through its frame; turn this on only when they don't overlap).
@@ -91,10 +97,12 @@ export class GardenJoint extends GardenElement {
     private bodies: PhysicsBody[] = [];
     private watcher: Observer<Scene>;
 
-    /** A `motor` change only changes the speed. */
+    /** A change to the motor's settings only changes the motor. */
     protected get handlesChanges() {
         return true;
     }
+
+    private static motorKeys = new Set<PropertyKey>(["motor", "motor-force", "motor-type", "motor-axis"]);
 
     protected dispose() {
         this.disconnect();
@@ -102,7 +110,8 @@ export class GardenJoint extends GardenElement {
     }
 
     async updated(changed?: Map<PropertyKey, unknown>) {
-        let onlyMotor = changed && changed.size == 1 && changed.has("motor") && this.constraint;
+        let onlyMotor = changed && changed.size && this.constraint &&
+            [...changed.keys()].every(key => GardenJoint.motorKeys.has(key));
         if (onlyMotor) {
             this.applyMotor(this.getScene());
             return;
@@ -141,7 +150,7 @@ export class GardenJoint extends GardenElement {
         this.bodies = bodies;
         this.constraint = this.build(bodies, scene);
         if (!this.constraint) return;
-        bodies[0].addConstraint(bodies[1], this.constraint);
+        bodies[0].addConstraint(bodies[1], this.constraint, this.num("instance-a"), this.num("instance-b"));
         if (this.hasAttribute("collisions") && this.getAttribute("collisions") != "false")
             this.constraint.isCollisionsEnabled = true;
         if (this.type?.toLowerCase() == "distance" && this.hasAttribute("min-distance"))
@@ -161,6 +170,7 @@ export class GardenJoint extends GardenElement {
         this.constraint?.dispose();
         this.constraint = null;
         this.bodies = [];
+        this.motorOn = null;
     }
 
     private vec(name: string, fallback: Vector3): Vector3 {
@@ -200,7 +210,7 @@ export class GardenJoint extends GardenElement {
                 return new BallAndSocketConstraint(pivotA, pivotB, axisA, axisB, scene);
             case "distance": {
                 let max = this.num("max-distance") ?? Vector3.Distance(
-                    bodies[0].transformNode.getAbsolutePosition(), bodies[1].transformNode.getAbsolutePosition());
+                    this.placeOf(bodies[0], this.num("instance-a")), this.placeOf(bodies[1], this.num("instance-b")));
                 return new DistanceConstraint(max, scene);
             }
             case "hinge":
@@ -226,6 +236,12 @@ export class GardenJoint extends GardenElement {
         }
     }
 
+    /** Where a body (or one copy of a `grid`'s) is now. */
+    private placeOf(body: PhysicsBody, instance?: number): Vector3 {
+        let copy = instance != null ? GardenMesh.copyPlace(body.transformNode as any, instance) : null;
+        return copy ?? body.transformNode.getAbsolutePosition();
+    }
+
     private plugin(scene: Scene): any {
         return scene?.getPhysicsEngine()?.getPhysicsPlugin();
     }
@@ -239,19 +255,55 @@ export class GardenJoint extends GardenElement {
         if (limit.maxLimit != null) plugin.setAxisMaxLimit(this.constraint, limit.axis, limit.maxLimit);
     }
 
-    private applyMotor(scene: Scene) {
-        if (!this.constraint || (this.motor == null && !this.hasAttribute("motor"))) return;
-        let plugin = this.plugin(scene);
+    /** The axis the motor drives now. */
+    private motorAxis(): PhysicsConstraintAxis {
         let axisName = this.getAttribute("motor-axis")?.toLowerCase();
-        let axis = axisNames[axisName] ?? ((this.type || "").toLowerCase() == "hinge"
+        return axisNames[axisName] ?? ((this.type || "").toLowerCase() == "hinge"
             ? PhysicsConstraintAxis.ANGULAR_X : PhysicsConstraintAxis.LINEAR_X);
-        let speed = Number(this.motor ?? 0);
-        plugin.setAxisMotorType(this.constraint, axis, PhysicsConstraintMotorType.VELOCITY);
+    }
+
+    private applyMotor(scene: Scene) {
+        if (!this.constraint) return;
+        let plugin = this.plugin(scene);
+        let axis = this.motorAxis();
+        let had = this.motorOn;
+        this.motorOn = null;
+        if (this.motor == null && !this.hasAttribute("motor")) {
+            // Taken off: the axis is free again.
+            if (had != null) {
+                this.freeAxis(plugin, had);
+                this.keepAwake(plugin, false);
+            }
+            return;
+        }
+        // Moved to another axis: the old one is free again.
+        if (had != null && had != axis)
+            this.freeAxis(plugin, had);
+        let target = Number(this.motor ?? 0);
+        let position = this.getAttribute("motor-type")?.toLowerCase() == "position";
+        plugin.setAxisMotorType(this.constraint, axis,
+            position ? PhysicsConstraintMotorType.POSITION : PhysicsConstraintMotorType.VELOCITY);
         plugin.setAxisMotorMaxForce(this.constraint, axis, this.num("motor-force") ?? 1000);
-        plugin.setAxisMotorTarget(this.constraint, axis, speed);
-        // A sleeping body ignores its motor, so a running motor keeps its bodies awake.
+        plugin.setAxisMotorTarget(this.constraint, axis, target);
+        this.motorOn = axis;
+        // A sleeping body ignores its motor, so a running motor keeps its bodies awake (a
+        // position motor too: it must wake to go to a new target).
+        this.keepAwake(plugin, position || !!target);
+    }
+
+    /** Takes the motor off `axis` (Havok keeps driving it with only the type set to none). */
+    private freeAxis(plugin: any, axis: PhysicsConstraintAxis) {
+        plugin.setAxisMotorMaxForce(this.constraint, axis, 0);
+        plugin.setAxisMotorTarget(this.constraint, axis, 0);
+        plugin.setAxisMotorType(this.constraint, axis, PhysicsConstraintMotorType.NONE);
+    }
+
+    /** The axis the motor was last put on. */
+    private motorOn: PhysicsConstraintAxis = null;
+
+    private keepAwake(plugin: any, awake: boolean) {
         for (let body of this.bodies)
-            plugin.setActivationControl?.(body, speed ? PhysicsActivationControl.ALWAYS_ACTIVE
+            plugin.setActivationControl?.(body, awake ? PhysicsActivationControl.ALWAYS_ACTIVE
                 : PhysicsActivationControl.SIMULATION_CONTROLLED);
     }
 }
