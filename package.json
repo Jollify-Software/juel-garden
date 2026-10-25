@@ -89,7 +89,8 @@
     "test:viewport": "node tests/viewport.js",
     "test:raycast": "node tests/raycast.js",
     "test:ragdoll": "node tests/ragdoll.js",
-    "test:environment": "node tests/environment.js"
+    "test:environment": "node tests/environment.js",
+    "test:animation-blending": "node tests/animation-blending.js"
   },
   "repository": {
     "type": "git",

@@ -207,7 +207,9 @@ and walk-throughs with guides and talking exhibits (the plan is
 |---|---|
 | `walk` | A walking player, camera-relative; Havok's character controller with `<garden-physics>`, else `terrain` or `collisions`. `element.walker` |
 | `follow`, `follow-wait` | Followers that keep apart; a leader that stops for stragglers (`garden-wait` / `garden-resume`) |
-| `play()`, `anim-*` | Named GLB animations with cross-fades; idle/walk/run picked by speed; one-shots fire `garden-animation-end` |
+| `play()`, `anim-*` | Named GLB animations with cross-fades; idle/walk/run picked by speed; one-shots fire `garden-animation-end`. `play` changed later cross-fades over `blend` seconds (default 0.25); a `.babylon` file's skeleton ranges are named animations too |
+| `weights`, `sync` | Several animations at once at their own weights, `weights="walk 0.5, strafe 0.5"` (live: fades to new weights over `blend`); `sync="walk"` keeps the others in step with one; `setWeights({ ... }, { blend, sync })` from code (`test:animation-blending`) |
+| `<garden-clip>` | One more animation for the model it's in, by `name`: cut by frame (`from`/`to`, from `group` or a `.babylon` file's one take), or retargeted from another file (`src`) made for another rig with the same bone names, e.g. Mixamo's (`ground-reference`, `fix-ground-reference`, `fix-root-position`, `root-node`, `map="from:to"`); live (`test:animation-blending`) |
 | `near` | `garden-near` / `garden-far` when something (or `camera`) comes close |
 | `<garden-torus-knot>` | `radius`, `tube`, `p`, `q`, `radial-segments`, `tubular-segments` |
 | `grab` | Pick a mesh or model up and move it in six directions (a controller or hand turns it over); `grab="scale"` pinches it bigger or smaller; `grab-box` draws a bounding box with handles; `garden-grab` / `garden-release` |
