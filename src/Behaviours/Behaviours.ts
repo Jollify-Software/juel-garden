@@ -8,6 +8,7 @@ import { BehaviourFollow } from "./BehaviourFollow";
 import { BehaviourGrab } from "./BehaviourGrab";
 import { BehaviourNear } from "./BehaviourNear";
 import { BehaviourOrbit } from "./BehaviourOrbit";
+import { BehaviourSpan } from "./BehaviourSpan";
 import { BehaviourSuspension } from "./BehaviourSuspension";
 import { BehaviourTerrain } from "./BehaviourTerrain";
 import { BehaviourTrack } from "./BehaviourTrack";
@@ -25,7 +26,8 @@ import { BehaviourWander } from "./BehaviourWander";
  *   *or* one instance of a `<garden-sprite>` group (via
  *   {@link SpriteBehaviourTarget}), through {@link applyToTarget}.
  * - `meshOnly` -- `follow-wait` (see {@link BehaviourWait}), `near` (see
- *   {@link BehaviourNear}), `grab` (see {@link BehaviourGrab}), `orbit` (real
+ *   {@link BehaviourNear}), `grab` (see {@link BehaviourGrab}), `span` (see
+ *   {@link BehaviourSpan}), `orbit` (real
  *   scene-graph `.parent` reparenting) and `action` (a Babylon
  *   `ActionManager`) -- none has a sprite
  *   equivalent, so these stay real-`Mesh`-only, wired only from
@@ -59,6 +61,7 @@ export module Behaviours {
         'orbit': BehaviourOrbit,
         'action': BehaviourAction,
         'grab': BehaviourGrab,
+        'span': BehaviourSpan,
     }
 
     /** The `GardenMesh` entry point -- every behaviour, generic and mesh-only alike. */
