@@ -1,5 +1,9 @@
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
+import { WebXRFeatureName } from "@babylonjs/core/XR/webXRFeaturesManager";
+import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
+import { PhysicsImpostor } from "@babylonjs/core/Physics/v1/physicsImpostor";
+import { GardenPhysics } from "./Physics";
 import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
@@ -20,6 +24,13 @@ import { GardenScene } from "./Scene";
  * teleport-target meshes, defaults to every `<garden-ground>` and the ground of a
  * `<garden-sky environment="default">`), `teleportation`
  * (default on; `teleportation="false"` turns it off).
+ *
+ * **Hands in the physics** (needs a `<garden-physics>`): `physics-controllers` gives
+ * each controller (or tracked hand) a small body, so you can knock things over, push
+ * them, bat a ball; its value is the body's size in metres (default 0.1).
+ * `physics-headset` gives the head one too (headbutt the ball). With `grab` on a
+ * body, the controller's trigger picks it up and letting go throws it (see
+ * {@link BehaviourGrab}); a `<garden-launcher hand="right">` throws from one hand.
  *
  * Arriving from another page that was in VR -- through a `<garden-link>` --
  * re-enters VR straight away where the browser supports WebXR navigation
@@ -98,9 +109,39 @@ export class GardenWebXR extends GardenElement {
                 // camera is already a full fallback, so this is not fatal.
                 console.warn("garden-webxr: WebXR experience unavailable.", err);
             }
+            await this.enablePhysicsControllers();
             this.enterGrantedSession();
         } finally {
             this.endBuild();
+        }
+    }
+
+    /** The controllers' (and the headset's) bodies, with `physics-controllers`. */
+    physicsControllers: WebXRControllerPhysics;
+
+    /** `physics-controllers` / `physics-headset`: bodies on the hands (and head), once Havok is up. */
+    private async enablePhysicsControllers() {
+        let on = (name: string) => this.hasAttribute(name) && this.getAttribute(name) != "false";
+        if (!this.xr?.baseExperience || !(on("physics-controllers") || on("physics-headset")))
+            return;
+        let physics = GardenPhysics.forElement(this);
+        if (!physics) {
+            console.warn("<garden-webxr physics-controllers> needs a <garden-physics> in the scene.");
+            return;
+        }
+        await physics.ready;
+        try {
+            this.physicsControllers = this.xr.baseExperience.featuresManager.enableFeature(WebXRFeatureName.PHYSICS_CONTROLLERS, "latest", {
+                xrInput: this.xr.input,
+                physicsProperties: {
+                    restitution: 0.5,
+                    impostorSize: Number(this.getAttribute("physics-controllers")) || 0.1,
+                    impostorType: PhysicsImpostor.BoxImpostor,
+                },
+                enableHeadsetImpostor: on("physics-headset"),
+            }) as WebXRControllerPhysics;
+        } catch (err) {
+            console.warn("garden-webxr: controller physics unavailable.", err);
         }
     }
 

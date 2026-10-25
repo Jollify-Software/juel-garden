@@ -87,6 +87,7 @@
     "test:force": "node tests/force.js",
     "test:picking": "node tests/picking.js",
     "test:overlap": "node tests/overlap.js",
+    "test:throw": "node tests/throw.js",
     "test:sprite": "node tests/sprite.js",
     "test:viewport": "node tests/viewport.js",
     "test:raycast": "node tests/raycast.js",
