@@ -286,6 +286,7 @@ For scenes lit by an environment map (`npm run test:precompile` for the last two
 | `pbrSplatMaterial()`, `pbrTexturedMaterial()` | A PBR ground of three photo-scanned layers blended by a mix map (height blending, anti-tiling, parallax), and one scanned surface with its normal, occlusion and roughness maps |
 | `precompile()` | Compiles the scene's shaders before play in two stages: what a first screen shows (`first`), then the rest behind it (`all`), instanced shaders included |
 | `compiledEffectCount()` | How many shader variants the engine has compiled: the same material compiles one for each set of mesh attributes, bones, instances and lights |
+| `.ktx2` textures | GPU-compressed textures (Basis Universal, in KTX2 files or glTF's `KHR_texture_basisu`): any `<garden-texture src>`, material texture or model texture can be one. They stay compressed on the GPU (a 1024 px map takes about 1 MB instead of 5), upload in a moment, and ETC1S files are smaller than JPEGs. Decoded by Babylon's KTX2 decoder (WebAssembly, in workers) from `decoders/ktx2/` beside the bundle, never the CDN. Made by `node Tools/ktx2-encode.mjs in.png out.ktx2 [--uastc] [--linear]` (ETC1S for colour maps; UASTC for normal and data maps, with `--linear`). `npm run test:ktx2` |
 
 **Set everything that changes a shader's defines before a mesh first renders**: the rendering
 pipeline, every light (make it early and move it later rather than add it later), shadow

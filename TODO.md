@@ -607,3 +607,9 @@ Left over:
   vertex colours in its glTF models doubled the variants too. Now `precompile()` (two
   stages: a first screen, then the rest), `compiledEffectCount()` and `toPBRMaterials`'s
   `vertexColours: false`, with the rule in the README; `npm run test:precompile`.
+- [x] KTX2 textures (2026-10-27): Babylon's KTX2 decoder (its WebAssembly transcoders) pointed at
+  vendored copies in `decoders/ktx2/`, as the mesh decoders are; `Tools/ktx2-encode.mjs`
+  encodes PNG/JPEG to ETC1S or UASTC with `babylonpress-ktx2-encoder` (Basis Universal in
+  WebAssembly, so no KTX-Software install). `npm run test:ktx2`. Normal maps are encoded as
+  plain UASTC (`--linear`), not Basis's two-channel normal mode, which Babylon's shaders
+  don't unpack.

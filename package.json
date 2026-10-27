@@ -35,7 +35,7 @@
     "test:physics": "node tests/physics-zero-g.js",
     "test:link": "node tests/link.js",
     "test:model": "node tests/model.js",
-    "copy-decoders": "node -e \"const fs=require('fs');fs.mkdirSync('dist/decoders',{recursive:true});for(const f of fs.readdirSync('vendor/decoders'))if(!f.endsWith('.md'))fs.copyFileSync('vendor/decoders/'+f,'dist/decoders/'+f)\"",
+    "copy-decoders": "node -e \"require('fs').cpSync('vendor/decoders','dist/decoders',{recursive:true,filter:f=>!f.endsWith('.md')})\"",
     "test:polygon": "node tests/polygon.js",
     "test:polygon-winding": "node tests/polygon-winding.js",
     "test:parterre-polygon": "node tests/parterre-polygon.js",
@@ -83,6 +83,7 @@
     "test:nature": "node tests/nature.js",
     "test:nature-elements": "node tests/nature-elements.js",
     "test:precompile": "node tests/precompile.js",
+    "test:ktx2": "node tests/ktx2.js",
     "test:model-skinned": "node tests/model-skinned.js",
     "test:joint": "node tests/joint.js",
     "test:force": "node tests/force.js",
@@ -103,6 +104,7 @@
   },
   "homepage": "https://github.com/Jollify-Software/juel-garden#readme",
   "devDependencies": {
+    "babylonpress-ktx2-encoder": "^0.6.0",
     "esbuild": "^0.25.12",
     "http-server": "^14.1.1",
     "playwright-core": "^1.48.2",
@@ -112,6 +114,7 @@
   "dependencies": {
     "@babylonjs/core": "^8.56.2",
     "@babylonjs/havok": "^1.3.14",
+    "@babylonjs/ktx2decoder": "^8.56.2",
     "@babylonjs/loaders": "^8.56.2",
     "@swc/helpers": "^0.5.13",
     "cssjson": "^2.1.3",
