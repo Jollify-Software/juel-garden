@@ -3,7 +3,8 @@
 // teleported); any other attribute -- a Lit property like `width` or a plain one like `colour`
 // or `track` -- rebuilds it without leaving the old mesh, material or behaviour behind; a child
 // <garden-material>'s change reaches the mesh; trees, cameras and houses rebuild; a light still
-// changes in place; a change made while an element is out of the document applies when it's back.
+// changes in place; a change made while an element is out of the document applies when it's back;
+// nodes a game hung on a mesh after its build survive its rebuild.
 // Run after a build: node tests/live.js.
 const { run } = require("./harness");
 
@@ -72,6 +73,24 @@ async ({ page, check, frames }) => {
         return { parent: ball.mesh.parent === holder.mesh, alive: !ball.mesh.isDisposed() };
     });
     check("a rebuilt parent keeps its child element's mesh", child.parent && child.alive, JSON.stringify(child));
+
+    // A node a page or game hung on the mesh after the build (a character's model on an
+    // invisible walking box, a carried light) moves onto the rebuilt mesh, not disposed with it.
+    const hung = await page.evaluate(async () => {
+        const box = document.getElementById("box"), scene = box.mesh.getScene();
+        const model = box.mesh.clone("hung-model", box.mesh, true);
+        model.element = undefined;
+        const light = new (document.getElementById("lamp").light.constructor)("hung-light", box.mesh.position.clone(), scene);
+        light.parent = box.mesh;
+        box.setAttribute("height", "2");
+        await new Promise(r => setTimeout(r, 100));
+        const result = { model: !model.isDisposed() && model.parent === box.mesh, light: !light.isDisposed() && light.parent === box.mesh && scene.lights.includes(light) };
+        model.dispose(); light.dispose();
+        box.setAttribute("height", "1");
+        await new Promise(r => setTimeout(r, 100));
+        return result;
+    });
+    check("nodes hung on a mesh after its build move onto the rebuilt mesh", hung.model && hung.light, JSON.stringify(hung));
 
     // A behaviour changed: the old one stops, the new one runs.
     const track = await page.evaluate(async () => {
