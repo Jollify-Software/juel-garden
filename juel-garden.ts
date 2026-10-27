@@ -18,6 +18,7 @@ export * from "./src/Characters/Huddle";
 export * from "./src/Utils/worldPosition";
 export * from "./src/Utils/StandardMaterials";
 export * from "./src/Utils/PBRMaterials";
+export * from "./src/Utils/Precompile";
 export * from "./src/Utils/noise";
 export * from "./src/Nature/Images";
 export * from "./src/Nature/SplatMaterial";

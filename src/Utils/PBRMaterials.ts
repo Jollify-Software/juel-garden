@@ -33,6 +33,12 @@ export interface PBRMaterialOptions {
     maxLights?: number;
     /** StandardMaterial sources only: their colours are already linear (glTF's). Default false. */
     linearColours?: boolean;
+    /**
+     * `false` switches off the meshes' vertex colours (`mesh.useVertexColors`). Modelling tools
+     * export white vertex colours nothing uses, and a material compiles a second shader for the
+     * meshes that have them (see {@link precompile}). Default: left as they are.
+     */
+    vertexColours?: boolean;
 }
 
 /**
@@ -66,6 +72,7 @@ export function toPBRMaterials(meshes: AbstractMesh[], scene: Scene, options: PB
         return r ?? fallback;
     };
     for (let mesh of meshes) {
+        if (options.vertexColours === false) mesh.useVertexColors = false;
         let source = mesh.material;
         if (!source) continue;
         let material = made.get(source);

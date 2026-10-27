@@ -82,6 +82,7 @@
     "test:characters": "node tests/characters.js",
     "test:nature": "node tests/nature.js",
     "test:nature-elements": "node tests/nature-elements.js",
+    "test:precompile": "node tests/precompile.js",
     "test:model-skinned": "node tests/model-skinned.js",
     "test:joint": "node tests/joint.js",
     "test:force": "node tests/force.js",

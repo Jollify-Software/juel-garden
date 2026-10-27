@@ -600,3 +600,10 @@ Left over:
   Now it waits for the next step to begin (`onBeforePhysicsObservable`) before handing the
   transform back. Found when a game put a ball back after a shot from its rest handler; check in
   `npm run test:physics`.
+- [x] Shaders compiling two or three times each (2026-10-27): a game's start-up was 14 to 20 s
+  because its post-process pipeline, lights, shadow generators and `receiveShadows` were added
+  after meshes had rendered behind the loading screen, and each change recompiled every
+  shader (with ANGLE's Direct3D, hundreds of milliseconds each); unused UV sets and white
+  vertex colours in its glTF models doubled the variants too. Now `precompile()` (two
+  stages: a first screen, then the rest), `compiledEffectCount()` and `toPBRMaterials`'s
+  `vertexColours: false`, with the rule in the README; `npm run test:precompile`.
