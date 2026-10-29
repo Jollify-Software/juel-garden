@@ -32,7 +32,7 @@ function check(name, ok, info = "") {
     const files = pages(path.join(ROOT, "examples")).map(f => path.relative(ROOT, f).split(path.sep).join("/"))
         .filter(f => f.includes(filter)).sort();
     const browser = await chromium.launch({ executablePath: CHROME, headless: true,
-        args: ["--enable-gpu", "--ignore-gpu-blocklist", "--use-angle=d3d11", "--enable-webgl"] });
+        args: [...require("./gpu").GPU_ARGS] });
     try {
         for (const file of files) {
             // The lean build is the library as an app bundles it: no window.BABYLON and no

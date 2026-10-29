@@ -19,7 +19,7 @@ function check(name, ok, info = "") {
 
 (async () => {
     const browser = await chromium.launch({ executablePath: CHROME, headless: true,
-        args: ["--enable-gpu", "--ignore-gpu-blocklist", "--use-angle=d3d11", "--enable-webgl"] });
+        args: [...require("./gpu").GPU_ARGS] });
     try {
         const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
         await page.route(ORIGIN + "/**", route => {

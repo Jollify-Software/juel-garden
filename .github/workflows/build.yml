@@ -7,8 +7,9 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
-# The physics test (npm run test:physics) needs a real GPU, so it stays a
-# local run; CI only builds.
+# The unit tests (tests/unit, no browser) block a merge. The browser tests run in a second
+# job under SwiftShader (software WebGL: the runner has no GPU) and don't block yet: a few
+# GPU-heavy tests, like test:physics, are only proved on a real GPU, locally.
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,8 +24,37 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Type-check
+        run: npx tsc --noEmit -p .
+
       - name: Build
         run: |
           npm run build
+          npm run build:lib
           test -s dist/decoders/draco_decoder_gltf.wasm
           test -s dist/juel-garden.js
+
+      - name: Unit tests
+        run: node tests/run-all.js --unit
+
+  browser-tests:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Browser tests (SwiftShader)
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node tests/run-all.js --browser --gpu=swiftshader --timeout=300
