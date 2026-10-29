@@ -124,6 +124,27 @@ const withTimeout = (p, ms, what) => Promise.race([
         })), 5000, "teleport inside the physics step");
         check("A teleport from inside the physics step moves the body", JSON.stringify(moved) == "[-2,1,-2]", JSON.stringify(moved));
 
+        // Two teleports a step apart: the first from outside the step, the second from an
+        // after-physics listener that runs before the first one's clean-up (a ball parked when
+        // it was potted, then put back by a garden-rest listener). The second must stick: the
+        // first's clean-up used to switch the body's pre-step off again, leaving the body
+        // where the first teleport put it.
+        const second = await withTimeout(page.evaluate(() => new Promise(r => {
+            const cue = document.getElementById("cue");
+            const scene = document.querySelector("garden-scene").scene;
+            let armed = false;
+            const early = scene.onAfterPhysicsObservable.add(() => {
+                if (!armed) return;
+                armed = false;
+                scene.onAfterPhysicsObservable.remove(early);
+                cue.teleport("1 -1 1");
+            });
+            cue.teleport("2 2 2");
+            armed = true;
+            setTimeout(() => r(cue.mesh.position.asArray().map(n => +n.toFixed(2))), 500);
+        })), 5000, "two teleports a step apart");
+        check("A second teleport a step after the first sticks", JSON.stringify(second) == "[1,-1,1]", JSON.stringify(second));
+
         await page.screenshot({ path: out });
         check("No console errors or warnings", errors.length == 0, errors.join(" | "));
     } finally {

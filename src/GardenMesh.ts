@@ -433,11 +433,20 @@ export abstract class GardenMesh extends GardenElement {
         // Wait for that step to begin first: called from inside the physics step (a
         // garden-rest or garden-collide listener), an after-physics observer added now
         // would run in this same pass, before the body ever got the new transform.
+        // Only the latest teleport hands the body back: an earlier one's clean-up can run
+        // after a later teleport (one from an after-physics listener registered before it),
+        // and would switch the pre-step off before the body ever got the later position.
         body.disablePreStep = false;
+        const teleport = ++this.teleports;
         const scene = this.getScene();
         scene.onBeforePhysicsObservable.addOnce(() =>
-            scene.onAfterPhysicsObservable.addOnce(() => body.disablePreStep = true));
+            scene.onAfterPhysicsObservable.addOnce(() => {
+                if (teleport == this.teleports) body.disablePreStep = true;
+            }));
     }
+
+    /** How many times teleport() has been called: only the latest one's clean-up runs. */
+    private teleports = 0;
 
     /** Disposes the physics body (e.g. a ball that has been potted). The mesh stays. */
     removePhysics() {
