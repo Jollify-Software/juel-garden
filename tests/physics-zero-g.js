@@ -31,7 +31,7 @@ const withTimeout = (p, ms, what) => Promise.race([
     const browser = await chromium.launch({
         executablePath: CHROME,
         headless: true,
-        args: ["--enable-gpu", "--ignore-gpu-blocklist", "--use-angle=d3d11", "--enable-webgl"],
+        args: [...require("./gpu").GPU_ARGS],
         timeout: 30000,
     });
     try {

@@ -26,7 +26,7 @@ function run(html, body, { url = "/test.html", viewport = { width: 1000, height:
     };
     (async () => {
         const browser = await chromium.launch({ executablePath: CHROME, headless: true,
-            args: ["--enable-gpu", "--ignore-gpu-blocklist", "--use-angle=d3d11", "--enable-webgl", "--autoplay-policy=no-user-gesture-required"] });
+            args: [...require("./gpu").GPU_ARGS, "--autoplay-policy=no-user-gesture-required"] });
         try {
             const page = await browser.newPage({ viewport, hasTouch: true });
             page.setDefaultTimeout(15000);

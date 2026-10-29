@@ -366,6 +366,16 @@ global bundle's `BABYLON` or `JuelGarden`, which the npm build doesn't
 define). Each feature has its own
 `npm run test:*`.
 
+`node tests/run-all.js` runs the whole suite one test at a time (each browser test starts its
+own Chrome, and several at once run a small PC out of memory), with a time limit on each
+(`--timeout=120`, seconds) and a summary; build first. `--unit` runs only the unit tests in
+`tests/unit/` (pure maths on `node:test`, bundled by esbuild, no browser and no build);
+`--browser` only the browser tests; words pick tests by name (`node tests/run-all.js waypoint`);
+`--list` says what would run. `--gpu=swiftshader` draws WebGL in software, for a machine with no
+GPU (CI); `tests/gpu.js` holds the Chrome switches every browser test uses. CI runs the
+type-check, both builds and the unit tests, and the browser tests under SwiftShader as a job that
+doesn't block yet.
+
 # Related projects
 
 ## Changing, adding, moving and removing elements
