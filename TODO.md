@@ -600,6 +600,14 @@ Left over:
   Now it waits for the next step to begin (`onBeforePhysicsObservable`) before handing the
   transform back. Found when a game put a ball back after a shot from its rest handler; check in
   `npm run test:physics`.
+- [x] Two `teleport()`s a step apart lost the second (2026-10-29): the first one's clean-up (turning
+  the pre-step back off) is added during the next step, so it runs after an after-physics
+  listener registered earlier, such as `garden-rest`'s. A teleport from that listener (a ball put
+  back) set the pre-step on, and the first teleport's clean-up turned it straight off again, so
+  the body stayed where the first teleport put it while the code thought it had moved. Found as
+  a game stalling: a potted ball parked, then put back by the rest handler in the next step, left
+  "in play" a long way outside the table. Now only the latest teleport's clean-up runs (a
+  counter); check in `npm run test:physics`.
 - [x] Shaders compiling two or three times each (2026-10-27): a game's start-up was 14 to 20 s
   because its post-process pipeline, lights, shadow generators and `receiveShadows` were added
   after meshes had rendered behind the loading screen, and each change recompiled every
