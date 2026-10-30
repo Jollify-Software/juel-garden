@@ -1,9 +1,11 @@
 import { Camera } from "@babylonjs/core/Cameras/camera";
+import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Viewport } from "@babylonjs/core/Maths/math.viewport";
 import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { customElement, property } from "lit/decorators.js";
+import { CameraJump } from "../CameraTypes/CameraJump";
 import { CameraTypeStrategies } from "../CameraTypes/CameraTypeStrategies";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
@@ -32,6 +34,11 @@ import { GardenScene } from "./Scene";
  * `height-offset`, `rotation-offset`, `look-offset`, `camera-stiffness`,
  * `camera-damping`, `free-look`, `look-pad`, `look-speed` (the last eight are `type="follow"`-specific), `ellipsoid`/`touch`
  * (`type="free"`-specific).
+ *
+ * `jump` (a `type="free"` camera, or any other built on Babylon's `FreeCamera`): Space jumps.
+ * Its value is the height in metres (`jump="1.2"`; empty or bare, 1). With `collisions` it
+ * bumps its head on ceilings and lands on what's below, as a visitor walking round a venue
+ * would. Only while standing, and not while typing in a form field ({@link CameraJump}).
  *
  * `rotation` (degrees, `"x y z"`) turns a `free` (or other non-orbiting)
  * camera: `"0 90 0"` looks along +x, `"90 0 0"` straight down.
@@ -73,6 +80,8 @@ export class GardenCamera extends GardenElement {
     @property({ converter: Vector3Convert.fromString }) position: Vector3;
     @property({ converter: Vector3Convert.fromString }) ellipsoid: Vector3;
     @property() touch: string;
+    /** Space jumps, this high in metres (empty: 1); see the class notes. */
+    @property() jump: string;
     /**
      * The near clip plane, in metres (the camera's `minZ`). Babylon's default is 1, which
      * clips a small model seen from close by; `near="0.01"` shows a 60 cm model from 1 m.
@@ -209,7 +218,12 @@ export class GardenCamera extends GardenElement {
         super.dispose();
     }
 
+    /** Space's jump, for a camera with `jump`. */
+    jumper: CameraJump;
+
     private disposeCamera() {
+        this.jumper?.dispose();
+        this.jumper = null;
         if (!this.camera) return;
         let scene = this.camera.getScene();
         this.wasActive = scene.activeCamera == this.camera;
@@ -275,6 +289,11 @@ export class GardenCamera extends GardenElement {
         let controls = this.getAttribute("controls");
         if (controls != "false" && (!viewport || controls != null))
             this.camera.attachControl(sceneEl.canvas, true);
+
+        if (this.hasAttribute("jump") && this.camera instanceof FreeCamera) {
+            let height = parseFloat(this.getAttribute("jump"));
+            this.jumper = new CameraJump(this.camera, scene, Number.isFinite(height) && height > 0 ? height : 1);
+        }
 
         if (target && !point && "setTarget" in this.camera && !("chaseTarget" in this.camera)) {
             // An arc camera orbiting an element: it follows the mesh.
