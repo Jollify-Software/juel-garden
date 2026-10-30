@@ -15,7 +15,7 @@ interface HtmlSource {
 /**
  * Rasterises a mesh's own light-DOM content (its first child element) into a
  * `DynamicTexture` via `html2canvas`, for `texture="html"` (see
- * {@link ModifyTextureSetter}): the element's inner HTML, styled by the page's
+ * {@link "Modifiers/ModifyTextureSetter"!ModifyTextureSetter}): the element's inner HTML, styled by the page's
  * CSS, becomes the mesh's surface.
  *
  * The child is moved out of the scene (where it would push the canvas down) into a
@@ -24,7 +24,7 @@ interface HtmlSource {
  * through the mesh element itself, `garden-plane > div`, no longer match), scripts can
  * still find it, and any change to it (text, children, attributes) draws the texture
  * again after a short debounce. {@link render} (or the element's
- * {@link GardenMesh.renderHtml}) draws it again on demand, after a stylesheet change say.
+ * {@link "GardenMesh"!GardenMesh.renderHtml}) draws it again on demand, after a stylesheet change say.
  * Appending a new first child to the mesh element replaces the content. When the
  * element is removed for good, the content goes back inside it.
  *

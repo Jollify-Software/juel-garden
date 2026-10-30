@@ -27,10 +27,10 @@ import { IBehaviourTarget } from "../IBehaviourTarget";
  * rotated onto its side").
  *
  * Works against any {@link IBehaviourTarget} (a `GardenMesh`'s `Mesh`, or one
- * instance of a `<garden-sprite>` group via {@link SpriteBehaviourTarget}).
- * Must be paired with `drive` (see {@link BehaviourDrive}) and run after it
+ * instance of a `<garden-sprite>` group via {@link "Behaviours/SpriteBehaviourTarget"!SpriteBehaviourTarget}).
+ * Must be paired with `drive` (see {@link "Behaviours/BehaviourDrive"!BehaviourDrive}) and run after it
  * -- the library takes care of this ordering automatically (see
- * {@link Behaviours}).
+ * {@link "Behaviours/Behaviours"!Behaviours}).
  *
  * Attributes: `suspension-terrain` (selector of the `<garden-height-map>` to
  * follow), `suspension-wheels` (4 local x,z offsets: front-left, front-right,

@@ -15,14 +15,14 @@ import { IBehaviourTarget } from "../IBehaviourTarget";
  * Follows the polyline of a parent `<garden-line>`'s `points` attribute --
  * built for rollercoaster-style rides, but works for any path-following
  * {@link IBehaviourTarget} (a `GardenMesh`'s `Mesh`, or one instance of a
- * `<garden-sprite>` group via {@link SpriteBehaviourTarget}).
+ * `<garden-sprite>` group via {@link "Behaviours/SpriteBehaviourTarget"!SpriteBehaviourTarget}).
  *
  * Attributes: `track-smooth` (Catmull-Rom points per segment, for a smooth
  * curve instead of snapping at corners; omit for straight rail segments),
  * `track-bank` (present to roll "up" into the path's curve instead of
  * staying world-Y-up), `track-step` (distance moved per frame, default
  * `0.05`). Pauses while `element.waiting` is true (see
- * {@link BehaviourWait}).
+ * {@link "Behaviours/BehaviourWait"!BehaviourWait}).
  *
  * @example
  * ```html

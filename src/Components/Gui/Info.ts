@@ -12,7 +12,7 @@ import { GardenMesh } from "../../GardenMesh";
 // with nothing but `import "@babylonjs/gui"` in isolation -- not a code bug).
 /**
  * A clickable info panel anchored above its parent mesh -- click the mesh
- * (via {@link GardenScene}'s pointer-pick, wired to `activate()`) to open a
+ * (via {@link "Components/Scene"!GardenScene}'s pointer-pick, wired to `activate()`) to open a
  * screen-space card that tracks the mesh's position as the camera moves.
  * Hosts `<garden-text>`/`<garden-button>` rows as content.
  *
@@ -50,6 +50,9 @@ export class GardenInfo extends GardenElement {
     private parentMesh: GardenMesh;
     private anchor: Vector3;
     private visible = false;
+    /** Set by a rebuild for a change: the new card needs its rows and its open state back. */
+    private rebuilding = false;
+    private wasVisible = false;
     private outsideClickHandler = (evt: PointerEvent) => {
         let target = evt.target as Node;
         if (this.visible && !this.panel.contains(target) && !this.marker.contains(target))
@@ -154,6 +157,17 @@ export class GardenInfo extends GardenElement {
             this.show();
         };
 
+        if (this.rebuilding) {
+            // A change (a new title, say) built a new card: its <garden-text>, <garden-button>
+            // and <garden-link> rows build into it again, and a card that was open stays open.
+            this.rebuilding = false;
+            for (let child of Array.from(this.children))
+                if (child instanceof GardenElement)
+                    child.requestUpdate();
+            if (this.wasVisible)
+                this.show();
+        }
+
         if (this.hasAttribute("open")) {
             // this.parentMesh.mesh may not exist yet -- there's no ordering
             // guarantee between a parent and a child declared in the same
@@ -245,8 +259,13 @@ export class GardenInfo extends GardenElement {
         this.panel.style.display = "none";
     }
 
-    /** A rebuild makes its marker, panel and per-frame placing again. */
+    /**
+     * A rebuild makes its marker, panel and per-frame placing again, then asks its rows
+     * to build into the new card and reopens it if it was open.
+     */
     protected unbuild() {
+        this.rebuilding = true;
+        this.wasVisible = this.visible;
         this.removeBuilt();
         super.unbuild();
     }

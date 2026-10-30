@@ -8,7 +8,7 @@ import { customElement, property } from "lit/decorators.js";
  * (triangulated with `earcut`). Only builds when `extrude` is set.
  *
  * Attributes: `extrude` (boolean, must be present to build), `shape` (the
- * polygon outline, a `Vector3` array -- see {@link Vector3Convert.array}),
+ * polygon outline, a `Vector3` array -- see {@link "Converters/Vector3Convert"!Vector3Convert.array}),
  * `depth` (plus the common {@link GardenMesh} set). The outline may wind
  * either way round; it's turned so the sides face out.
  *

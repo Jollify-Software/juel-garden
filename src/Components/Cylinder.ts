@@ -3,8 +3,8 @@ import { customElement } from "lit/decorators.js";
 import { GardenMesh } from "../GardenMesh";
 
 /**
- * A cylinder (or, with a low `tessellation`, a prism -- see {@link GardenColumn}
- * and the roof cone in {@link GardenHouse}), via Babylon's `MeshBuilder.CreateCylinder`.
+ * A cylinder (or, with a low `tessellation`, a prism -- see {@link "Components/Prefab/Column"!GardenColumn}
+ * and the roof cone in {@link "Components/Prefab/House"!GardenHouse}), via Babylon's `MeshBuilder.CreateCylinder`.
  *
  * Attributes: `diameter`, `height`, `tessellation` (plus the common
  * {@link GardenMesh} set).

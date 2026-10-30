@@ -8,12 +8,12 @@ import { IBehaviourTarget } from "../IBehaviourTarget";
  * {@link IBehaviourTarget}, so the same generic Behaviours that move a
  * `GardenMesh`'s single `Mesh` -- `track`/`drive`/`suspension`/`wander`/
  * `flee-target`/`terrain` -- can run once per sprite in the group instead.
- * See {@link GardenSprite}, which constructs one of these per placed sprite.
+ * See {@link "Components/Sprite"!GardenSprite}, which constructs one of these per placed sprite.
  *
  * `position` aliases the sprite's own live position object rather than
  * copying it: Behaviours mutate a target's position both in place
- * (`target.position.x += ...`, e.g. {@link BehaviourDrive}) and by whole-
- * vector reassignment (`target.position = ...`, e.g. {@link BehaviourTrack}) --
+ * (`target.position.x += ...`, e.g. {@link "Behaviours/BehaviourDrive"!BehaviourDrive}) and by whole-
+ * vector reassignment (`target.position = ...`, e.g. {@link "Behaviours/BehaviourTrack"!BehaviourTrack}) --
  * the getter returns the sprite's real `Vector3` so in-place writes land
  * directly, and the setter copies into that same object (rather than
  * replacing it) so a reassignment doesn't orphan the sprite from what this

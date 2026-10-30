@@ -2,6 +2,7 @@ import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
 import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
 import { PhysicsEventType, PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import type { Scene } from "@babylonjs/core/scene";
 import { PhysicsRaycastResult } from "@babylonjs/core/Physics/physicsRaycastResult";
 import HavokPhysics from "@babylonjs/havok";
 import { PhysicsViewer } from "@babylonjs/core/Debug/physicsViewer";
@@ -17,7 +18,7 @@ const defaultWasmUrl = scriptSrc
     ? new URL("HavokPhysics.wasm", scriptSrc).href
     : "HavokPhysics.wasm";
 
-/** The element a physics body belongs to (set by {@link GardenMesh.setMesh}). */
+/** The element a physics body belongs to (set by {@link "GardenMesh"!GardenMesh.setMesh}). */
 export function elementOfBody(body: PhysicsBody): GardenElement {
     return (<any>body?.transformNode)?.element ?? null;
 }
@@ -96,16 +97,43 @@ export class GardenPhysics extends GardenElement {
     /** True while every dynamic body is stopped. */
     atRest = true;
 
-    /** Resolves with the plugin once Havok is loaded and the scene's physics is on. */
-    readonly ready: Promise<HavokPlugin>;
+    /**
+     * Resolves with the plugin once Havok is loaded and the scene's physics is on. A scene
+     * removed for good and added back is a new scene: this is then a new Promise, for the
+     * physics started in it.
+     */
+    ready: Promise<HavokPlugin>;
     private _resolveReady: (plugin: HavokPlugin) => void;
 
     private _dynamicBodies = new Set<PhysicsBody>();
     private _started = false;
+    /** The Babylon scene the physics was started in. */
+    private _builtScene: Scene;
 
     constructor() {
         super();
+        this.newReady();
+    }
+
+    private newReady() {
         this.ready = new Promise(resolve => { this._resolveReady = resolve; });
+    }
+
+    /**
+     * Removed for good, the physics stays on in its scene (as before). But when that scene
+     * was disposed too (its `<garden-scene>` removed for good), the element starts again in
+     * the new scene when it is added back, with a new {@link ready}, so its meshes wait for it.
+     */
+    protected dispose() {
+        super.dispose();
+        if (this._started && this._builtScene?.isDisposed) {
+            this._started = false;
+            this._builtScene = null;
+            this.plugin = null;
+            this._dynamicBodies.clear();
+            this.atRest = true;
+            this.newReady();
+        }
     }
 
     /**
@@ -155,9 +183,10 @@ export class GardenPhysics extends GardenElement {
         this._started = true;
         this.beginBuild();
 
-        let scene = this.getScene();
+        let scene = this._builtScene = this.getScene();
         let wasmUrl = this.wasm ?? defaultWasmUrl;
-        let havok = this.havok = await HavokPhysics({ locateFile: () => wasmUrl });
+        // Started again in a new scene, the loaded module is used again.
+        let havok = this.havok ??= await HavokPhysics({ locateFile: () => wasmUrl });
 
         this.plugin = new HavokPlugin(this.timestep == null, havok);
         scene.enablePhysics(this.gravity ?? new Vector3(0, -9.81, 0), this.plugin);

@@ -5,13 +5,13 @@ import { IBehaviourTarget } from "../IBehaviourTarget";
 /**
  * Keeps a target resting on a `<garden-height-map>`'s own surface height,
  * sampled at its current (x, z) every frame -- no spring, no tilt, just a Y
- * snap (see {@link BehaviourSuspension} for the fuller wheeled-vehicle
+ * snap (see {@link "Behaviours/BehaviourSuspension"!BehaviourSuspension} for the fuller wheeled-vehicle
  * version, with a damped spring per corner and chassis pitch/roll). Works
  * against any {@link IBehaviourTarget} -- a `GardenMesh`'s `Mesh`, or
- * (applied once per placed sprite -- see {@link GardenSprite}) one instance
- * of a `<garden-sprite>` group via {@link SpriteBehaviourTarget}. A no-op
+ * (applied once per placed sprite -- see {@link "Components/Sprite"!GardenSprite}) one instance
+ * of a `<garden-sprite>` group via {@link "Behaviours/SpriteBehaviourTarget"!SpriteBehaviourTarget}. A no-op
  * unless `terrain` is set; combines freely with `flee-target` (see
- * {@link BehaviourFlee}) or `wander` (see {@link BehaviourWander}) on the
+ * {@link "Behaviours/BehaviourFlee"!BehaviourFlee}) or `wander` (see {@link "Behaviours/BehaviourWander"!BehaviourWander}) on the
  * same element, since this only ever touches y, never x/z.
  *
  * Attributes: `terrain` (selector of the `<garden-height-map>` to rest on,

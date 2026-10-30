@@ -22,7 +22,7 @@ import { StepType } from "./Stairs";
 
 /**
  * Generates a curved (spiral-segment) staircase mesh. Used by
- * {@link GardenStairs} when its `curvature` attribute is set. Ported from
+ * {@link "Components/Prefab/Stairs"!GardenStairs} when its `curvature` attribute is set. Ported from
  * the kitfox.com stairs generator.
  *
  * @category Shape Functions

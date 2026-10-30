@@ -3,8 +3,8 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 
 /**
  * A registered `<garden-action type="set"|"increment">` waiting to be applied
- * to a mesh by {@link BehaviourAction} once an `action="..."` attribute
- * references it by id. See {@link GardenAction}.
+ * to a mesh by {@link "Behaviours/BehaviourAction"!BehaviourAction} once an `action="..."` attribute
+ * references it by id. See {@link "Components/Action"!GardenAction}.
  *
  * @category Core
  */

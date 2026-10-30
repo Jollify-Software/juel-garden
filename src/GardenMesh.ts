@@ -77,7 +77,7 @@ const shapeByTag: {[tag: string]: PhysicsShapeType} = {
  *
  * `layer-mask` (a number, `0x...` hex allowed) is the mesh's Babylon `layerMask`
  * (its parts' too): only cameras whose `layer-mask` shares a bit with it see it
- * (see {@link GardenCamera}).
+ * (see {@link "Components/Camera"!GardenCamera}).
  *
  * Script API: {@link impulse}, {@link getVelocity}, {@link setVelocity},
  * {@link stop}, {@link teleport}, {@link removePhysics}, and the underlying
@@ -159,6 +159,7 @@ export abstract class GardenMesh extends GardenElement {
      * element's share included); a physics body is teleported there.
      */
     applyTransform() {
+        this.reflectTransform();
         if (!this.mesh)
             return;
         let { position, rotation, scaling } = Modifier.transformOf(this);
@@ -176,6 +177,37 @@ export abstract class GardenMesh extends GardenElement {
             else
                 this.mesh.position = position;
         }
+    }
+
+    /**
+     * A `position`, `rotation` or `scale` property set from code (`box.position = new Vector3(1, 0, 2)`)
+     * onto its attribute, which is what the build and {@link applyTransform} read (a parent element's
+     * share is added there). The values keep the attribute's units: `rotation` in degrees. A property
+     * that came from its attribute is left alone, so an expression such as `(Math.PI) 0 0` stays.
+     *
+     * @example
+     * ```js
+     * const box = document.querySelector("garden-box");
+     * box.position = new BABYLON.Vector3(0, 1, -2); // moves the box; its attribute now reads "0 1 -2"
+     * ```
+     */
+    private reflectTransform() {
+        for (let key of ["position", "rotation", "scale"]) {
+            let value = this[key] as Vector3;
+            if (!value || ![value.x, value.y, value.z].every(n => typeof n == "number" && !isNaN(n)))
+                continue;
+            let attr = this.getAttribute(key);
+            let parsed = attr == null ? null : Vector3Convert.fromString(attr);
+            if (parsed && parsed.x == value.x && parsed.y == value.y && parsed.z == value.z)
+                continue;
+            this.setAttribute(key, `${value.x} ${value.y} ${value.z}`);
+        }
+    }
+
+    /** A transform property set from code reaches the attribute before the build or move reads it. */
+    protected shouldUpdate(changed: Map<PropertyKey, unknown>): boolean {
+        this.reflectTransform();
+        return super.shouldUpdate(changed);
     }
 
     /** Before a rebuild for a change: the body goes too (setMesh replaces the mesh itself). */
@@ -307,7 +339,7 @@ export abstract class GardenMesh extends GardenElement {
      * Disposes the materials in `materials` that no mesh wears any more, unless a
      * `<garden-material>` owns them, with their textures unless a `<garden-texture>` owns those.
      */
-    private static disposeUnworn(materials: Set<Material>) {
+    protected static disposeUnworn(materials: Set<Material>) {
         for (let material of materials) {
             if (GardenMaterial.owned.has(material) || material.getBindedMeshes().length ||
                 !material.getScene()?.materials.includes(material))

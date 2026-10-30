@@ -78,6 +78,54 @@ function check(name, ok, info = "") {
         check("a system with no capacity attribute is built and draws particles",
             noCap && Number.isFinite(noCap.capacity) && noCap.capacity > 0 && noCap.count > 0 && noCap.count <= noCap.capacity && errors.length == 0,
             JSON.stringify({ noCap, errors }));
+
+        // A custom system changed three times is rebuilt each time: the last build's system (and
+        // its texture) must go, not run on beside the new one; removed for good, none is left.
+        const rebuilt = await page.evaluate(async () => {
+            const wait = ms => new Promise(r => setTimeout(r, ms));
+            const s = document.querySelector("garden-scene").scene;
+            const count = () => ({ systems: s.particleSystems.length, textures: s.textures.length });
+            const before = count();
+            const el = document.createElement("garden-particle");
+            el.setAttribute("capacity", "200");
+            el.setAttribute("url", "/examples/assets/dunes.png");
+            document.querySelector("garden-scene").appendChild(el);
+            await wait(500);
+            el.play();
+            const built = count();
+            for (const c of ["300", "400", "500"]) { el.setAttribute("capacity", c); await wait(400); }
+            const changed = { ...count(), capacity: el.particleSystem?.getCapacity(), started: el.particleSystem?.isStarted() };
+            el.remove();
+            await wait(400);
+            return { before, built, changed, gone: count() };
+        });
+        check("a changed custom system replaces the old one (one system, its texture, still playing)",
+            rebuilt.built.systems == rebuilt.before.systems + 1 && rebuilt.changed.systems == rebuilt.built.systems
+            && rebuilt.changed.textures == rebuilt.built.textures && rebuilt.changed.capacity == 500 && rebuilt.changed.started,
+            JSON.stringify(rebuilt));
+        check("a changed custom system removed for good leaves nothing",
+            rebuilt.gone.systems == rebuilt.before.systems && rebuilt.gone.textures == rebuilt.before.textures, JSON.stringify(rebuilt));
+
+        // Weather systems share one dot texture per scene: removing (or rebuilding) one must not
+        // dispose it under the others.
+        const shared = await page.evaluate(async () => {
+            const wait = ms => new Promise(r => setTimeout(r, ms));
+            const scene = document.querySelector("garden-scene");
+            const add = preset => { const e = document.createElement("garden-particle"); e.setAttribute("preset", preset); scene.appendChild(e); return e; };
+            const rain = add("rain"), snow = add("snow");
+            await wait(800);
+            rain.setAttribute("event", "load"); // a property change rebuilds the rain
+            await wait(800);
+            rain.remove();
+            await wait(400);
+            const tex = snow.particleSystem?.particleTexture;
+            const r = { texture: !!tex, live: !!tex?.getInternalTexture(), inScene: scene.scene.textures.includes(tex),
+                count: snow.particleSystem?.particles.length };
+            snow.remove();
+            return r;
+        });
+        check("removing one weather system keeps the dot texture the others draw with",
+            shared.texture && shared.live && shared.inScene && shared.count > 0, JSON.stringify(shared));
     } finally {
         await browser.close();
     }

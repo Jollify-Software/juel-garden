@@ -7,7 +7,7 @@ import { GardenElement } from "../GardenElement";
 
 /**
  * A positional (or ambient) audio source on Babylon's audio engine
- * (`AudioEngineV2`, see {@link GardenScene.audioEngine}). Inside an element
+ * (`AudioEngineV2`, see {@link "Components/Scene"!GardenScene.audioEngine}). Inside an element
  * with a mesh or node it is spatial: it follows that mesh every frame, so a
  * voice comes from a guide who is walking about. Directly inside
  * `<garden-scene>` (or with `ambient`) it plays at the same volume
@@ -136,6 +136,8 @@ export class GardenSound extends GardenElement {
             this.attachTo(parent);
         }
 
+        // A new `url` builds again: the last build's listeners go first, so each event plays once.
+        this.unlisten();
         this.listen("play-on", () => this.play());
         this.listen("stop-on", () => this.stop());
 
@@ -151,6 +153,13 @@ export class GardenSound extends GardenElement {
             target.addEventListener(name, listener);
             this._listeners.push([target, name, listener]);
         }
+    }
+
+    /** Takes back the `play-on`/`stop-on` listeners {@link listen} added. */
+    private unlisten() {
+        for (let [target, name, listener] of this._listeners)
+            target.removeEventListener(name, listener);
+        this._listeners = [];
     }
 
     /** Makes the sound come from another element (its mesh or node) or a Babylon node; `null` makes it ambient. */
@@ -183,9 +192,7 @@ export class GardenSound extends GardenElement {
     }
 
     protected dispose() {
-        for (let [target, name, listener] of this._listeners)
-            target.removeEventListener(name, listener);
-        this._listeners = [];
+        this.unlisten();
         this.sound?.dispose();
         this.sound = null;
         this._built = null;

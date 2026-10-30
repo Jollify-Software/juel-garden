@@ -23,8 +23,8 @@ import { BehaviourWander } from "./BehaviourWander";
  *   `terrain` -- each needs nothing more than {@link IBehaviourTarget}'s
  *   `position`/`rotation`, so these run against a `GardenMesh`'s `Mesh`
  *   *or* one instance of a `<garden-sprite>` group (via
- *   {@link SpriteBehaviourTarget}), through {@link applyToTarget}.
- * - `meshOnly` -- `follow-wait` (see {@link BehaviourWait}), `near` (see
+ *   {@link "Behaviours/SpriteBehaviourTarget"!SpriteBehaviourTarget}), through {@link applyToTarget}.
+ * - `meshOnly` -- `follow-wait` (see {@link "Behaviours/BehaviourWait"!BehaviourWait}), `near` (see
  *   {@link BehaviourNear}), `grab` (see {@link BehaviourGrab}), `orbit` (real
  *   scene-graph `.parent` reparenting) and `action` (a Babylon
  *   `ActionManager`) -- none has a sprite
@@ -78,7 +78,7 @@ export module Behaviours {
     /**
      * The generic entry point -- just the position/rotation-only
      * behaviours, against any {@link IBehaviourTarget}. Called once per
-     * placed sprite by {@link GardenSprite}, and by {@link applyBehaviours}
+     * placed sprite by {@link "Components/Sprite"!GardenSprite}, and by {@link applyBehaviours}
      * above (a `Mesh` already satisfies the interface as-is).
      */
     export var applyToTarget = function (el: GardenElement, target: IBehaviourTarget, attr: Attr[]) {

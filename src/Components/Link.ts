@@ -24,7 +24,7 @@ import { GardenInfo } from "./Gui/Info";
  * the back button flies back out, and another page can link straight to
  * `mall.html#shop-12`. In a headset the jump is an instant teleport, and a
  * browser with WebXR navigation keeps the visitor in VR across pages (see
- * {@link GardenWebXR}).
+ * {@link "Components/WebXR"!GardenWebXR}).
  *
  * Where it goes decides what it looks like:
  *
@@ -126,6 +126,12 @@ export class GardenLink extends GardenMesh {
         let btn = createInfoButton(this.title || this.textContent.trim() || this.href);
         btn.addEventListener("click", () => this.follow());
         info.container.appendChild(btn);
+        // Rebuilt (its own change, or its card's) or removed for good, the button leaves the
+        // card, and the next build adds it again.
+        this.whenDisposed(() => {
+            btn.remove();
+            this.wired = false;
+        });
     }
 
     private async attachTo(owner: GardenMesh) {
@@ -137,16 +143,32 @@ export class GardenLink extends GardenMesh {
         // Some elements (e.g. <garden-canvas>) build their mesh a tick later still.
         if (!owner.mesh)
             await new Promise(resolve => this.getScene().onBeforeRenderObservable.addOnce(resolve));
-        let mesh = owner.mesh;
-        if (!mesh) {
+        if (!owner.mesh)
             console.warn(`<garden-link> inside <${owner.localName}>: that element has no mesh to click.`);
-            return;
-        }
         let highlight = this.highlightColour();
-        this.makeClickable(mesh, hover => {
-            mesh.outlineColor = highlight;
-            mesh.outlineWidth = 0.03;
-            mesh.renderOutline = hover;
+        let wiredMesh: AbstractMesh = null;
+        let actions: ExecuteCodeAction[] = [];
+        let wire = () => {
+            let mesh = owner.mesh;
+            if (!mesh || mesh == wiredMesh || mesh.isDisposed())
+                return;
+            wiredMesh = mesh;
+            actions = this.makeClickable(mesh, hover => {
+                mesh.outlineColor = highlight;
+                mesh.outlineWidth = 0.03;
+                mesh.renderOutline = hover;
+            });
+        };
+        wire();
+        // The owner builds a new mesh for a change (a colour, a size) or when it's added back:
+        // that one is made clickable too.
+        this.observe(this.getScene().onBeforeRenderObservable, wire);
+        // Rebuilt or removed for good, the link takes its actions off the mesh, and the next
+        // build wires it again.
+        this.whenDisposed(() => {
+            for (let action of actions)
+                wiredMesh?.actionManager?.unregisterAction(action);
+            this.wired = false;
         });
     }
 
@@ -155,8 +177,10 @@ export class GardenLink extends GardenMesh {
         let name = this.id || "link";
         let r = this.radius;
 
+        // The ring and title are made after setMesh(), so it would carry them over to the new
+        // disc as someone else's; they go here, with their materials and the title's texture.
         for (let part of this.parts)
-            part.dispose();
+            part.dispose(false, true);
         this.parts = [];
 
         let disc = MeshBuilder.CreateDisc(`${name}-portal`, {
@@ -175,7 +199,12 @@ export class GardenLink extends GardenMesh {
         } else {
             discMat.emissiveColor = Color3.FromHexString("#1d3557");
         }
+        // setMesh() gave the bare disc a material for `colour` (which colours the ring here);
+        // nothing wears it once the disc has its own, so it goes.
+        let applied = disc.material;
         disc.material = discMat;
+        if (applied && applied != discMat)
+            GardenMesh.disposeUnworn(new Set([applied]));
 
         let ringColour = this.colourOf("colour", Color3.White());
         let ringMat = new StandardMaterial(`${name}-ring-mat`, scene);
@@ -247,12 +276,18 @@ export class GardenLink extends GardenMesh {
     }
 
     /** Click (or a controller's trigger, in a headset) follows the link; hover calls `onHover`. */
-    private makeClickable(mesh: AbstractMesh, onHover: (hover: boolean) => void) {
+    /** Click and hover actions on `mesh`; returns them, so they can be taken off again. */
+    private makeClickable(mesh: AbstractMesh, onHover: (hover: boolean) => void): ExecuteCodeAction[] {
         if (!mesh.actionManager)
             mesh.actionManager = new ActionManager(this.getScene());
-        mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickTrigger, () => this.follow()));
-        mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOverTrigger, () => onHover(true)));
-        mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOutTrigger, () => onHover(false)));
+        let actions = [
+            new ExecuteCodeAction(ActionManager.OnPickTrigger, () => this.follow()),
+            new ExecuteCodeAction(ActionManager.OnPointerOverTrigger, () => onHover(true)),
+            new ExecuteCodeAction(ActionManager.OnPointerOutTrigger, () => onHover(false)),
+        ];
+        for (let action of actions)
+            mesh.actionManager.registerAction(action);
+        return actions;
     }
 
     private highlightColour(): Color3 {

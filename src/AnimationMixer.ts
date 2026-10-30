@@ -7,7 +7,10 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 export interface PlayOptions {
     /** Cross-fade time from the current animation, seconds. Default 0.25; 0 cuts. */
     blend?: number;
-    /** Loop (the default) or play once. A one-shot returns to the motion animation (or the last looping one) when it ends. */
+    /**
+     * Loop (the default) or play once. A one-shot returns to the motion animation (or the last
+     * looping one) when it ends; with neither, it holds its last frame.
+     */
     loop?: boolean;
     /** Playback speed, 1 = as authored. */
     speed?: number;
@@ -16,7 +19,7 @@ export interface PlayOptions {
 /**
  * Plays a model's named animation groups (a GLB's `Idle`, `Walk`, `Wave`)
  * with cross-fades, and optionally picks idle/walk/run from how fast the
- * model is moving. Owned by {@link GardenMeshModel}; see its `play()` and
+ * model is moving. Owned by {@link "Components/MeshModel"!GardenMeshModel}; see its `play()` and
  * `anim-*` attributes.
  *
  * Fades by animation-group weights: during a blend both groups run, the new
@@ -58,6 +61,38 @@ export class AnimationMixer {
         return name ? this.groups.get(name.toLowerCase()) ?? null : null;
     }
 
+    /** The {@link playOnce} waiting for its one-shot to end. */
+    private once: { group: AnimationGroup, resolve: (ended: boolean) => void } = null;
+
+    /** Resolves the waiting {@link playOnce}: true when its one-shot ended, false when something took over. */
+    private settleOnce(ended: boolean) {
+        let once = this.once;
+        this.once = null;
+        once?.resolve(ended);
+    }
+
+    /**
+     * Plays `name` once and resolves when it ends: `true`, or `false` if there is no such
+     * animation, another `play()`, `playOnce()` or `stop()` took over first, or the mixer was
+     * disposed (the model removed or reloaded). With no
+     * motion or looping animation to go back to, the model stays in the last frame, so an
+     * `Open` and then a `Close` each hold where they end. Played again while it plays, a
+     * one-shot starts over (and the first call resolves `false`).
+     *
+     * @example
+     * ```js
+     * button.disabled = true;
+     * await model.mixer.playOnce(open ? "Close" : "Open", { blend: 0 });
+     * button.disabled = false;
+     * ```
+     */
+    playOnce(name: string, options: Omit<PlayOptions, "loop"> = {}): Promise<boolean> {
+        if (!this.play(name, { ...options, loop: false }))
+            return Promise.resolve(false);
+        let group = this.group(name);
+        return new Promise(resolve => this.once = { group, resolve });
+    }
+
     /** Cross-fades to `name`. Returns false (with a warning) if there is no such animation. */
     play(name: string, options: PlayOptions = {}): boolean {
         let group = this.group(name);
@@ -65,6 +100,7 @@ export class AnimationMixer {
             console.warn(`No animation "${name}"; this model has: ${this.names.join(", ")}`);
             return false;
         }
+        this.settleOnce(false);
         let loop = options.loop ?? true;
         let speed = options.speed ?? 1;
         let blend = Math.max(0, options.blend ?? 0.25);
@@ -85,7 +121,12 @@ export class AnimationMixer {
         // Babylon clears what starts inside its end notification, so start it before the next
         // frame's animations, at the weight it has (no blend through the rest pose).
         let again = this.ending == group;
+        // A one-shot played again while it plays: Babylon's start() does nothing for a group
+        // already started, so stop it first (at the weight it has, as `again`).
+        let restart = !loop && !again && group.isStarted;
         group.onAnimationGroupEndObservable.clear();
+        if (restart)
+            group.stop();
         let start = () => {
             if (!wasPlaying)
                 group.start(loop, speed);
@@ -109,7 +150,7 @@ export class AnimationMixer {
                 this.fades = this.fades.filter(f => f.group != other);
                 this.fades.push({ group: other, from: other.weight, to: 0, t: 0, length: blend });
             }
-            let from = wasPlaying || again ? group.weight : 0;
+            let from = wasPlaying || again || restart ? group.weight : 0;
             this.fades.push({ group, from, to: 1, t: 0, length: blend });
             group.weight = from;
         }
@@ -118,6 +159,7 @@ export class AnimationMixer {
 
     /** Stops everything (fading out over `blend` seconds). */
     stop(blend = 0.25) {
+        this.settleOnce(false);
         this.current = null;
         this.oneShot = false;
         this.lastLoop = null;
@@ -145,6 +187,8 @@ export class AnimationMixer {
         if (this.current != group.name)
             return;
         this.oneShot = false;
+        if (this.once?.group == group)
+            this.settleOnce(true);
         this.ending = group;
         try {
             this.owner.dispatchEvent(new CustomEvent("garden-animation-end", { bubbles: true, detail: { name: group.name } }));
@@ -175,7 +219,9 @@ export class AnimationMixer {
         this.fades = this.fades.filter(f => f.t < f.length);
     }
 
+    /** Done with: stops stepping fades, and a waiting {@link playOnce} resolves `false`. */
     dispose() {
+        this.settleOnce(false);
         this.scene.onBeforeRenderObservable.remove(this.observer);
     }
 }

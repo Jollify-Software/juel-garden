@@ -20,11 +20,11 @@ import { GardenRoom } from "./Room";
  *    needed; the wall only carries shape modifiers (`curve`, `segments`). In
  *    this mode the element builds no mesh of its own -- the room reads its
  *    attributes and builds the side as part of the room mesh. See
- *    {@link GardenRoom}.
+ *    {@link "Components/Prefab/Room"!GardenRoom}.
  *
  * Attributes: `points` (centreline, a `Vector3` array -- see
- * {@link Vector3Convert.array}), `height` (default {@link GardenRoom.WallHeight}),
- * `thickness` (default {@link GardenRoom.WallThickness}), `curve` (sagitta: bow
+ * {@link Vector3Convert.array}), `height` (default {@link "Components/Prefab/Room"!GardenRoom.WallHeight}),
+ * `thickness` (default {@link "Components/Prefab/Room"!GardenRoom.WallThickness}), `curve` (sagitta: bow
  * a two-point wall out by this many units, + one way / - the other), `segments`
  * (arc sampling resolution, default 16), `smooth` (round a multi-point
  * centreline through a Catmull-Rom spline), `closed` (close the loop), `slot`
@@ -50,7 +50,7 @@ export class GardenWall extends GardenMesh {
     // used in room-slot mode; no need to redeclare it as a reactive property.
 
     /**
-     * Room-slot mode: the parent {@link GardenRoom} injects this side's two edge
+     * Room-slot mode: the parent {@link "Components/Prefab/Room"!GardenRoom} injects this side's two edge
      * endpoints (room-local) before it builds, so the wall doesn't need `points`.
      */
     edge?: [Vector3, Vector3];

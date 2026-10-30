@@ -51,6 +51,7 @@ export * from "./src/Components/Ground";
 export * from "./src/Components/Polygon";
 export * from "./src/Components/Clone";
 export * from "./src/Components/MeshModel";
+export * from "./src/Components/ModelViewer";
 export * from "./src/Components/Animation";
 export * from "./src/Components/HeightMap";
 export * from "./src/Components/Sky";

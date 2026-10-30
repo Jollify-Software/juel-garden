@@ -6,5 +6,6 @@
         "sourceMap": false,
         "outDir": "lib/types"
     },
-    "files": ["juel-garden.ts"]
+    "files": ["juel-garden.ts"],
+    "include": ["src/elements/*.ts"]
 }

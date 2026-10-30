@@ -59,7 +59,7 @@ export class Walker {
  *   walks it up slopes and steps, against walls, and pushes dynamic bodies.
  *   The capsule is sized from the mesh (or `walk-height`/`walk-radius`).
  *   Floors need `physics="static"`.
- * - Otherwise with `terrain="#height-map"` (see {@link BehaviourTerrain}) it
+ * - Otherwise with `terrain="#height-map"` (see {@link "Behaviours/BehaviourTerrain"!BehaviourTerrain}) it
  *   follows the ground; with `collisions` it slides along meshes with
  *   `collisions` (Babylon's `moveWithCollisions`) and falls under the
  *   scene's `gravity`.
@@ -100,7 +100,7 @@ export function BehaviourWalk(el: GardenElement, target: IBehaviourTarget, attr:
     walker._target = target;
     walker.enabled = previous?.enabled ?? true;
     walker.heading = previous?.heading ?? target.rotation.y - facingOffset;
-    walker.input = previous?.input ?? new WalkInput(el.getSceneEl(), el.getAttribute("walk-joystick") ?? "auto", el);
+    walker.input = previous && !previous.input.disposed ? previous.input : new WalkInput(el.getSceneEl(), el.getAttribute("walk-joystick") ?? "auto", el);
     (<any>el).walker = walker;
 
     let mesh = target instanceof AbstractMesh ? target : null;
@@ -269,4 +269,13 @@ export function BehaviourWalk(el: GardenElement, target: IBehaviourTarget, attr:
         walker.controller?.dispose();
         walker.controller = null;
     };
+
+    // Removed for good: the character controller, the keyboard and the pad go too (a
+    // rebuild for a change keeps them; the next BehaviourWalk takes them over).
+    el.whenDisposed(removed => {
+        if (removed && (<any>el).walker == walker) {
+            walker._dispose();
+            walker.input.dispose();
+        }
+    });
 }

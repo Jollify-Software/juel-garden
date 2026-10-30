@@ -41,6 +41,8 @@ export class GardenLightning extends GardenElement {
     private flash: HemisphericLight;
     private timer: any;
     private flashing = false;
+    /** Ends the flash under way at once, with the sky and fog put back (removal mid-flash). */
+    private endFlash: () => void = null;
 
     updated() {
         let scene = this.getScene();
@@ -93,14 +95,18 @@ export class GardenLightning extends GardenElement {
             let mix = level * 0.7;
             scene.clearColor = new Color4(sky.r + (colour.r - sky.r) * mix, sky.g + (colour.g - sky.g) * mix, sky.b + (colour.b - sky.b) * mix, sky.a);
             scene.fogColor = Color3.Lerp(fog, colour, mix * 0.6);
-            if (t >= length) {
-                scene.onBeforeRenderObservable.remove(observer);
-                this.flash.intensity = 0;
-                scene.clearColor = sky;
-                scene.fogColor = fog;
-                this.flashing = false;
-            }
+            if (t >= length)
+                this.endFlash();
         });
+        this.endFlash = () => {
+            scene.onBeforeRenderObservable.remove(observer);
+            if (this.flash)
+                this.flash.intensity = 0;
+            scene.clearColor = sky;
+            scene.fogColor = fog;
+            this.flashing = false;
+            this.endFlash = null;
+        };
         this.dispatchEvent(new CustomEvent("garden-lightning", { bubbles: true }));
 
         let thunder = this.querySelector("garden-sound") as GardenSound;
@@ -113,6 +119,7 @@ export class GardenLightning extends GardenElement {
 
     protected dispose() {
         clearTimeout(this.timer);
+        this.endFlash?.();
         this.flash?.dispose();
         this.flash = null;
         super.dispose();

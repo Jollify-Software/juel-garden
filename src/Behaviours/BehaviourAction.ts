@@ -44,7 +44,7 @@ function applyAction(action: ActionInfo, mesh: Mesh, scene: Scene) {
 
 /**
  * Attaches one or more scene-level `<garden-action>`s (see
- * {@link GardenAction}) to this mesh, by id -- `action="myAction"` or
+ * {@link "Components/Action"!GardenAction}) to this mesh, by id -- `action="myAction"` or
  * `action="a b c"` for several at once. The actions may come before or after
  * the mesh in the markup: this waits until every one has registered.
  *

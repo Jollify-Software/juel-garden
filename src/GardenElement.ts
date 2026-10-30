@@ -19,7 +19,7 @@ import { BehaviourNear } from "./Behaviours/BehaviourNear";
  * Registered as `<garden-element>` in its own right too -- a plain,
  * mesh-less positioning container, most often used with the `parent`
  * attribute so its children become real Babylon scene-graph children (see
- * {@link GardenMesh.modifyMesh}) instead of each carrying a world-space
+ * {@link "GardenMesh"!GardenMesh.modifyMesh}) instead of each carrying a world-space
  * position by hand.
  *
  * @example
@@ -164,7 +164,7 @@ export class GardenElement extends LitElement {
     /** Its build was disposed (removed for good); adding it back rebuilds it. */
     private disposed = false;
     private builtUnder: Element = null;
-    private disposers: (() => void)[] = [];
+    private disposers: ((removed: boolean) => void)[] = [];
     /** A change came while it was out of the document; it's applied when it's back. */
     private changedWhileAway = false;
 
@@ -245,7 +245,7 @@ export class GardenElement extends LitElement {
      */
     protected unbuild() {
         for (let disposer of this.disposers.splice(0))
-            disposer();
+            disposer(false);
     }
 
     /** `position`, `rotation` and `scale` onto what the element built, without rebuilding it. */
@@ -319,7 +319,7 @@ export class GardenElement extends LitElement {
      */
     protected dispose() {
         for (let disposer of this.disposers.splice(0))
-            disposer();
+            disposer(true);
         if (this.node && !this.node.isDisposed())
             this.node.dispose();
         this.node = null;
@@ -337,8 +337,17 @@ export class GardenElement extends LitElement {
     protected moved() {
     }
 
-    /** Runs `disposer` when the element's build is disposed (see {@link dispose}). */
-    whenDisposed(disposer: () => void) {
+    /**
+     * Runs `disposer` when the element's build is disposed: before a rebuild for a change
+     * ({@link unbuild}, `removed` false) and when it is removed for good ({@link dispose},
+     * `removed` true). Work kept across rebuilds (a walker's input) lets go only when `removed`.
+     *
+     * @example
+     * ```ts
+     * el.whenDisposed(removed => { if (removed) input.dispose(); });
+     * ```
+     */
+    whenDisposed(disposer: (removed: boolean) => void) {
         this.disposers.push(disposer);
     }
 

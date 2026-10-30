@@ -326,6 +326,27 @@ run(`
         const removed = { before: keptBefore, after: goneDomes.map(m => m.isDisposed()), skyGone: gone.panoramaSky == null };
         return { single, start, end, half, back, unlit, flashed, fogged, strike: typeof bolt.strike, during: +during.toFixed(2), after, removed };
     });
+    // Each panorama build listens on the scene for `garden-lightning`; a rebuild or removal takes it back.
+    const cdp = await page.context().newCDPSession(page);
+    const flashListeners = async () => {
+        const { result } = await cdp.send("Runtime.evaluate", { expression: "document.querySelector('garden-scene')" });
+        const { listeners } = await cdp.send("DOMDebugger.getEventListeners", { objectId: result.objectId });
+        return listeners.filter(l => l.type == "garden-lightning").length;
+    };
+    const skyBase = await flashListeners();
+    await page.evaluate(() => { const el = document.createElement("garden-sky"); el.id = "sky5"; const c = document.createElement("canvas"); c.width = 64; c.height = 32; el.setAttribute("panorama", c.toDataURL("image/png")); document.querySelector("garden-scene").appendChild(el); });
+    await page.waitForTimeout(300);
+    const skyAdded = await flashListeners();
+    for (const tint of ["#808080", "#909090"]) {
+        await page.evaluate(t => document.getElementById("sky5").setAttribute("tint", t), tint);
+        await page.waitForTimeout(300);
+    }
+    const skyChanged = await flashListeners();
+    await page.evaluate(() => document.getElementById("sky5").remove());
+    await page.waitForTimeout(300);
+    const skyRemoved = await flashListeners();
+    check("<garden-sky panorama>: one lightning listener per sky, through rebuilds; none after removal", skyAdded == skyBase + 1 && skyChanged == skyAdded && skyRemoved == skyBase,
+        `listeners ${skyBase} -> ${skyAdded} added -> ${skyChanged} after two changes -> ${skyRemoved} removed`);
     check("<garden-sky panorama> puts one photograph on a dome, tinted", sky.single.domes == 1 && sky.single.vis[0] == 1 && sky.single.tint == "#808090" && sky.single.mesh, JSON.stringify(sky.single));
     check("panorama-to adds a second; `blend` cross-fades them, live", sky.start.join() == "1,0" && sky.end.join() == "0,1" && sky.half.join() == "0.5,0.5", JSON.stringify(sky));
     check("blendTo() fades back from code", sky.back.join() == "1,0", JSON.stringify(sky.back));

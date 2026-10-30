@@ -2,7 +2,7 @@ import { ThumbPad } from "../Utils/ThumbPad";
 import { ThumbstickRegistry } from "../Utils/ThumbstickRegistry";
 
 /**
- * The input for a `walk` behaviour (see {@link BehaviourWalk}): keyboard
+ * The input for a `walk` behaviour (see {@link "Behaviours/BehaviourWalk"!BehaviourWalk}): keyboard
  * (WASD/arrows, Shift to run), the first gamepad's left stick (B to run, or
  * the stick pushed right over), and an on-screen thumb pad on touch screens
  * (pushed to its rim to run): a `<garden-thumbstick controls="...">` that
@@ -20,6 +20,12 @@ export class WalkInput {
     private host: HTMLElement;
     private joystick: string;
     private owner: Element;
+    private listening = new AbortController();
+
+    /** True once {@link dispose} has run: the walker was removed for good. */
+    get disposed(): boolean {
+        return this.listening.signal.aborted;
+    }
 
     /**
      * `joystick`: `"auto"` (touch screens only), `"always"` or `"never"`.
@@ -33,10 +39,21 @@ export class WalkInput {
             let t = e.target as HTMLElement;
             return t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
         };
-        window.addEventListener("keydown", e => { if (!typing(e)) this.keys.add(e.key.toLowerCase()); });
-        window.addEventListener("keyup", e => this.keys.delete(e.key.toLowerCase()));
-        window.addEventListener("blur", () => this.keys.clear());
+        let signal = this.listening.signal;
+        window.addEventListener("keydown", e => { if (!typing(e)) this.keys.add(e.key.toLowerCase()); }, { signal });
+        window.addEventListener("keyup", e => this.keys.delete(e.key.toLowerCase()), { signal });
+        window.addEventListener("blur", () => this.keys.clear(), { signal });
+    }
 
+    /**
+     * Lets go of the keyboard and removes the built-in pad, when the walker is removed for
+     * good (a rebuild for a change keeps the input). A walker added back makes a new one.
+     */
+    dispose() {
+        this.listening.abort();
+        this.keys.clear();
+        this.pad?.dispose();
+        this.pad = null;
     }
 
     /** The thumbsticks for this walker, or the built-in pad (made on first use) if there are none. */
@@ -48,7 +65,7 @@ export class WalkInput {
             return declared.filter(s => s.enabled);
         }
         let j = this.joystick;
-        if (!this.pad && this.host && (j == "always" || (j == "auto" && ThumbPad.touchScreen)))
+        if (!this.pad && this.host && !this.disposed && (j == "always" || (j == "auto" && ThumbPad.touchScreen)))
             this.pad = new ThumbPad(this.host, "left", "garden-walk-joystick");
         return this.pad ? [this.pad] : [];
     }

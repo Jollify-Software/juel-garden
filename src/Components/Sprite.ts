@@ -31,12 +31,12 @@ import { GardenElement } from "../GardenElement";
  * {@link sprites}, for `playAnimation()` from code.
  *
  * Per-frame movement is delegated entirely to the generic `Behaviours` --
- * see {@link BehaviourFlee} (`flee-target`/`flee-radius`/`flee-speed`),
- * {@link BehaviourTerrain} (`terrain`/`terrain-offset`), and
- * {@link BehaviourWander} (`wander`/`wander-radius`/`wander-speed`/
+ * see {@link "Behaviours/BehaviourFlee"!BehaviourFlee} (`flee-target`/`flee-radius`/`flee-speed`),
+ * {@link "Behaviours/BehaviourTerrain"!BehaviourTerrain} (`terrain`/`terrain-offset`), and
+ * {@link "Behaviours/BehaviourWander"!BehaviourWander} (`wander`/`wander-radius`/`wander-speed`/
  * `points-of-interest`/`look-radius`/`look-chance`/`look-duration`) for
  * their exact attributes -- applied once per placed sprite via
- * {@link SpriteBehaviourTarget}, the same way `GardenMesh` applies them to
+ * {@link "Behaviours/SpriteBehaviourTarget"!SpriteBehaviourTarget}, the same way `GardenMesh` applies them to
  * its own single `Mesh` (see {@link Behaviours}).
  *
  * @example

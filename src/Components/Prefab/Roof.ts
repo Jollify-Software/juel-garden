@@ -34,7 +34,7 @@ interface RoofContainer {
  * once, a `<garden-structure>`. Types: `"flat"` (a simple box slab, the
  * default), `"dome"` (an ellipsoid vault with separate outside/inside shells and
  * materials, and a supplemental uplight so a painted ceiling doesn't read as
- * black -- see {@link createDomeRoof}), or `"cone"` (an apex/pitched roof --
+ * black -- see {@link "Utils/Mesh/createDomeRoof"!createDomeRoof}), or `"cone"` (an apex/pitched roof --
  * a primitive hut over a rotunda).
  *
  * Attributes: `type` (`"flat"|"dome"|"cone"`), `thickness`, `overhang` (extend
@@ -262,7 +262,7 @@ export class GardenRoof extends GardenMesh {
      * Size and centre the roof over every <garden-room> sibling under the same
      * <garden-structure>, instead of a single room, so one dome can cover several rooms
      * at once. Reads the rooms' declared position and footprint (width/depth, or a polygon
-     * room's points -- {@link GardenRoom.localBounds}) directly rather
+     * room's points -- {@link "Components/Prefab/Room"!GardenRoom.localBounds}) directly rather
      * than their built meshes -- those are available as soon as the document has parsed,
      * so there's no readiness dependency between the roof and its room siblings (which
      * matters: <garden-structure> itself waits on its room/stair children, so waiting on
