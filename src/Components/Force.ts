@@ -8,6 +8,9 @@ import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
 import { GardenPhysics } from "./Physics";
 
+/** The types that stay on (a field) rather than going off once. */
+const FIELDS = new Set(["gravity", "updraft", "vortex"]);
+
 /**
  * A force on every physics body near a point (needs `<garden-physics>`): an
  * explosion that throws things outwards, a field that pulls them in, an
@@ -29,7 +32,11 @@ import { GardenPhysics } from "./Physics";
  *   over one step instead of an impulse; `updraft-mode="perpendicular"`
  *   lifts along the updraft's axis everywhere instead of away from its centre.
  * - `event="load"` -- goes off by itself once the bodies exist (after
- *   `delay` ms, default 0). Otherwise call {@link fire}.
+ *   `delay` ms, default 0), once. Otherwise call {@link fire}.
+ *
+ * A change of an attribute updates a field that is on: it stays on with the new
+ * values (for what is left of its `duration`). An explosion, or a field that has
+ * gone off, isn't set off again by a change.
  * - `duration` -- ms a field stays on once fired (unset: until {@link stop}).
  * - `show` -- a translucent sphere or cylinder shows where it reaches while
  *   it acts (the explosion's for `show` ms, default 1500), for working on a
@@ -61,14 +68,32 @@ export class GardenForce extends GardenElement {
     private field: { enable(): void, disable(): void, dispose(): void };
     private shown: Mesh;
     private timers: number[] = [];
+    /** Takes back the `event="load"` wait for the first frame, if it hasn't come yet. */
+    private cancelLoad: () => void;
+    /** An `event="load"` force has gone off: a change doesn't set it off again. */
+    private wentOff = false;
+    /** When a field on for `duration` turns off (`performance.now()` time). */
+    private endsAt: number;
+    /**
+     * A field that was on when a change came: the rebuild turns it on again with the new
+     * attributes, for what is left of its `duration` (null: until stopped).
+     */
+    private resume: { left: number } = null;
 
     protected unbuild() {
+        this.cancelLoad?.();
+        if (this.active)
+            this.resume = { left: this.endsAt != null ? Math.max(0, this.endsAt - performance.now()) : null };
         this.stop();
         super.unbuild();
     }
 
+    /** Removed before its first frame, an `event="load"` force doesn't go off; added back, it goes off again. */
     protected dispose() {
+        this.cancelLoad?.();
         this.stop();
+        this.resume = null;
+        this.wentOff = false;
         super.dispose();
     }
 
@@ -83,14 +108,29 @@ export class GardenForce extends GardenElement {
         }
         await physicsEl.ready;
         let scene = this.getScene();
-        if (!scene) return;
+        if (!scene) { this.endBuild(); return; }
         this.helper = new PhysicsHelper(scene);
         this.endBuild();
-        if (this.event == "load") {
+        // Rebuilt for a change: a field that was on comes back on with the new attributes; an
+        // explosion, or a field that had gone off, isn't set off again.
+        let resume = this.resume;
+        this.resume = null;
+        if (resume) {
+            if (FIELDS.has(this.forceType) && resume.left !== 0)
+                this.goOff(resume.left ?? undefined, true);
+            return;
+        }
+        if (this.event == "load" && !this.wentOff) {
             // The bodies are made a frame or two after their meshes: let them all exist first.
             let delay = this.num("delay") ?? 0;
-            scene.onAfterRenderObservable.addOnce(() =>
-                this.later(() => this.fire(), delay));
+            let observer = scene.onAfterRenderObservable.addOnce(() => {
+                this.cancelLoad = null;
+                this.later(() => { this.wentOff = true; this.fire(); }, delay);
+            });
+            this.cancelLoad = () => {
+                scene.onAfterRenderObservable.remove(observer);
+                this.cancelLoad = null;
+            };
         }
     }
 
@@ -110,10 +150,22 @@ export class GardenForce extends GardenElement {
         return (this.position ?? Vector3.Zero()).clone();
     }
 
+    private get forceType(): string {
+        return (this.type || "explosion").toLowerCase();
+    }
+
     /** Sets it off: an explosion pushes once; a field turns on (for `duration` ms, if set). */
     fire() {
+        this.goOff();
+    }
+
+    /**
+     * {@link fire}; a field resumed after a change passes what's left of its `duration` and
+     * `resumed`, which doesn't fire `garden-force` again.
+     */
+    private goOff(duration?: number, resumed = false) {
         if (!this.helper) return;
-        let type = (this.type || "explosion").toLowerCase();
+        let type = this.forceType;
         let origin = this.origin();
         let radius = this.num("radius") ?? 5;
         let strength = this.num("strength") ?? 10;
@@ -143,16 +195,19 @@ export class GardenForce extends GardenElement {
                 this.field.enable();
                 this.active = true;
                 this.show(type, radius, height);
-                let duration = this.num("duration");
-                if (duration != null)
+                duration ??= this.num("duration");
+                if (duration != null) {
+                    this.endsAt = performance.now() + duration;
                     this.later(() => this.stop(), duration);
+                }
                 break;
             }
             default:
                 console.warn(`<garden-force> has unrecognized type "${this.type}".`);
                 return;
         }
-        this.dispatchEvent(new CustomEvent("garden-force", { bubbles: true, detail: { type } }));
+        if (!resumed)
+            this.dispatchEvent(new CustomEvent("garden-force", { bubbles: true, detail: { type } }));
     }
 
     /** Turns a field off (and hides `show`); an explosion has nothing to stop. */
@@ -165,6 +220,7 @@ export class GardenForce extends GardenElement {
             this.field = null;
         }
         this.active = false;
+        this.endsAt = null;
         this.hide();
     }
 

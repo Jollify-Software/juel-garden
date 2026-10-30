@@ -9,6 +9,10 @@
       "types": "./lib/types/juel-garden.d.ts",
       "import": "./lib/juel-garden.mjs"
     },
+    "./elements/*": {
+      "types": "./lib/types/src/elements/*.d.ts",
+      "import": "./lib/src/elements/*.mjs"
+    },
     "./dist/*": "./dist/*",
     "./package.json": "./package.json"
   },
@@ -19,13 +23,15 @@
     "src",
     "juel-garden.ts",
     "juel-garden.global.ts",
+    "juel-garden.viewer.ts",
     "tsconfig.json",
     "tsconfig.lib.json"
   ],
   "scripts": {
     "dev": "esbuild juel-garden.global.ts --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.js --log-level=warning && npm run copy-wasm && npm run copy-decoders",
     "build": "esbuild juel-garden.global.ts --bundle --minify --format=iife --global-name=JuelGarden --platform=browser --target=es2020 --outfile=dist/juel-garden.js --log-level=warning && npm run copy-wasm && npm run copy-decoders",
-    "build:lib": "esbuild juel-garden.ts --bundle --format=esm --packages=external --platform=browser --target=es2020 --sourcemap --outfile=lib/juel-garden.mjs --log-level=warning && tsc -p tsconfig.lib.json",
+    "build:lib": "node -e \"require('fs').rmSync('lib/chunks', { recursive: true, force: true })\" && esbuild juel-garden.ts src/elements/*.ts --bundle --splitting --format=esm --packages=external --platform=browser --target=es2020 --sourcemap --outdir=lib --out-extension:.js=.mjs --chunk-names=chunks/[name]-[hash] --log-level=warning && tsc -p tsconfig.lib.json",
+    "build:viewer": "node Tools/build-viewer.mjs && npm run copy-decoders",
     "build:lean": "esbuild juel-garden.ts --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/juel-garden.lean.js --log-level=warning",
     "prepare": "npm run build:lib",
     "examples": "http-server . -o /examples/ -c-1",
@@ -47,6 +53,7 @@
     "test:examples": "node tests/examples.js",
     "test:lean": "npm run build:lean && node tests/examples.js --lean",
     "test:boolean": "node tests/boolean.js",
+    "test:canvas": "node tests/canvas.js",
     "test:replicate": "node tests/replicate.js",
     "test:torus-knot-replicate": "node tests/torus-knot-replicate.js",
     "test:action": "node tests/action.js",
@@ -92,7 +99,16 @@
     "test:viewport": "node tests/viewport.js",
     "test:raycast": "node tests/raycast.js",
     "test:ragdoll": "node tests/ragdoll.js",
-    "test:environment": "node tests/environment.js"
+    "test:environment": "node tests/environment.js",
+    "test:embedded": "node tests/embedded.js",
+    "test:camera-clip": "node tests/camera-clip.js",
+    "test:one-shot-hold": "node tests/one-shot-hold.js",
+    "test:model-viewer": "node tests/model-viewer.js",
+    "test:model-viewer:viewer": "npm run build:viewer && node tests/model-viewer.js --viewer",
+    "test:no-webgl": "node tests/no-webgl.js",
+    "test:bare-elements": "node tests/bare-elements.js",
+    "test:house-remerge": "node tests/house-remerge.js",
+    "test:elements-entries": "npm run build:lib && npm run build:viewer && node tests/elements-entries.js"
   },
   "repository": {
     "type": "git",

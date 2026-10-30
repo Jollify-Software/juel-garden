@@ -4,7 +4,7 @@ import { Color3 } from "@babylonjs/core/Maths/math.color";
  * Parses a colour attribute value as `"r g b"` (0..1 each) or a small set of
  * named colours (`red`, `green`, `blue`, `black`, `white`, `purple`,
  * `magenta`, `yellow`, `gray`, `teal`). Hex (`#rrggbb`) is handled separately
- * by callers (e.g. {@link ModifyColourSetter}), not here.
+ * by callers (e.g. {@link "Modifiers/ModifyColourSetter"!ModifyColourSetter}), not here.
  *
  * @category Converters
  */

@@ -232,7 +232,7 @@ class PBRSplatPlugin extends MaterialPluginBase {
 /**
  * A photo-real ground: Babylon's PBRMaterial blending three photo-scanned surfaces (each a
  * colour map, a normal map and optionally a map of ambient occlusion, roughness and height, as
- * Poly Haven and other scan libraries supply them) by a mix map, as {@link splatMaterial} does
+ * Poly Haven and other scan libraries supply them) by a mix map, as {@link "Nature/SplatMaterial"!splatMaterial} does
  * for StandardMaterial: its red, green and blue say how much of layers 1, 2 and 3 go where,
  * across the ground's 0..1 UVs.
  *

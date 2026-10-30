@@ -41,7 +41,10 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
  * - `base`: `"ground"` (default when `height`/`fit` is set) moves the model
  *   so it stands on its own `position`, centred; `"none"` keeps the file's origin.
  * - `animation` (or `play`): a glTF animation group to loop (by name, any
- *   case), or `"none"` to stop the loader's auto-play.
+ *   case), or `"none"` to stop the loader's auto-play. With `"none"`, start
+ *   animations with {@link play} or {@link playOnce}: every group's weight is 0
+ *   once the model loads, so a group a page starts itself (`group.start()`)
+ *   moves nothing unless the page also sets `group.weight = 1`.
  * - `anim-idle`, `anim-walk`, `anim-run`: animations picked by how fast the
  *   model moves (a `walk`, `follow`, `track` or `wander`, or anything moving
  *   it), cross-fading between them and speeding walk/run to match.
@@ -52,7 +55,7 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
  *   metres of the model's `position` -- for big scans in a large venue, so
  *   the visitor only downloads what they walk up to.
  * - `materials`: `"standard"` swaps the glTF's PBR materials for StandardMaterials when it
- *   loads (see {@link toStandardMaterials}), for a scene without an environment map, where
+ *   loads (see {@link "Utils/StandardMaterials"!toStandardMaterials}), for a scene without an environment map, where
  *   PBR models come out dark.
  * - `loading-screen`: `"false"` to skip Babylon's loading screen, which
  *   otherwise covers the canvas while any model is loading. A model with
@@ -60,7 +63,8 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
  *
  * Script API: {@link play}`(name, { blend, loop, speed })` cross-fades to a
  * named animation (`loop: false` plays it once, then goes back to the
- * motion animation and fires `garden-animation-end`), {@link stopAnimation},
+ * motion animation and fires `garden-animation-end`; with none it holds its
+ * last frame), {@link playOnce} (the same, as a Promise), {@link stopAnimation},
  * {@link animationNames}, and the underlying {@link mixer}.
  *
  * Fires `garden-model-progress` (detail: `{ loaded, total }`, bytes; `total`
@@ -160,6 +164,23 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         return this.mixer?.play(name, options) ?? false;
     }
 
+    /**
+     * Plays the animation `name` once; resolves `true` when it ends (it then holds its last
+     * frame unless there is a motion or looping animation to go back to), `false` if there is
+     * no such animation, another play or stop took over first, or the model was removed or
+     * reloaded. See {@link AnimationMixer.playOnce}.
+     *
+     * @example
+     * ```js
+     * const box = document.querySelector("garden-mesh-model");
+     * await box.playOnce("Open");
+     * await box.playOnce("Close");
+     * ```
+     */
+    playOnce(name: string, options?: Omit<PlayOptions, "loop">): Promise<boolean> {
+        return this.mixer?.playOnce(name, options) ?? Promise.resolve(false);
+    }
+
     /** Stops the animations, fading out over `blend` seconds (default 0.25). */
     stopAnimation(blend?: number) {
         this.mixer?.stop(blend);
@@ -178,10 +199,11 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     }
 
     private disposeLoaded() {
-        for (let group of this.animationGroups) group.dispose();
-        this.animationGroups = [];
+        // The mixer first: a disposed group fires its end, which isn't a one-shot ending.
         this._mixer?.dispose();
         this._mixer = null;
+        for (let group of this.animationGroups) group.dispose();
+        this.animationGroups = [];
         for (let mesh of this.loadedMeshes) if (!mesh.isDisposed()) mesh.dispose(false, true);
         this.loadedMeshes = [];
         this.skeleton?.dispose();

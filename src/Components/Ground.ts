@@ -9,7 +9,7 @@ import { OptionsBuilder } from "../Options/OptionsBuilder";
 
 /**
  * A flat ground plane, via Babylon's `MeshBuilder.CreateGround`. The default
- * teleport target for `<garden-webxr>` (see {@link GardenWebXR}) when no
+ * teleport target for `<garden-webxr>` (see {@link "Components/WebXR"!GardenWebXR}) when no
  * `floor` attribute is given.
  *
  * Attributes: `width`, `height`, `subdivisions` (plus the common

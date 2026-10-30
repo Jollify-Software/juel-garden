@@ -21,6 +21,7 @@ run(`<garden-scene>
     <garden-light id="lamp" type="point" position="0 3 0" intensity="1"></garden-light>
     <garden-trees id="trees" count="3"></garden-trees>
     <garden-house id="house" position="-6 0 -6"></garden-house>
+    <garden-box id="coded" position="-8 0.5 8"><garden-sphere id="kid" position="0 1 0" diameter="0.3"></garden-sphere></garden-box>
     <garden-box id="sun" position="10 1 10"><garden-cylinder id="orb" orbit orbit-angle="0.02" position="13 0.1 10" diameter="1" height="0.2"></garden-cylinder></garden-box>
 </garden-scene>`,
 async ({ page, check, frames }) => {
@@ -43,6 +44,27 @@ async ({ page, check, frames }) => {
     });
     check("a position change moves the same mesh", moved.same && moved.at.join() == "1,2,3", JSON.stringify(moved));
     check("a rotation change turns it (degrees)", Math.abs(moved.turned - Math.PI / 2) < 1e-3, JSON.stringify(moved));
+
+    // The same through the properties, set from code: the mesh moves (a parent element's share
+    // included) and the attribute follows; applyTransform() right after applies it at once.
+    const coded = await page.evaluate(async () => {
+        const box = document.getElementById("coded"), kid = document.getElementById("kid"), mesh = box.mesh;
+        const V = mesh.position.constructor, xyz = v => [v.x, v.y, v.z].map(n => +n.toFixed(3)).join();
+        box.position = new V(-7, 0.5, 9);
+        box.rotation = new V(0, 180, 0);
+        await new Promise(r => setTimeout(r, 50));
+        const at = xyz(box.mesh.position), turned = +box.mesh.rotation.y.toFixed(3), attr = box.getAttribute("position");
+        kid.position = new V(0, 2, 0);
+        kid.applyTransform();
+        const kidNow = xyz(kid.mesh.position);
+        await new Promise(r => setTimeout(r, 50));
+        return { same: box.mesh === mesh, at, turned, attr, kidNow, kidLater: xyz(kid.mesh.position) };
+    });
+    check("a position property set from code moves the same mesh", coded.same && coded.at == "-7,0.5,9" && coded.attr == "-7 0.5 9",
+        JSON.stringify(coded));
+    check("a rotation property set from code turns it (degrees, as the attribute)", Math.abs(coded.turned - Math.PI) < 1e-3, JSON.stringify(coded));
+    check("a child's position property adds its parent element's share, at once with applyTransform()",
+        coded.kidNow == "-7,2.5,9" && coded.kidLater == "-7,2.5,9", JSON.stringify(coded));
 
     // Other attributes rebuild, without leaving anything behind.
     const base = await stat();

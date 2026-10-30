@@ -39,6 +39,9 @@ function check(name, ok, info = "") {
   <garden-box id="before" size="1" colour="red" position="2 0 0" action="hoverLate"></garden-box>
   <garden-action id="hoverLate" type="set" trigger="pointerOver" target="material"
                  property="emissiveColor" value="white"></garden-action>
+  <garden-box id="circler" size="1" position="5 0 0"></garden-box>
+  <garden-action type="beforeRender" variable="i" increment="0.05" parameter="#circler"
+                 property="position" value="(5*Math.cos(i)) 0 (5*Math.sin(i))"></garden-action>
 </garden-scene></body></html>` }));
         await page.goto(ORIGIN + "/action-test.html", { waitUntil: "load" });
         await page.waitForFunction(() => document.querySelector("garden-scene").scene?.getFrameId() > 30, null, { timeout: 30000 });
@@ -47,6 +50,16 @@ function check(name, ok, info = "") {
             [id, document.getElementById(id).mesh?.actionManager?.actions?.length ?? 0])));
         check("an action declared before its mesh reaches the mesh's ActionManager", counts.first > 0, JSON.stringify(counts));
         check("an action declared after its mesh reaches the mesh's ActionManager", counts.before > 0, JSON.stringify(counts));
+        // A beforeRender action setting `position` each frame moves its mesh round the circle.
+        const circler = await page.evaluate(async () => {
+            const mesh = document.getElementById("circler").mesh, at = () => [mesh.position.x, mesh.position.z];
+            const a = at();
+            await new Promise(r => setTimeout(r, 300));
+            const b = at();
+            return { a, b, radius: +Math.hypot(...b).toFixed(3) };
+        });
+        check("a beforeRender action setting position moves its mesh", circler.radius == 5 &&
+            (circler.a[0] != circler.b[0] || circler.a[1] != circler.b[1]) && circler.b[1] != 0, JSON.stringify(circler));
         check("no page errors", errors.length == 0, JSON.stringify(errors));
     } finally {
         await browser.close();

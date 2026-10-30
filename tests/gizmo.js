@@ -50,6 +50,32 @@ function check(name, ok, info = "") {
         });
         check("a gizmo after its mesh attaches to it", JSON.stringify(got.after) == JSON.stringify([got.early]), JSON.stringify(got));
         check("a gizmo before its mesh attaches to it", JSON.stringify(got.before) == JSON.stringify([got.late]), JSON.stringify(got));
+        // Changed three times, a gizmo is built again each time: the old manager must go (its
+        // pointer observers and handles stayed), and the gizmo that was on stays on.
+        const rebuilt = await page.evaluate(async () => {
+            const wait = ms => new Promise(r => setTimeout(r, ms));
+            const scene = document.querySelector("garden-scene").scene;
+            const el = document.getElementById("after");
+            // A manager adds one to the scene and one to its utility layer's scene.
+            const layer = () => el.manager?.utilityLayer?.utilityLayerScene ?? el.manager?._defaultUtilityLayer?.utilityLayerScene;
+            const layerScene = layer();
+            const observers = () => scene.onPointerObservable.observers.length + layerScene.onPointerObservable.observers.length;
+            const before = observers();
+            el.enablePosition();
+            const base = observers();
+            const first = el.manager;
+            for (const t of ["2", "3", "5"]) { el.setAttribute("thickness", t); await wait(300); }
+            const changed = { observers: observers(), replaced: el.manager != first,
+                position: el.manager.positionGizmoEnabled, attached: el.manager.attachableMeshes?.length };
+            el.remove();
+            await wait(300);
+            return { before, base, changed, gone: observers(), manager: !!el.manager };
+        });
+        check("a gizmo changed three times keeps one manager, its gizmo still on",
+            rebuilt.changed.observers == rebuilt.base && rebuilt.changed.replaced
+            && rebuilt.changed.position && rebuilt.changed.attached == 1, JSON.stringify(rebuilt));
+        check("a gizmo removed for good takes its pointer observers with it",
+            rebuilt.gone == rebuilt.before - 2 /* its two, scene and layer */ && !rebuilt.manager, JSON.stringify(rebuilt));
         check("no page errors (a selector matching nothing only warns)", errors.length == 0, JSON.stringify(errors));
     } finally {
         await browser.close();

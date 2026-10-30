@@ -1,4 +1,5 @@
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import type { Scene } from "@babylonjs/core/scene";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 import { customElement, property } from "lit/decorators.js";
 import { GardenElement } from "../GardenElement";
@@ -47,6 +48,38 @@ export class GardenWebXR extends GardenElement {
     xr: WebXRDefaultExperience;
 
     private sessionGranted = false;
+    /** The `sessiongranted` listener has been added (it is never taken back: it fires once). */
+    private listeningForGrant = false;
+    /** The Babylon scene the XR experience was built in. */
+    private builtIn: Scene;
+
+    /**
+     * Removed for good, the XR experience and its "enter VR/AR" button leave the page.
+     * Babylon disposes the experience with its scene, but its button can stay behind
+     * (it finds it through the engine's canvas), so the button is removed here either way.
+     */
+    protected dispose() {
+        this.dropExperience();
+        super.dispose();
+    }
+
+    /**
+     * A change (`mode`, `teleportation`, `floor`) builds a new experience, so the old one
+     * and its button go first: otherwise each change left another button on the page.
+     */
+    protected unbuild() {
+        this.dropExperience();
+        super.unbuild();
+    }
+
+    private dropExperience() {
+        this.xr?.enterExitUI?.overlay?.remove();
+        if (this.xr && !this.builtIn?.isDisposed)
+            this.xr.dispose();
+        this.xr = null;
+        this.builtIn = null;
+        this.floorMeshes = [];
+    }
 
     constructor() {
         super();
@@ -57,7 +90,9 @@ export class GardenWebXR extends GardenElement {
     async updated() {
         // Listen before any awaits: the browser grants the session as the page loads.
         let xrSystem = (<any>navigator).xr;
-        if (xrSystem && !this.xr) {
+        if (xrSystem && !this.listeningForGrant) {
+            // Once per element: a rebuild after a change doesn't add another.
+            this.listeningForGrant = true;
             xrSystem.addEventListener("sessiongranted", () => {
                 this.sessionGranted = true;
                 this.enterGrantedSession();
@@ -88,6 +123,7 @@ export class GardenWebXR extends GardenElement {
             this.floorMeshes = floorMeshes;
 
             try {
+                this.builtIn = scene;
                 this.xr = await scene.createDefaultXRExperienceAsync({
                     uiOptions: { sessionMode: this.mode === "ar" ? "immersive-ar" : "immersive-vr" },
                     floorMeshes,

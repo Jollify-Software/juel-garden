@@ -36,13 +36,13 @@ export interface PBRMaterialOptions {
     /**
      * `false` switches off the meshes' vertex colours (`mesh.useVertexColors`). Modelling tools
      * export white vertex colours nothing uses, and a material compiles a second shader for the
-     * meshes that have them (see {@link precompile}). Default: left as they are.
+     * meshes that have them (see {@link "Utils/Precompile"!precompile}). Default: left as they are.
      */
     vertexColours?: boolean;
 }
 
 /**
- * The photo-real counterpart of {@link toStandardMaterials}: gives a model physically based
+ * The photo-real counterpart of {@link "Utils/StandardMaterials"!toStandardMaterials}: gives a model physically based
  * materials that light properly under image-based lighting (`scene.environmentTexture`, for
  * example a `.env` made from an HDR sky) and real lights.
  *
@@ -145,7 +145,7 @@ export interface PBRTexturedOptions {
 /**
  * A photo-scanned surface as a PBRMaterial: the colour map, the normal map, and a map of
  * ambient occlusion (red) and roughness (green), repeating `uTiles` × `vTiles` -- the PBR
- * counterpart of {@link texturedMaterial}, for rocks, walls and bark.
+ * counterpart of {@link "Nature/Rocks"!texturedMaterial}, for rocks, walls and bark.
  *
  * @category Nature
  */

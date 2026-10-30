@@ -30,7 +30,7 @@ import { Weather } from "./Weather";
  * Attributes: `effect` (a Babylon `ParticleHelper` preset name, e.g. `"fire"`
  * -- when set, the custom attributes below are ignored), `event`
  * (`"load"` auto-plays; `"pointerdown"` toggles on click via
- * {@link GardenMesh.modifyMesh}; anything else waits to be played on demand),
+ * {@link "GardenMesh"!GardenMesh.modifyMesh}; anything else waits to be played on demand),
  * and for a custom system: `url`, `capacity`, `emitter`, `minemitbox`/
  * `maxemitbox`, `colour1`/`colour2`/`colourdead`, `minsize`/`maxsize`,
  * `minlifetime`/`maxlifetime`, `emitrate`, `direction1`/`direction2`,
@@ -108,6 +108,9 @@ export class GardenParticle extends GardenElement {
 
     updated() {
         let scene = this.getScene();
+        // A rebuild for a changed attribute: the last build's system goes first, or it
+        // carried on running (and drawing) beside the new one, and outlived the element.
+        this.disposeSystems();
         let preset = this.getAttribute("preset");
         if (preset) {
             this.buildWeather(preset);
@@ -120,6 +123,8 @@ export class GardenParticle extends GardenElement {
                     set.dispose();
                     return;
                 }
+                // Two changes close together: the set made for the first is replaced, not kept.
+                this.effectSet?.dispose();
                 this.effectSet = set;
                 if ('mesh' in this.parentElement) {
                     // World position, not the raw local `.position` -- so the emitter is
@@ -211,13 +216,24 @@ if (this.billboard)
         this.endBuild();
     }
 
-    protected dispose() {
-        this.weather?.dispose();
-        this.weather = null;
+    /** Disposes the system (custom, effect set or weather) the last build made. */
+    private disposeSystems() {
+        if (this.weather) {
+            // The weather's system is `particleSystem` too: only the weather disposes it, as
+            // it keeps the dot texture every weather system in the scene shares.
+            this.weather.dispose();
+            this.weather = null;
+            this.particleSystem = null;
+        }
         this.effectSet?.dispose();
         this.effectSet = null;
+        // A custom system's own texture goes with it.
         this.particleSystem?.dispose();
         this.particleSystem = null;
+    }
+
+    protected dispose() {
+        this.disposeSystems();
         super.dispose();
     }
 

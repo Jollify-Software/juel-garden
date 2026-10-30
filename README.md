@@ -30,6 +30,14 @@ Here is the Garden equivalent of the [A-Frame basic scene](https://aframe.io/doc
 </garden-scene>
 ```
 
+To show one model in an ordinary page, one tag is enough (framed, turnable, its named
+animations playable: see [Showing one model in a page](#showing-one-model-in-a-page-garden-model-viewer)):
+
+```html
+<garden-model-viewer src="box.glb" style="width: 100%; aspect-ratio: 4 / 3"></garden-model-viewer>
+<button onclick="document.querySelector('garden-model-viewer').playOnce('Open')">Open</button>
+```
+
 The [Waypoints example](https://jollify.app/doc/waypoints.html) shows how this library could be used to create educational VR experiences.  
 `<garden-waypoint>` moves you to a stop when you click it, or when you **look at it and hold**
 (`dwell`, 1500 ms by default, `0` off: a white reticle, dark-edged so it reads on pale surfaces too, fills at the centre of view, for headsets
@@ -71,6 +79,104 @@ My favourite example is the [temple example](https://jollify.app/doc/temple.html
     <garden-ground width="150" height="160" colour="green" position="0 -5 0" collisions></garden-ground>
 </garden-scene>
 ```
+
+## Embedding a scene in a page
+
+A `<garden-scene>` takes over the window by default: the page's `html` and `body` lose
+their margins and scrolling, and the canvas fills the body. To put a scene in the middle
+of an ordinary page that scrolls, give it **`embedded`** and size it with CSS like any
+block (`width`, `height`, `aspect-ratio`); the canvas follows the box as it changes size.
+
+```html
+<p>Text above...</p>
+<garden-scene embedded style="width: 100%; aspect-ratio: 16 / 9">
+    <garden-camera type="arc" radius="4"></garden-camera>
+    <garden-light></garden-light>
+    <garden-box position="0 0.5 0"></garden-box>
+</garden-scene>
+<p>...and below.</p>
+```
+
+Only a scene's own canvas is styled, so other canvases on the page keep their size. With
+one full-window and one embedded scene on a page, each behaves as it asks; the full-window
+page styles leave when the last full-window scene does. Test: `node tests/embedded.js`.
+
+For one model, **`<garden-model-viewer>`** does all of this in one tag (below).
+
+## Showing one model in a page: `<garden-model-viewer>`
+
+```html
+<garden-model-viewer id="box" src="box.glb" style="width: 100%; aspect-ratio: 4 / 3"></garden-model-viewer>
+<button onclick="document.getElementById('box').playOnce('Open')">Open</button>
+```
+
+It builds an embedded scene, an orbit camera, lights and a `<garden-mesh-model>` inside
+itself. Once the model loads, the camera faces its front (glTF models face +z) and fits
+the whole model in view for the viewer's shape; the clip planes and zoom limits follow the
+model's size, so a 5 cm part and a 50 m building both fill it. It frames the model as it
+loads: an animation that moves far outside that pose (a lid that opens) needs `radius`.
+The page sizes it with CSS (300 px wide and 2:1 by default).
+
+| Attribute | Default | What it does |
+|---|---|---|
+| `src` | | The model (glTF/GLB, or anything `<garden-mesh-model>` loads). |
+| `background` | `transparent` | The page shows through; or a colour (`#rrggbb` or a name). |
+| `alpha`, `beta` | front, from a little above | The start angles, in radians, as `<garden-camera>`. A change after load turns the camera. |
+| `radius` | fits the model | The start distance from the model's centre, in metres. A change after load moves the camera (removed: fits again). |
+| `wheel` | `ctrl` | The wheel scrolls the page unless Ctrl (⌘) is held; `zoom`: it always zooms. |
+| `auto-rotate` | off | Degrees a second to turn on its own, until someone touches it. Not while the page prefers reduced motion. |
+| `poster` | | An image shown until the model's first frame (and in its place, without WebGL). |
+| `materials` | | `standard`: passed to the model (see `<garden-mesh-model>`). |
+| `label` | the file name | What screen readers hear (`aria-label`; the viewer has `role="img"`). |
+
+Keyboard: the viewer is a tab stop with a focus ring; arrow keys turn the model 10° a
+press and `+`/`-` zoom.
+
+No WebGL: if the browser can't start WebGL, the viewer builds no scene. It shows `poster`
+and the page's own content marked `slot="fallback"` inside it (hidden while WebGL works),
+the poster above the content when there are both, or else a short message; it gets the
+`no-webgl` attribute, `loaded` resolves `false` and it fires `garden-model-error`. With
+fallback content the viewer drops `role="img"`, so screen readers reach its links.
+
+Script: `loaded` (a Promise, there from the start: `true` once the model has loaded, `false`
+if it failed or there's no WebGL; a new `src` makes a new one), `animationNames`,
+`play(name, options)`, `playOnce(name)` (a Promise that resolves when the one-shot ends;
+the model holds its last pose), `stopAnimation()`, `model`, `scene`, `camera`, `frame()`.
+The model's `garden-model-load`, `garden-model-error` and `garden-model-progress` events
+bubble out of the viewer. A script placed after the viewer can run after its model has
+loaded, too late to hear `garden-model-load`: `await viewer.loaded` instead (the example
+does). No buttons are drawn: the page
+makes its own. There's no loading screen, and nothing is fetched from a CDN (no default
+environment map). Example: `examples/ModelViewer/index.html`. Test: `node tests/model-viewer.js`.
+
+## Smaller builds
+
+Every entry below except the last two registers every `<garden-*>` element. A page that only
+shows a model doesn't need them all:
+
+| Entry | For | Size in KB (minified; gzipped) |
+|---|---|---|
+| `dist/juel-garden.js` (`npm run build`) | A `<script>` tag: every element, plus all of Babylon as `window.BABYLON` | 7,390; 1,665 |
+| `import "juel-garden"` (`lib/juel-garden.mjs`) | An app with a bundler: every element | 3,513 up front ¹ |
+| `dist/juel-garden-viewer.js` (`npm run build:viewer`) | A `<script>` tag on a page that shows only `<garden-model-viewer>` | 2,959; 719 |
+| `import "juel-garden/elements/model-viewer"` | An app with a bundler that shows only models | 2,800 up front ¹ |
+
+¹ Built as an app's bundler does it (ESM, code splitting), counting what the page loads up
+front: Babylon's WebGPU shaders and most glTF extensions become chunks fetched only when
+needed. KB of 1,024 bytes, measured on 2026-10-29 (`node Tools/bundle-report.mjs` lists what's in each build).
+
+The viewer bundle has `<garden-scene>`, `<garden-camera>`, `<garden-light>`,
+`<garden-mesh-model>` and `<garden-model-viewer>`, and no `window.BABYLON` (the classes
+are `window.JuelGarden`, as in the full bundle). It loads glTF/GLB, OBJ and STL, not
+`.babylon` files, and leaves out what a viewer page can't use: the WebGPU shaders (scenes
+use WebGL), `texture="html"`, and the glTF interactivity and audio-emitter extensions (a
+model that uses them still loads, without that behaviour). `Tools/build-viewer.mjs` says how.
+
+The element entries are `juel-garden/elements/scene`, `…/camera`, `…/light`,
+`…/mesh-model` and `…/model-viewer`. Each registers its element and the elements it
+needs, and they share code with `"juel-garden"`, so an app can import both. Their source
+is `src/elements/` (built to `lib/src/elements/`), and the API docs (`npm run doc`) list them
+as the `elements/*` modules. Test: `npm run test:elements-entries`.
 
 ## Links between and within scenes
 
@@ -208,12 +314,14 @@ and walk-throughs with guides and talking exhibits (the plan is
 | `walk` | A walking player, camera-relative; Havok's character controller with `<garden-physics>`, else `terrain` or `collisions`. `element.walker` |
 | `follow`, `follow-wait` | Followers that keep apart; a leader that stops for stragglers (`garden-wait` / `garden-resume`) |
 | `play()`, `anim-*` | Named GLB animations with cross-fades; idle/walk/run picked by speed; one-shots fire `garden-animation-end` |
+| `playOnce()`, `animation="none"` | `await model.playOnce("Open")` plays a one-shot and resolves when it ends (`false` if another play took over, or the model was removed); with no looping or motion animation the model holds the last frame, so open-then-close works from buttons. Played again while it plays, it starts over (the first call resolves `false`). `await model.loaded` waits for the model (or its failure); it's replaced when `src` changes. With `animation="none"` every group's weight is 0 after load: use `play()`/`playOnce()`, or set `group.weight = 1` before `group.start()`. Test: `node tests/one-shot-hold.js` (`examples/assets/hinged-box.glb`, made by `Tools/make-hinged-box.py`) |
 | `near` | `garden-near` / `garden-far` when something (or `camera`) comes close |
 | `<garden-torus-knot>` | `radius`, `tube`, `p`, `q`, `radial-segments`, `tubular-segments` |
 | `grab` | Pick a mesh or model up and move it in six directions (a controller or hand turns it over); `grab="scale"` pinches it bigger or smaller; `grab-box` draws a bounding box with handles; `garden-grab` / `garden-release` |
 | `<garden-light pool>` | Lights carried by meshes; a pool of light on the ground; live `intensity`/`range`; `shadows` (everything casts but grounds and height maps; a mesh's `cast-shadows`/`receive-shadows` overrides it); a spot light's `exponent`; `cascades` (cascaded shadow maps for big outdoor scenes); `specular` |
 | Weather | `<garden-particle preset="rain/snow/sand/dust-devil">`, `<garden-lightning>`, scene fog + `fogTo()`, `<garden-sky colour>` + `fadeTo()` |
 | `<garden-camera type="arc">` | `alpha`/`beta`/`radius` (radians, as Babylon's ArcRotateCamera), `target="x y z"` or an element to follow, `beta-lower`/`beta-upper`/`radius-lower`/`radius-upper` |
+| `<garden-camera near far>` | Clip planes in metres, any camera type (`minZ`/`maxZ`; Babylon's defaults 1 and 10000 when unset): `near="0.01"` for a small model seen from close by. A change applies in place. Test: `node tests/camera-clip.js` |
 | `<garden-camera type="device">` | Turns with the phone or tablet it's on (a phone in a viewer); a free camera on a desktop. `target="x y z"` aims a free or device camera too |
 | `<garden-sky environment>` | A prefiltered `.env`/`.dds` cube as the sky and the light PBR materials (glTF models) reflect; `blur`, `lighting="false"`, `backdrop="false"` (light only: the background is `colour`), `turn` (degrees). `environment="default"`: Babylon's default environment (backdrop, ground fitted under the models once they load, and light) |
 | `<garden-material node>` | A node material (the Node Material Editor's output) from a JSON file or `#ID` on Babylon's snippet server: shaders, water, anti-tiling grounds; `<garden-texture block="name">` fills a texture block, `input-<name>` sets an input block |
@@ -318,7 +426,7 @@ needs, all declared (together in [examples/Physics/joints.html](examples/Physics
 | Piece | What it does |
 |---|---|
 | `<garden-joint>` | A joint between two bodies (`between="#a #b"`): `ball`, `distance` (a rod; a rope with `min-distance`), `hinge`, `slider`, `prismatic`, `lock`, `spring`, `six-dof`; `pivot-a`/`-b`, `axis-a`/`-b`, `limits="angular-x 0 1.57, ..."`, `motor` (speed, live) and `motor-force`, `collisions`. Joins rebuilt bodies again (`test:joint`) |
-| `<garden-force>` | `explosion` (once), `gravity`, `updraft`, `vortex` (fields): `position`, `radius`, `strength`, `height`, `falloff`; `event="load"`, `delay`, `duration`, `show`; `fire()`/`stop()`, `garden-force` event (`test:force`) |
+| `<garden-force>` | `explosion` (once), `gravity`, `updraft`, `vortex` (fields): `position`, `radius`, `strength`, `height`, `falloff`; `event="load"` (once), `delay`, `duration`, `show`; `fire()`/`stop()`, `garden-force` event. A change keeps a field that's on on, with the new values, for the rest of its `duration`; it doesn't set off an explosion, or a field that has gone off, again (`test:force`) |
 | `physics.raycast(from, to, { ignore, triggers })` | The first body on a line: `{ element, point, normal, distance, instance }`, or null. Aim lines, line of sight, what's under the pointer (`test:raycast`) |
 | `grid="nx ny nz"` | Any mesh repeated as GPU thin instances, `grid-spacing` apart, `instance-colours` (`random` or a list); with `physics` each copy is a body; picking and raycasts say which copy (`test:raycast`) |
 | `<garden-ragdoll>` | In a rigged `<garden-mesh-model>`, with a `<garden-ragdoll-bone>` per bone group (`bones`, `size`/`width`/`height`/`depth`, `box-offset`, `rotation-axis`, `min`/`max`, `joint`): boxes ride the animation until `limp` (or `limp()`), then it falls; `impulse(v, bone)`; `garden-ragdoll` event. The skeleton's top bone must have a box (`test:ragdoll`) |
@@ -384,11 +492,18 @@ Elements can be changed, added, moved and removed from script at any time:
 
 - **Changing** an attribute (or its property) after the element has built applies it.
   `position`, `rotation` and `scale` alone move a mesh, a plain `<garden-element>` or a camera
-  in place (a physics body is teleported). Anything else, `width`, `colour`, `texture`, `track`,
+  in place (a physics body is teleported). On a mesh, a `position`, `rotation` (degrees, as the
+  attribute) or `scale` property set from code (`box.position = new BABYLON.Vector3(0, 1, -2)`)
+  is written to its attribute, so it moves the mesh too, a parent element's share included;
+  call `box.applyTransform()` to move it at once rather than at the next update. Anything else, `width`, `colour`, `texture`, `track`,
   `physics` and so on, builds the element again: its old mesh, own material and behaviours go,
   and its child elements' meshes stay with the new one. A `<garden-material>` or
   `<garden-texture>` that changes swaps itself into whatever wore the old one. A light, water,
   sound, marker, thumbstick or model changes in place (a model reloads only for a new file).
+  A `<garden-particle>` builds its system again: the old one, with its texture, goes. A
+  `<garden-gizmo>` builds its manager again, with the gizmo that was on still on. A
+  `<garden-action>` replaces its parent mesh's action and its `beforeRender` loop (it doesn't
+  add a second one).
   Changing `id`, `class`, `style`, `slot`, `data-*` or `aria-*` builds nothing.
 
 - **Moving** one (`appendChild`/`insertBefore` elsewhere, or anything else that removes it and
@@ -398,8 +513,38 @@ Elements can be changed, added, moved and removed from script at any time:
   the ground where they are, are built again.
 - **Removing** one for good disposes what it built a microtask later: its mesh, physics body,
   light, water, sky, sound, particles or model leave the scene, and its behaviours (`track`,
-  `follow`, `walk`, …) stop. Materials stay; their `<garden-material>` owns them.
+  `follow`, `walk`, …) stop. A `<garden-waypoint>` takes its reticle, next-stop ring and click
+  handling with it, and added back it builds them again. A `<garden-action>` takes its parent
+  mesh's action and its `beforeRender` loop (its entry in the scene's actions stays), and a
+  `<garden-duplicate-vertices>` stops its wobble and disposes its hidden reference sphere; the
+  wobble also moves to its parent's new mesh when the parent is built again. A
+  `<garden-lightning>` removed mid-flash ends the flash and puts the sky back, and a
+  `<garden-force event="load">` removed before its first frame doesn't go off. A `<garden-light shadows>`
+  stops handing new meshes to its shadow generator (so does a change that rebuilds it), and a
+  `type="follow"` camera takes its look pad, keys and per-frame chase with it (also on a rebuild). A `walk` takes its walk pad, keys and character controller with it (a rebuild keeps them;
+  added back it gets new ones), and a `drive` its keys (also on a rebuild). A `<garden-sky panorama>` stops listening for lightning (so does
+  a rebuild, which listens afresh). A `<garden-animation>` changed (new `keyframes`, `property`,
+  `speed`…) or removed takes its animation off its target, so the next `play()` uses the new
+  attributes; removed, it also stops what it was playing. Two `<garden-animation>`s on one target
+  run side by side, each with its own `from`/`to`/`loop`, and `stop()` stops only its own. A `<garden-canvas>` rebuilt for a change draws its text where `point` says, as
+  the first time, on a new texture in place of the old one (also on a mesh's material). Materials stay; their `<garden-material>` owns them.
 - **Adding it back** after that builds it again from its attributes.
+- **The `<garden-scene>` itself** (or a `<garden-model-viewer>`, which has one inside) moved in the
+  page keeps its engine and goes on drawing; removed for good, its engine is disposed a
+  microtask later. Added back after that, it builds again (a new canvas, engine and scene),
+  and so do the elements inside it; a `<garden-physics>` among them starts its physics again
+  in the new scene, and the bodies join it. (A `<garden-physics>` removed on its own leaves
+  the physics on in its scene.) A `<garden-webxr>` removed for good takes its "enter VR"
+  button with it, so adding it, or its scene, back shows one button. Changed (a new `mode`,
+  `teleportation` or `floor`), it builds a new experience in place of the old one, still with
+  one button.
+- **A `<garden-info>` card** rebuilt for its own change (a new `title`) keeps its
+  `<garden-text>`, `<garden-button>` and `<garden-link>` rows, each once, and stays open if it
+  was open; a row removed for good leaves the card, and added back it is there once.
+- **A `<garden-link>` inside a mesh** keeps the mesh clickable when the mesh is built again (for
+  a change, or added back after removal), with its click and hover once. A portal rebuilt for
+  a change replaces its ring and title along with their materials and the title's texture, and
+  leaves no unused material behind.
 
 `node tests/live.js` covers changes, `node tests/moved.js` moves and removals. A subclass
 disposes its own objects by overriding `dispose()` (removed for good) and `unbuild()` (before a

@@ -66,4 +66,23 @@ run(`
         return document.getElementById("voice").sound.spatial._subGraph._subNodes.Spatial.position.asArray().map(n => +n.toFixed(2));
     });
     check("a spatial sound follows its moving mesh", followed[0] == 10 && followed[2] == 5, JSON.stringify(followed));
+
+    // A new `url` builds again with one set of play-on/stop-on listeners on the parent (counted
+    // through the DevTools protocol); removal takes them back.
+    const cdp = await page.context().newCDPSession(page);
+    const talkListeners = async () => {
+        const { result } = await cdp.send("Runtime.evaluate", { expression: "document.getElementById('speaker')" });
+        const { listeners } = await cdp.send("DOMDebugger.getEventListeners", { objectId: result.objectId });
+        return listeners.filter(l => l.type == "talk").length;
+    };
+    const talkBefore = await talkListeners();
+    await page.evaluate(() => { window.oldVoice = document.getElementById("voice").sound; document.getElementById("voice").setAttribute("url", "/examples/assets/tone.wav?again"); });
+    await page.waitForFunction(() => { const s = document.getElementById("voice").sound; return s && s != window.oldVoice; }, null, { timeout: 10000 });
+    await frames(5);
+    const talkRebuilt = await talkListeners();
+    await page.evaluate(() => document.getElementById("voice").remove());
+    await frames(5);
+    const talkRemoved = await talkListeners();
+    check("a new url keeps one play-on listener; removal takes it back", talkBefore == 1 && talkRebuilt == 1 && talkRemoved == 0,
+        `talk listeners ${talkBefore} -> ${talkRebuilt} after a new url -> ${talkRemoved} removed`);
 });

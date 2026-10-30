@@ -33,7 +33,12 @@ Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anon
  * lights, the camera, prefabs) is declared as a descendant of this element.
  *
  * Attributes: `gravity` (a `Vector3`, e.g. `"0 -0.2 0"`), `collisions`
- * (enables `scene.collisionsEnabled`).
+ * (enables `scene.collisionsEnabled`), `embedded` (see below).
+ *
+ * **Full-window or embedded:** by default the scene takes over the window: the page's
+ * `html` and `body` lose their margins and scrolling, and the canvas fills the body.
+ * With `embedded` the scene is a block inside an ordinary page, sized by the page's CSS,
+ * and the page scrolls as usual. Either way only the scene's own canvas is styled.
  *
  * **Fog:** `fog-mode` (`exp`, `exp2`, `linear` or `none`; setting
  * `fog-density` alone picks `exp2`), `fog-density` (e.g. `0.02`; `0.1` is a
@@ -52,6 +57,19 @@ Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anon
  * </garden-scene>
  * ```
  *
+ * @example
+ * ```html
+ * <article>
+ *   <p>Text above the scene...</p>
+ *   <garden-scene embedded style="width: 100%; aspect-ratio: 16 / 9">
+ *     <garden-camera type="arc" radius="4"></garden-camera>
+ *     <garden-light></garden-light>
+ *     <garden-box position="0 0.5 0"></garden-box>
+ *   </garden-scene>
+ *   <p>...and text below it; the page scrolls.</p>
+ * </article>
+ * ```
+ *
  * @category Components
  */
 @customElement("garden-scene")
@@ -62,6 +80,12 @@ export class GardenScene extends LitElement {
     @property({ attribute: "fog-colour" }) fogColour: string;
     @property({ type: Number, attribute: "fog-start" }) fogStart: number;
     @property({ type: Number, attribute: "fog-end" }) fogEnd: number;
+    /**
+     * The scene lives inside the page instead of taking over the window: the page keeps
+     * scrolling and its own margins, and the scene fills its own box, which the page sizes
+     * (`width`, `height`, `aspect-ratio`). The canvas follows the box's size as it changes.
+     */
+    @property({ type: Boolean }) embedded = false;
 
     canvas: HTMLCanvasElement;
     engine: Engine;
@@ -72,6 +96,8 @@ export class GardenScene extends LitElement {
     selectedElement: GardenMesh;
 
     private _renderLoopActive = false;
+    /** True once the scene was removed for good and its engine disposed: added back, it builds again. */
+    private _disposedForGood = false;
     private _audioEngine: Promise<AudioEngineV2>;
     /** True once the fog has a colour of its own (`fog-colour`, or fogTo() with a colour): the sky stops colouring it. */
     fogColourSet = false;
@@ -124,8 +150,79 @@ export class GardenScene extends LitElement {
         return this.scene;
     }
 
-    updated() {
+    updated(changed: Map<PropertyKey, unknown>) {
         this.applyFog();
+        if (changed.has("embedded") && this.scene)
+            this.applyEmbedded();
+    }
+
+    /** Scenes in the document that take over the whole window (no `embedded`). */
+    private static fullWindowScenes = new Set<GardenScene>();
+
+    /**
+     * Every scene's canvas fills the scene, and only the scene's own canvas: other
+     * canvases on the page keep their size. An embedded scene is a block the page sizes.
+     */
+    private static injectCanvasStyles() {
+        if (document.getElementById("garden-garden-styles"))
+            return;
+        let styles = document.createElement("style");
+        styles.id = "garden-garden-styles";
+        styles.textContent = `garden-scene > canvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+            :where(garden-scene[embedded]) {
+                display: block;
+                position: relative;
+            }
+            :where(garden-scene[embedded] > canvas) {
+                display: block;
+            }`;
+        document.head.appendChild(styles);
+    }
+
+    /**
+     * The full-window page styles (`html, body` with no scrolling, no margin), in the
+     * document while at least one scene without `embedded` is in it.
+     */
+    private static updatePageStyles() {
+        let styles = document.getElementById("garden-garden-page-styles");
+        if (GardenScene.fullWindowScenes.size && !styles) {
+            styles = document.createElement("style");
+            styles.id = "garden-garden-page-styles";
+            styles.textContent = `html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }`;
+            document.head.appendChild(styles);
+        } else if (!GardenScene.fullWindowScenes.size && styles) {
+            styles.remove();
+        }
+    }
+
+    private _resizeObserver: ResizeObserver;
+
+    /** Full-window or embedded, as the `embedded` attribute says now. */
+    private applyEmbedded() {
+        if (this.embedded) {
+            GardenScene.fullWindowScenes.delete(this);
+            if (!this._resizeObserver) {
+                this._resizeObserver = new ResizeObserver(() => this.engine?.resize());
+                this._resizeObserver.observe(this);
+            }
+        } else {
+            if (this.isConnected)
+                GardenScene.fullWindowScenes.add(this);
+            this._resizeObserver?.disconnect();
+            this._resizeObserver = null;
+        }
+        GardenScene.updatePageStyles();
+        this.engine?.resize();
     }
 
     private applyFog() {
@@ -184,24 +281,8 @@ export class GardenScene extends LitElement {
 
         this.appendChild(this.canvas);
 
-        // Only inject styles if not already present
-        if (!document.getElementById("garden-garden-styles")) {
-            let styles = document.createElement("style");
-            styles.id = "garden-garden-styles";
-            styles.textContent = `html, body {
-                overflow: hidden;
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-            canvas {
-                width: 100%;
-                height: 100%;
-                touch-action: none;
-            }`;
-            document.head.appendChild(styles);
-        }
+        GardenScene.injectCanvasStyles();
+        this.applyEmbedded();
 
         const setupScene = () => {
             try {
@@ -273,13 +354,44 @@ export class GardenScene extends LitElement {
         this.engine?.resize();
     };
 
+    connectedCallback() {
+        super.connectedCallback();
+        if (this._disposedForGood) {
+            // Added back after it was removed for good: a new canvas, engine and scene, as an
+            // element builds again; the children, added back with it, build into the new scene.
+            this._disposedForGood = false;
+            this.canvas?.remove();
+            this.firstUpdated();
+            this.applyFog();
+        } else if (this.hasUpdated && !this.embedded) {
+            GardenScene.fullWindowScenes.add(this);
+            GardenScene.updatePageStyles();
+        }
+    }
+
     disconnectedCallback() {
         super.disconnectedCallback?.();
+        // The page styles go with the last full-window scene; a microtask, so a move keeps them.
+        GardenScene.fullWindowScenes.delete(this);
+        queueMicrotask(() => GardenScene.updatePageStyles());
+        // A move (removed and added back in one task, as `appendChild` does) keeps the engine,
+        // as a moved element keeps its build; removed for good, the scene is disposed.
+        queueMicrotask(() => {
+            if (!this.isConnected)
+                this.disposeEngine();
+        });
+    }
+
+    /** Stops drawing and disposes the engine and audio, once the scene has been removed for good. */
+    private disposeEngine() {
+        this._resizeObserver?.disconnect();
+        this._resizeObserver = null;
         window.removeEventListener("resize", this._resizeHandler);
-        if (this.engine) {
+        if (this.engine && !this.engine.isDisposed) {
             this.engine.stopRenderLoop();
             this.engine.dispose();
             this._renderLoopActive = false;
+            this._disposedForGood = true;
         }
         if (this._audioEngine) {
             this._audioEngine.then(audio => audio.dispose()).catch(() => {});

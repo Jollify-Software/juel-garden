@@ -6,7 +6,8 @@
 //   run("<garden-scene>...</garden-scene>", async ({ page, check, errors }) => { ... });
 //
 // `html` is the body (or null with `url` set to a repo page); the page loads
-// /dist/juel-garden.js. `open(html)` loads a second inline page in the same tab. Never return a Babylon object
+// /dist/juel-garden.js (or, with --viewer on the command line, dist/juel-garden-viewer.js served in
+// its place: `npm run build:viewer` first). `open(html)` loads a second inline page in the same tab. Never return a Babylon object
 // from page.evaluate() (Playwright tries to serialise it and stalls).
 const fs = require("fs");
 const path = require("path");
@@ -15,6 +16,7 @@ const { chromium } = require("playwright-core");
 const ROOT = path.resolve(__dirname, "..");
 const ORIGIN = "http://juel-garden.test";
 const CHROME = process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const VIEWER = process.argv.includes("--viewer");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".wasm": "application/wasm", ".png": "image/png",
     ".jpg": "image/jpeg", ".glb": "model/gltf-binary", ".gltf": "model/gltf+json", ".wav": "audio/wav", ".json": "application/json" };
 
@@ -31,7 +33,9 @@ function run(html, body, { url = "/test.html", viewport = { width: 1000, height:
             const page = await browser.newPage({ viewport, hasTouch: true });
             page.setDefaultTimeout(15000);
             await page.route(ORIGIN + "/**", route => {
-                const f = path.join(ROOT, decodeURIComponent(new globalThis.URL(route.request().url()).pathname));
+                let f = path.join(ROOT, decodeURIComponent(new globalThis.URL(route.request().url()).pathname));
+                if (VIEWER && f == path.join(ROOT, "dist", "juel-garden.js"))
+                    f = path.join(ROOT, "dist", "juel-garden-viewer.js");
                 if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory())
                     return route.fulfill({ status: 404, body: "" });
                 route.fulfill({ status: 200, body: fs.readFileSync(f), contentType: TYPES[path.extname(f).toLowerCase()] || "application/octet-stream" });

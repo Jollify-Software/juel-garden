@@ -8,7 +8,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 
 /**
  * The weather presets behind `<garden-particle preset="...">` (see
- * {@link GardenParticle}): tuned particle systems that need no image (they
+ * {@link "Components/Particle"!GardenParticle}): tuned particle systems that need no image (they
  * draw their own soft dot), so they work offline.
  *
  * - `rain` and `snow` fall round the camera and go where it goes.

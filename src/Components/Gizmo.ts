@@ -51,6 +51,17 @@ export class GardenGizmo extends GardenElement {
                 }
             }
         }
+        // Removed for good while it waited for its elements.
+        if (!this.isConnected)
+            return;
+        // A rebuild for a changed attribute: the old manager goes (its handles and pointer
+        // observers stayed otherwise, one more set on each change), and the gizmo that was
+        // on comes back on the new one.
+        let old = this.manager;
+        let on = !old ? null : old.positionGizmoEnabled ? "position" : old.rotationGizmoEnabled ? "rotation"
+            : old.scaleGizmoEnabled ? "scale" : old.boundingBoxGizmoEnabled ? "boundingBox" : null;
+        if (old)
+            GardenGizmo.disposeManager(old);
         this.manager = new GizmoManager(this.getScene(), this.thickness);
         if (meshes.length) {
             this.manager.attachableMeshes = meshes;
@@ -64,6 +75,30 @@ export class GardenGizmo extends GardenElement {
             this.manager.attachableNodes = nodes;
             this.manager.attachToNode(nodes[0]);
         }
+        if (on == "position") this.enablePosition();
+        else if (on == "rotation") this.enableRotation();
+        else if (on == "scale") this.enableScale();
+        else if (on == "boundingBox") this.enableBoundingBox();
+    }
+
+    /** Removed for good: the manager, its handles and its pointer observers leave the scene. */
+    protected dispose() {
+        if (this.manager)
+            GardenGizmo.disposeManager(this.manager);
+        this.manager = null;
+        super.dispose();
+    }
+
+    /**
+     * Disposes `manager` with both its pointer observers. Babylon's `dispose()` removes them
+     * from the scene's observable, but the gizmo-axis one is on the utility layer's scene, so
+     * one stayed there for each manager made.
+     */
+    private static disposeManager(manager: GizmoManager) {
+        let observers = (<any>manager)._pointerObservers ?? [];
+        manager.dispose();
+        for (let observer of observers)
+            manager.utilityLayer.utilityLayerScene.onPointerObservable.remove(observer);
     }
 
     enablePosition() {

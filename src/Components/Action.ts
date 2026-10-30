@@ -15,7 +15,7 @@ import { GardenScene } from "./Scene";
 /**
  * Declares a reusable Babylon `ActionManager` action (`"set"`, `"increment"`,
  * or a raw `"beforeRender"` loop), registered by `id` on the scene so a
- * mesh's `action="id"` attribute (via {@link BehaviourAction}) can attach it,
+ * mesh's `action="id"` attribute (via {@link "Behaviours/BehaviourAction"!BehaviourAction}) can attach it,
  * or `<garden-button>` can trigger it. Loosely mirrors A-Frame's animation/
  * event-action pattern.
  *
@@ -43,9 +43,11 @@ export class GardenAction extends GardenElement {
     /**
      * Resolves once this action has been built and registered (on the scene's
      * `actions`, or on its parent mesh). That happens only after the document has
-     * parsed, so a mesh's `action="id"` ({@link BehaviourAction}) waits on it.
+     * parsed, so a mesh's `action="id"` ({@link "Behaviours/BehaviourAction"!BehaviourAction}) waits on it.
      */
     readonly whenRegistered = new Promise<void>(resolve => this.resolveRegistered = resolve);
+    /** The latest build, so a build that a removal or a newer build overtook does nothing. */
+    private build: object = null;
 
     constructor() {
         super();
@@ -54,11 +56,25 @@ export class GardenAction extends GardenElement {
     }
 
     updated() {
+        // What this build adds to the scene and its parent mesh is undone when the element
+        // is removed for good or rebuilt for a change: the before-render loop and the parent
+        // mesh's action. (Its entry in the scene's `actions`, and what meshes have taken
+        // from there, stay.)
+        let build = this.build = {};
+        let undo: (() => void)[] = [];
+        this.whenDisposed(() => {
+            if (this.build == build)
+                this.build = null;
+            for (let step of undo.splice(0))
+                step();
+        });
         setTimeout(async () => {
             // `parameter`/`target` selectors (e.g. "#donut") can reference an element
             // declared later in the same markup than this <garden-action> -- wait for
             // the whole document before resolving them, same as GardenCamera's `target`.
             await GardenElement.whenDocumentReady();
+            if (this.build != build)
+                return;
 
             let scene = this.getScene();
             let el = document.querySelector(this.parameter) as GardenElement;
@@ -82,7 +98,7 @@ export class GardenAction extends GardenElement {
 
             switch (this.type) {
                 case "beforeRender":
-                    scene.registerBeforeRender(() => {
+                    let observer = scene.onBeforeRenderObservable.add(() => {
                         switch (this.property) {
                             case "position":
                                 el.position = Vector3Convert.fromString(this.value, i);
@@ -95,6 +111,7 @@ export class GardenAction extends GardenElement {
                         el.applyTransform();
                         i += this.increment ?? 0;
                     });
+                    undo.push(() => scene.onBeforeRenderObservable.remove(observer));
                     break;
 
                 case "set":
@@ -149,12 +166,14 @@ export class GardenAction extends GardenElement {
             }
             if (action && 'mesh' in owner) {
                 let meshEl = owner as GardenMesh;
-                if (!meshEl.mesh.actionManager) {
-                    meshEl.mesh.actionManager = new ActionManager(scene);
+                let mesh = meshEl.mesh;
+                if (!mesh.actionManager) {
+                    mesh.actionManager = new ActionManager(scene);
                 }
-                meshEl.mesh.actionManager.registerAction(
-                    action.action(meshEl.mesh, (<GardenMesh>el).mesh, value) as IAction
+                let registered = mesh.actionManager.registerAction(
+                    action.action(mesh, (<GardenMesh>el).mesh, value) as IAction
                 );
+                undo.push(() => mesh.actionManager?.unregisterAction(registered));
             } else if (action && 'actions' in owner) {
                 let sceneEl = owner as GardenScene;
                 sceneEl.actions[this.id] = action;

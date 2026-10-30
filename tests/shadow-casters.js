@@ -32,4 +32,27 @@ run(`
     const csm = await page.evaluate(() => { const g = document.getElementById("far").shadowGenerator; return { cls: g.getClassName(), n: g.numCascades, auto: document.getElementById("far").light.autoCalcShadowZBounds }; });
     check("cascades=\"3\": a cascaded shadow generator with 3 cascades", csm.cls == "CascadedShadowGenerator" && csm.n == 3 && csm.auto, JSON.stringify(csm));
     check("a light's specular colour", s.specular.join() == "0,1,0", JSON.stringify(s.specular));
+
+    // A shadow light watches for new meshes. A rebuild (a new shadow-map size) and a removal
+    // take that watcher back, so the old generator isn't kept, and later meshes still cast.
+    const before = await page.evaluate(() => document.querySelector("garden-scene").scene.onNewMeshAddedObservable.observers.length);
+    for (const size of ["1024", "2048"]) {
+        await page.evaluate(size => document.getElementById("sun").setAttribute("shadows", size), size);
+        await frames(5);
+    }
+    const changed = await page.evaluate(() => ({ observers: document.querySelector("garden-scene").scene.onNewMeshAddedObservable.observers.length,
+        size: document.getElementById("sun").shadowGenerator.getShadowMap().getSize().width }));
+    check("a changed shadow size keeps one new-mesh watcher", changed.observers == before && changed.size == 2048, JSON.stringify({ before, ...changed }));
+    await page.evaluate(() => {
+        document.getElementById("sun").remove();
+        const box = document.createElement("garden-box");
+        box.id = "late";
+        box.setAttribute("position", "-6 0.5 0");
+        document.querySelector("garden-scene").append(box);
+    });
+    await page.waitForFunction(() => document.getElementById("late").mesh);
+    await frames(5);
+    const gone = await page.evaluate(() => ({ observers: document.querySelector("garden-scene").scene.onNewMeshAddedObservable.observers.length,
+        late: document.getElementById("far").shadowGenerator.getShadowMap().renderList.some(m => m.element?.id == "late") }));
+    check("a removed shadow light takes its watcher back; a later box still casts", gone.observers == before - 1 && gone.late, JSON.stringify({ before, ...gone }));
 });

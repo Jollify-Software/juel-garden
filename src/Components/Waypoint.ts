@@ -1,6 +1,7 @@
 import { Animation } from "@babylonjs/core/Animations/animation";
 import { Camera } from "@babylonjs/core/Cameras/camera";
 import { PointerEventTypes } from "@babylonjs/core/Events/pointerEvents";
+import type { PointerInfo } from "@babylonjs/core/Events/pointerEvents";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
@@ -23,7 +24,7 @@ import { GardenMesh } from "../GardenMesh";
  * Must be a child of `<garden-camera>`.
  *
  * Attributes: `waypoints` (a selector resolving the tour stops, see
- * {@link resolveElements}), `offset` (a `Vector3` added to every stop's
+ * {@link "Utils/resolveElements"!resolveElements}), `offset` (a `Vector3` added to every stop's
  * position, e.g. eye height; none if unset), `speed` (the fly-to
  * animation's speed ratio: 1, the default, takes about 3.3 s, 2 twice as
  * fast; headsets want 2 or more), `dwell` (look-and-hold: milliseconds of
@@ -67,6 +68,12 @@ export class GardenWaypoint extends GardenElement {
     private lookedMs = 0;
     /** The stops are being resolved: a second update meanwhile (another property set before the document was ready) leaves them to it. */
     private resolving = false;
+    /** The `waypoints` selector last given, kept to build again after removal for good. */
+    private selector: string;
+    /** What a build added to the scene, for {@link dispose}. */
+    private built: { scene: Scene, pointer: Observer<PointerInfo>, frame: Observer<Scene> } | null = null;
+    /** The reticle's and next-stop ring's meshes. */
+    private markers: Mesh[] = [];
 
     connectedCallback() {
         super.connectedCallback();
@@ -94,12 +101,18 @@ export class GardenWaypoint extends GardenElement {
     };
 
     async updated() {
-        if (typeof this.waypoints !== 'string' || this.resolving)
+        if (this.resolving)
+            return;
+        // A new selector builds; otherwise only an element added back after removal for good
+        // (which disposed the last build) builds again from the one it had.
+        if (typeof this.waypoints === 'string')
+            this.selector = this.waypoints;
+        else if (this.built || !this.selector)
             return;
 
         // Read before any await: by the time this one resumes, another update may have
         // replaced the string with the resolved stops (the `n.trim is not a function` race).
-        const selector = this.waypoints;
+        const selector = this.selector;
         this.resolving = true;
         this.beginBuild();
         try {
@@ -116,7 +129,8 @@ export class GardenWaypoint extends GardenElement {
             let scene = this.getScene();
             this.setPosition(this.waypoints[this.index].getPosition());
 
-            scene.onPointerObservable.add((pointerInfo) => {
+            this.disposeBuilt();
+            const pointer = scene.onPointerObservable.add((pointerInfo) => {
                 switch (pointerInfo.type) {
                     case PointerEventTypes.POINTERDOWN:
                         if (pointerInfo.pickInfo.hit) {
@@ -128,11 +142,33 @@ export class GardenWaypoint extends GardenElement {
             });
 
             this.buildMarkers();
-            scene.onBeforeRenderObservable.add(() => this.onFrame());
+            const frame = scene.onBeforeRenderObservable.add(() => this.onFrame());
+            this.built = { scene, pointer, frame };
         } finally {
             this.resolving = false;
             this.endBuild();
         }
+    }
+
+    /** Removed for good: its observers, reticle and next-stop ring leave the scene. */
+    protected dispose() {
+        this.disposeBuilt();
+        super.dispose();
+    }
+
+    private disposeBuilt() {
+        if (!this.built)
+            return;
+        // The scene it was built in: once removed, getScene() finds none up the page.
+        const scene = this.built.scene;
+        scene.onPointerObservable.remove(this.built.pointer);
+        scene.onBeforeRenderObservable.remove(this.built.frame);
+        this.built = null;
+        for (const m of this.markers)
+            if (!m.isDisposed()) m.dispose(false, true);
+        this.markers = [];
+        this.reticle = null;
+        this.nextRing = null;
     }
 
     /** The stop a picked mesh belongs to (its own mesh, or one of its children). */
@@ -184,11 +220,13 @@ export class GardenWaypoint extends GardenElement {
             // The edge grows with the disc: a child of it, a little behind.
             edge.parent = this.reticle;
             edge.position.z = d * 0.0005;
+            this.markers.push(outline, ring, edge, this.reticle);
         }
         if (this.highlightNext) {
             this.nextRing = MeshBuilder.CreateTorus("waypoint-next", { diameter: 1.6, thickness: 0.08, tessellation: 48 }, scene);
             this.nextRing.material = unlit("waypoint-next", "#ffd166", 0.9);
             this.nextRing.isPickable = false;
+            this.markers.push(this.nextRing);
             this.placeNextRing();
         }
     }

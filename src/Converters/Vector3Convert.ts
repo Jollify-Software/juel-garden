@@ -12,7 +12,7 @@ import { ShapeFunctions } from "../ShapeFunctions";
  * instead be a `Shape.xxx(...)` call into {@link ShapeFunctions} that expands
  * to several points inline; `keyedArray`/`keyedRotationArray` parse
  * `"name: x y z, name: x y z"` into {@link NameValue} pairs (see
- * {@link GardenReplicate}).
+ * {@link "Components/Replicate"!GardenReplicate}).
  *
  * @category Converters
  */

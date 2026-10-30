@@ -9,6 +9,8 @@ import { ShadowLight } from "@babylonjs/core/Lights/shadowLight";
 import { SpotLight } from "@babylonjs/core/Lights/spotLight";
 import { Tools } from "@babylonjs/core/Misc/tools";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Observer } from "@babylonjs/core/Misc/observable";
+import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { customElement, property } from "lit/decorators.js";
 import { Color3Convert } from "../Converters/Color3Convert";
 import { Vector3Convert } from "../Converters/Vector3Convert";
@@ -16,8 +18,8 @@ import { GardenElement } from "../GardenElement";
 import { GardenAnimation } from "./Animation";
 
 /**
- * A light: `type="hemi"` (the default; ambient sky/ground light), `"point"`,
- * `"spot"` or `"directional"`.
+ * A light: `type="hemi"` (the default; ambient sky/ground light; `"hemispheric"`
+ * also works), `"point"`, `"spot"` or `"directional"`.
  *
  * **Carried lights.** Inside a mesh element (a character, a lantern) a light
  * hangs on that mesh, at its `position` relative to the mesh, and goes where
@@ -78,6 +80,12 @@ export class GardenLight extends GardenElement {
     shadowGenerator: ShadowGenerator;
 
     private _builtKey: string;
+    /**
+     * With `shadows`, the scene watcher that gives each new mesh to the shadow generator.
+     * A rebuild and a removal take it back, so it doesn't keep an old generator (and light)
+     * alive or pile up one per rebuild.
+     */
+    private meshAdded: Observer<AbstractMesh>;
 
     constructor() {
         super();
@@ -96,13 +104,16 @@ export class GardenLight extends GardenElement {
 
     async updated() {
         let scene = this.getScene();
-        let type = this.pool > 0 && this.type != "directional" ? "spot" : this.type;
+        // `hemispheric` (Babylon's own name) is another name for `hemi`.
+        let named = this.type == "hemispheric" ? "hemi" : this.type;
+        let type = this.pool > 0 && named != "directional" ? "spot" : named;
         let key = [type, this.hasAttribute("shadows"), this.shadows, this.getAttribute("cascades")].join("|");
         if (this.light && key == this._builtKey) {
             this.apply();
             return;
         }
         this._builtKey = key;
+        this.stopWatchingMeshes();
         this.shadowGenerator?.dispose();
         this.shadowGenerator = null;
         this.light?.dispose();
@@ -162,7 +173,7 @@ export class GardenLight extends GardenElement {
                 });
             };
             scene.meshes.forEach(add);
-            scene.onNewMeshAddedObservable.add(add);
+            this.meshAdded = scene.onNewMeshAddedObservable.add(add);
         }
 
         // Carried: hang on the parent's mesh once it is built.
@@ -221,7 +232,14 @@ export class GardenLight extends GardenElement {
         }
     }
 
+    /** Takes back the new-mesh watcher that `shadows` adds, if there is one. */
+    private stopWatchingMeshes() {
+        this.meshAdded?.remove();
+        this.meshAdded = null;
+    }
+
     protected dispose() {
+        this.stopWatchingMeshes();
         this.shadowGenerator?.dispose();
         this.light?.dispose();
         this.light = null;

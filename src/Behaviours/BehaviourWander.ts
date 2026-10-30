@@ -10,13 +10,13 @@ import { IBehaviourTarget } from "../IBehaviourTarget";
  * within `look-radius` of it, pausing there for a random duration in the
  * `look-duration` range ("min max" seconds) as if looking at it, then
  * resuming. Works against any {@link IBehaviourTarget} -- a `GardenMesh`'s
- * `Mesh`, or (applied once per placed sprite -- see {@link GardenSprite})
+ * `Mesh`, or (applied once per placed sprite -- see {@link "Components/Sprite"!GardenSprite})
  * one instance of a `<garden-sprite>` group via
- * {@link SpriteBehaviourTarget}. A no-op unless the `wander` attribute is
+ * {@link "Behaviours/SpriteBehaviourTarget"!SpriteBehaviourTarget}. A no-op unless the `wander` attribute is
  * present.
  *
- * Purely position-based -- unlike {@link BehaviourTrack}/{@link
- * BehaviourDrive}, it never touches `rotation`, since a `<garden-sprite>`'s
+ * Purely position-based -- unlike {@link "Behaviours/BehaviourTrack"!BehaviourTrack}/
+ * {@link "Behaviours/BehaviourDrive"!BehaviourDrive}, it never touches `rotation`, since a `<garden-sprite>`'s
  * billboard has no facing that a horizontal wander direction could
  * meaningfully turn (its `SpriteBehaviourTarget.rotation` bridges only onto
  * `sprite.angle`, a camera-relative roll -- turning that with the wander

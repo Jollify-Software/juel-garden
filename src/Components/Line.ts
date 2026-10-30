@@ -5,10 +5,10 @@ import { GardenMesh } from "../GardenMesh";
 /**
  * A polyline, via Babylon's `MeshBuilder.CreateLines`. Also doubles as the
  * path a `<garden-... track>` behaviour follows -- see
- * {@link BehaviourTrack}, which reads this element's own `points` attribute
+ * {@link "Behaviours/BehaviourTrack"!BehaviourTrack}, which reads this element's own `points` attribute
  * off its parent.
  *
- * Attributes: `points` (a `Vector3` array, see {@link Vector3Convert.array};
+ * Attributes: `points` (a `Vector3` array, see {@link "Converters/Vector3Convert"!Vector3Convert.array};
  * repeat the first point last for a closed loop) (plus the common
  * {@link GardenMesh} set -- though a line has no fill, so `colour` there
  * controls the line colour).

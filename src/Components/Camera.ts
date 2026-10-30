@@ -56,6 +56,14 @@ import { GardenScene } from "./Scene";
  * <garden-camera type="follow" target="#car" radius="8" height-offset="3"></garden-camera>
  * ```
  *
+ * `near` and `far` (metres, any type) are the clip planes; Babylon's near plane of 1 m
+ * clips a small model seen from close by:
+ *
+ * @example
+ * ```html
+ * <garden-camera type="arc" radius="1" near="0.01" target="0 0.3 0"></garden-camera>
+ * ```
+ *
  * @category Components
  */
 @customElement("garden-camera")
@@ -65,6 +73,14 @@ export class GardenCamera extends GardenElement {
     @property({ converter: Vector3Convert.fromString }) position: Vector3;
     @property({ converter: Vector3Convert.fromString }) ellipsoid: Vector3;
     @property() touch: string;
+    /**
+     * The near clip plane, in metres (the camera's `minZ`). Babylon's default is 1, which
+     * clips a small model seen from close by; `near="0.01"` shows a 60 cm model from 1 m.
+     * Unset leaves the default. A change applies to the camera in place.
+     */
+    @property({ type: Number }) near: number;
+    /** The far clip plane, in metres (the camera's `maxZ`, default 10000). A change applies in place. */
+    @property({ type: Number }) far: number;
 
     camera: Camera;
 
@@ -141,6 +157,32 @@ export class GardenCamera extends GardenElement {
         else
             this.camera.position = this.position;
         this.applyRotation();
+    }
+
+    /** A change of `near` or `far` alone (or with `position`) applies in place, keeping the camera's view. */
+    protected shouldUpdate(changed: Map<PropertyKey, unknown>): boolean {
+        if (this.hasUpdated && this.isConnected && this.camera && changed.size &&
+            [...changed.keys()].some(key => key == "near" || key == "far") &&
+            [...changed.keys()].every(key => key == "near" || key == "far" || key == "position")) {
+            this.applyClipPlanes(true);
+            if (changed.has("position"))
+                this.applyTransform();
+            return false;
+        }
+        return super.shouldUpdate(changed);
+    }
+
+    /** `near` and `far` onto the camera; with `reset`, one removed puts Babylon's default back. */
+    private applyClipPlanes(reset = false) {
+        if (!this.camera) return;
+        if (this.near != null && Number.isFinite(this.near))
+            this.camera.minZ = this.near;
+        else if (reset)
+            this.camera.minZ = 1;
+        if (this.far != null && Number.isFinite(this.far))
+            this.camera.maxZ = this.far;
+        else if (reset)
+            this.camera.maxZ = 10000;
     }
 
     /** `rotation` in degrees, for a camera that has its own (not an orbiting arc camera). */
@@ -226,6 +268,8 @@ export class GardenCamera extends GardenElement {
         }
         if (this.hasAttribute("layer-mask"))
             this.camera.layerMask = GardenCamera.mask(this.getAttribute("layer-mask"));
+        if (this.near != null || this.far != null)
+            this.applyClipPlanes();
         GardenCamera.arrange(sceneEl, scene);
 
         let controls = this.getAttribute("controls");

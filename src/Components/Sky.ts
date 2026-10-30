@@ -212,9 +212,12 @@ this.setMesh(skybox);
         sky.blend = Math.min(1, Math.max(0, this.blend || 0));
         if (this.panoramaTo && this.hasAttribute("duration"))
             this.blendTo(1, Number(this.getAttribute("duration")) || 0);
+        // One listener per build: a rebuild or a removal takes it back (it holds the old sky).
+        let listening = new AbortController();
         this.getSceneEl()?.addEventListener("garden-lightning", () => {
             if (this.panoramaSky == sky) sky.flash();
-        });
+        }, { signal: listening.signal });
+        this.whenDisposed(() => listening.abort());
     }
 
     protected dispose() {

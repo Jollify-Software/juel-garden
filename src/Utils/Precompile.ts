@@ -35,7 +35,7 @@ export interface Precompiled {
  * processing, every light the scene will have (make a light early and move it later, rather
  * than add it later), shadow generators and `receiveShadows`, fog mode, and the materials'
  * features (sheen, subsurface, alpha). A scene renders while it loads (behind a loading screen
- * too), so "first" can be the first frame after the scene exists. {@link toPBRMaterials} with
+ * too), so "first" can be the first frame after the scene exists. {@link "Utils/PBRMaterials"!toPBRMaterials} with
  * `vertexColours: false` removes another source of duplicate shaders in glTF models.
  *
  * Use `scene.getEngine()._compiledEffects` (its key count) to see how many shader variants a

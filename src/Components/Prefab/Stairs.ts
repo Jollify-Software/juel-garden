@@ -14,7 +14,7 @@ import { customElement, property } from "lit/decorators.js";
  * A flight of stairs, straight or curved, generated procedurally (see
  * {@link StairsFunctions}). The whitelisted way to punch an automatic floor
  * opening into a `<garden-room>` sibling under a shared `<garden-structure>`
- * (see {@link GardenStructure}).
+ * (see {@link "Components/Prefab/Structure"!GardenStructure}).
  *
  * Attributes: `width`, `height`, `depth`, `curvature` (degrees -- when set,
  * builds a curved staircase instead of a straight one; `depth` is ignored in

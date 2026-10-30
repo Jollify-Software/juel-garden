@@ -37,7 +37,7 @@ const flocks = new Map<GardenElement, Set<Follower>>();
  *
  * Works against any {@link IBehaviourTarget} (a `GardenMesh`'s mesh, or each
  * sprite of a `<garden-sprite>` group). Add `terrain="#height-map"` to keep
- * it on the ground (see {@link BehaviourTerrain}), or `collisions` to slide
+ * it on the ground (see {@link "Behaviours/BehaviourTerrain"!BehaviourTerrain}), or `collisions` to slide
  * along meshes with `collisions`.
  *
  * Attributes:
@@ -52,7 +52,7 @@ const flocks = new Map<GardenElement, Set<Follower>>();
  * - `follow-turn` (degrees/second, default `360`), `follow-facing-offset`
  *   (degrees, as for `walk`).
  *
- * Pair with `follow-wait` on the leader (see {@link BehaviourWait}) for a
+ * Pair with `follow-wait` on the leader (see {@link "Behaviours/BehaviourWait"!BehaviourWait}) for a
  * guide who waits for stragglers.
  *
  * @example

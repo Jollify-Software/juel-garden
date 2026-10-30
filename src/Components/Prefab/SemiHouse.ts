@@ -1,9 +1,10 @@
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { customElement } from "lit/decorators.js";
 import { GardenMesh } from "../../GardenMesh";
+import { mergedChildrenWatcher } from "./House";
 
 /**
- * A half-width variant of {@link GardenHouse}, for a semi-detached pair --
+ * A half-width variant of {@link "Components/Prefab/House"!GardenHouse}, for a semi-detached pair --
  * from the same classic Babylon.js "village" tutorial. Has no configurable
  * attributes; use `position`/`rotation`/`scale` to place it.
  *
@@ -16,6 +17,19 @@ import { GardenMesh } from "../../GardenMesh";
  */
 @customElement("garden-semi-house")
 export class GardenSemiHouse extends GardenMesh {
+    /** A change inside rebuilds the merged house: see {@link mergedChildrenWatcher}. */
+    private childWatcher = mergedChildrenWatcher(this);
+
+    connectedCallback() {
+        super.connectedCallback();
+        this.childWatcher.observe(this, { attributes: true, subtree: true });
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.childWatcher.disconnect();
+    }
+
     /**
      * The merge below consumes the walls' and roof's own meshes, so a rebuild has them
      * built again first (they're children: generated, or the author's).
