@@ -4,7 +4,7 @@ import { CreateAudioEngineAsync } from "@babylonjs/core/AudioV2/webAudio/webAudi
 import { Engine } from "@babylonjs/core/Engines/engine";
 import { IAction } from "@babylonjs/core/Actions/action";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { Scene } from "@babylonjs/core/scene";
+import { Scene, ScenePerformancePriority } from "@babylonjs/core/scene";
 import { Tools } from "@babylonjs/core/Misc/tools";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { LitElement } from "lit";
@@ -63,6 +63,15 @@ Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anon
  * high-density screen, and slower). Live, so a game can drop it when frames are slow.
  * `<garden-pipeline fsr>` upscales a smaller picture more sharply.
  *
+ * **Many meshes**: `performance="intermediate"` or `"aggressive"` is Babylon's scene
+ * performance priority (`scene.performancePriority`), trading conveniences for speed with
+ * thousands of meshes. Both stop picking as the pointer moves (hover actions,
+ * `pointerOver`/`pointerOut`; a press still picks) and stop clearing the canvas each frame,
+ * so the scene needs a sky, skybox or environment that fills the view. `"aggressive"`
+ * also draws every mesh without testing it against the view and keeps the render lists
+ * between frames: a mesh added later, or made visible, may not show until the priority is
+ * set again. `"compatible"` (the default) is Babylon's usual behaviour. Live.
+ *
  * @example
  * ```html
  * <garden-scene>
@@ -99,6 +108,8 @@ export class GardenScene extends LitElement {
     @property({ attribute: "ambient-colour" }) ambientColour: string;
     /** How much smaller than the canvas the scene is drawn: Babylon's hardware scaling level. */
     @property({ type: Number }) scaling: number;
+    /** Babylon's scene performance priority: `compatible` (default), `intermediate` or `aggressive`. */
+    @property() performance: string;
     /**
      * The scene lives inside the page instead of taking over the window: the page keeps
      * scrolling and its own margins, and the scene fills its own box, which the page sizes
@@ -177,6 +188,20 @@ export class GardenScene extends LitElement {
             this.engine.setHardwareScalingLevel(this.scaling > 0 ? this.scaling : 1);
         if (changed.has("embedded") && this.scene)
             this.applyEmbedded();
+        if (this.scene) {
+            let priority = GardenScene.performancePriority(this.performance);
+            if (this.scene.performancePriority != priority)
+                this.scene.performancePriority = priority;
+        }
+    }
+
+    /** `performance` as Babylon's priority: 0 backward compatible, 1 intermediate, 2 aggressive. */
+    static performancePriority(value: string): ScenePerformancePriority {
+        switch ((value ?? "").trim().toLowerCase()) {
+            case "intermediate": return ScenePerformancePriority.Intermediate;
+            case "aggressive": return ScenePerformancePriority.Aggressive;
+            default: return ScenePerformancePriority.BackwardCompatible;
+        }
     }
 
     /** Scenes in the document that take over the whole window (no `embedded`). */

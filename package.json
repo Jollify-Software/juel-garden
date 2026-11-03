@@ -119,6 +119,7 @@
     "test:joint-motor": "node tests/joint-motor.js",
     "test:grid-physics": "node tests/grid-physics.js",
     "test:span": "node tests/span.js",
+    "test:performance-priority": "node tests/performance-priority.js",
     "test:embedded": "node tests/embedded.js",
     "test:camera-clip": "node tests/camera-clip.js",
     "test:one-shot-hold": "node tests/one-shot-hold.js",
