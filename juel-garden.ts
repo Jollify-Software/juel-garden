@@ -6,6 +6,7 @@ export * from "./src/GardenElement";
 export * from "./src/GardenMesh";
 export * from "./src/GardenSkeletonMesh";
 export * from "./src/AnimationMixer";
+export * from "./src/RootMotion";
 export * from "./src/Behaviours/Behaviours";
 export * from "./src/Behaviours/BehaviourWalk";
 export * from "./src/Behaviours/BehaviourFollow";

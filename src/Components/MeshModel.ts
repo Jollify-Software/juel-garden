@@ -17,6 +17,7 @@ import "../Decoders";
 import { customElement, property } from "lit/decorators.js";
 import { GardenSkeletonMesh } from "../GardenSkeletonMesh";
 import { AnimationMixer, PlayOptions, WeightOptions, driveByMotion, skeletonRangeClips } from "../AnimationMixer";
+import { RootMotionClip, RootMotionController } from "../RootMotion";
 import { GardenElement } from "../GardenElement";
 import type { GardenClip } from "./Clip";
 import { toStandardMaterials } from "../Utils/StandardMaterials";
@@ -60,7 +61,14 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
  *   model moves (a `walk`, `follow`, `track` or `wander`, or anything moving
  *   it), cross-fading between them and speeding walk/run to match.
  *   `anim-walk-speed`/`anim-run-speed` are the speeds (units/second) the
- *   walk and run clips were made for, default `1.5` and `4`.
+ *   walk and run clips were made for, default `1.5` and `4`; `"auto"` measures
+ *   it from the clip (its root motion, see {@link rootMotionOf}).
+ * - `root-motion`: the animations move the model. Each clip's travel is measured once
+ *   (from the root's own travel, else from the planted feet of an in-place cycle; see
+ *   {@link RootMotionClip}), the pose plays in place and the model's node is moved by it,
+ *   weighted as the animations are blended, so the feet don't skate. Live; not for a model
+ *   that `walk`, `follow` or anything else moves as well. {@link rootMotionOf} reads a clip's
+ *   measured `cycleDistance`, `duration`, `speed`, `direction` and `source`.
  *
  * - `load-distance`: don't load until the camera comes within this many
  *   metres of the model's `position` -- for big scans in a large venue, so
@@ -126,6 +134,12 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     fromRanges = false;
     /** True once the model has loaded and built its clips: a clip changed after that builds again. */
     clipsBuilt = false;
+    /** Each animation's root motion, measured on first use, by the model's own group. */
+    private rootClips = new Map<AnimationGroup, RootMotionClip>();
+    /** Moves the model by its clips' root motion while `root-motion` is on. */
+    private rootController: RootMotionController;
+    /** The `root-motion` last applied. */
+    private rootMotionApplied = false;
 
     /** Resolves once the model has loaded (or failed). */
     loaded: Promise<void>;
@@ -142,8 +156,10 @@ export class GardenMeshModel extends GardenSkeletonMesh {
             // Only position/rotation/scale, or which animations play, changed: no need to reload.
             if (this.mesh) {
                 this.applyTransform();
-                if (this.clipsBuilt)
+                if (this.clipsBuilt) {
+                    this.applyRootMotion();
                     this.applyAnimations();
+                }
             }
             return;
         }
@@ -200,6 +216,78 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         this.mixer?.setWeights(weights, options);
     }
 
+    /** True while `root-motion` is on (present and not `"false"`). */
+    get rootMotion(): boolean {
+        return this.hasAttribute("root-motion") && this.getAttribute("root-motion") != "false";
+    }
+
+    /**
+     * The root motion of the animation `name` (any case): how far a cycle carries the model
+     * (`cycleDistance`, in the model's units), in how long (`duration`), its `speed`, `direction`
+     * and where that came from (`source`: `"root"`, `"contact"` or `"none"`). Measured once,
+     * whether `root-motion` is on or not. Null before the model loads or with no such animation.
+     */
+    rootMotionOf(name: string): RootMotionClip {
+        let group = this.animationGroups.find(g => g.name.toLowerCase() == name?.toLowerCase());
+        if (!group || !this.loadedHolder)
+            return null;
+        let clip = this.rootClips.get(group);
+        if (!clip) {
+            try {
+                clip = new RootMotionClip(group, this.loadedHolder);
+            } catch (error) {
+                console.warn(`<garden-mesh-model> couldn't measure the root motion of "${group.name}"`, error);
+                return null;
+            }
+            this.rootClips.set(group, clip);
+        }
+        return clip;
+    }
+
+    /**
+     * `root-motion` on: every animation's in-place group stands in for it in the mixer and the
+     * controller moves the model; off: the model's own groups again. What was playing carries
+     * on (from the start of its cycle) on the other groups.
+     */
+    private applyRootMotion() {
+        let on = this.rootMotion && !!this.loadedHolder;
+        // Clips whose animation went (a <garden-clip> rebuilt) go too.
+        for (let [group, clip] of this.rootClips)
+            if (!this.animationGroups.includes(group)) {
+                this.rootController?.remove(clip);
+                clip.dispose();
+                this.rootClips.delete(group);
+            }
+        if (on == this.rootMotionApplied && (!on || this.animationGroups.every(g => this.rootClips.has(g))))
+            return;
+        this.rootMotionApplied = on;
+        let mixer = this.mixer;
+        let current = mixer?.current;
+        if (on && !this.rootController)
+            this.rootController = new RootMotionController(this.loadedHolder);
+        let swapped = false;
+        for (let group of this.animationGroups) {
+            let clip = on ? this.rootMotionOf(group.name) : this.rootClips.get(group);
+            if (!clip) continue;
+            if (on) this.rootController.add(clip);
+            let wanted = on ? clip.inPlace : group;
+            if (mixer && mixer.group(group.name) != wanted) {
+                mixer.add(wanted);
+                swapped = true;
+            }
+        }
+        if (!on) {
+            this.rootController?.dispose();
+            this.rootController = null;
+        }
+        if (swapped) {
+            this.playedAnimation = this.playedWeights = undefined;
+            this.applyAnimations(0);
+            if (current && !mixer.current)
+                mixer.play(current, { blend: 0 });
+        }
+    }
+
     /** The `blend` attribute: seconds, default 0.25. */
     private get blendTime(): number {
         let value = Number(this.getAttribute("blend"));
@@ -247,6 +335,7 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     /** Builds a `<garden-clip>` again after it changed, replacing its old animation. */
     async rebuildClip(clip: GardenClip) {
         this.removeClip(clip);
+        this.applyRootMotion();
         if (!this.loadedHolder || clip.parentElement != this)
             return;
         let key = this.loadedKey;
@@ -256,6 +345,7 @@ export class GardenMeshModel extends GardenSkeletonMesh {
             return;
         }
         this.addClipGroup(clip, group);
+        this.applyRootMotion();
         // Asked for by `play` or `weights` (or playing before the change): play it now.
         let name = group.name.toLowerCase();
         let wanted = (this.animation ?? this.getAttribute("play"))?.toLowerCase() == name
@@ -338,6 +428,11 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         // The mixer first: a disposed group fires its end, which isn't a one-shot ending.
         this._mixer?.dispose();
         this._mixer = null;
+        this.rootController?.dispose();
+        this.rootController = null;
+        for (let clip of this.rootClips.values()) clip.dispose();
+        this.rootClips.clear();
+        this.rootMotionApplied = false;
         for (let group of this.animationGroups) group.dispose();
         this.animationGroups = [];
         this.clipGroups.clear();
@@ -436,6 +531,7 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         this.clipsBuilt = true;
 
         this.applyAnimations(0);
+        this.applyRootMotion();
 
         if (this.getAttribute("materials") == "standard")
             toStandardMaterials(result.meshes, scene);
@@ -446,10 +542,19 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         let anim = (name: string) => this.getAttribute("anim-" + name);
         if (this.mixer && (anim("idle") || anim("walk") || anim("run"))) {
             this.nearScene = scene;
-            let num = (name: string, fallback: number) => this.hasAttribute(name) ? Number(this.getAttribute(name)) : fallback;
+            // "auto": the clip's own speed (its root motion), in the scene's units.
+            let num = (name: string, clip: string, fallback: number) => {
+                let value = this.getAttribute(name);
+                if (value?.trim() == "auto") {
+                    holder.computeWorldMatrix(true);
+                    let speed = (this.rootMotionOf(clip)?.speed ?? 0) * holder.absoluteScaling.x;
+                    return speed > 0 ? speed : fallback;
+                }
+                return value != null ? Number(value) : fallback;
+            };
             this.motionObserver = driveByMotion(this.mixer, scene, holder, {
                 idle: anim("idle"), walk: anim("walk"), run: anim("run"),
-                walkSpeed: num("anim-walk-speed", 1.5), runSpeed: num("anim-run-speed", 4),
+                walkSpeed: num("anim-walk-speed", anim("walk"), 1.5), runSpeed: num("anim-run-speed", anim("run"), 4),
                 speedOf: () => {
                     let walker = (<any>this).walker, follower = (<any>this).follower;
                     return walker?.enabled ? walker.speed : follower?.enabled ? follower.speed : undefined;
