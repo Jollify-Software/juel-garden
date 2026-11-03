@@ -38,7 +38,7 @@ function cone(name: string, radius: number, rise: number, side: number, scene: S
 
 /**
  * A hollow apex (thatch / timber) roof with real thickness, built the same way
- * as {@link createDomeRoof}: an outer faceted cone plus a smaller inner cone
+ * as {@link "Utils/Mesh/createDomeRoof"!createDomeRoof}: an outer faceted cone plus a smaller inner cone
  * with `BACKSIDE` winding (so it's lit from inside the room), joined by a flat
  * annular rim that closes the gap between their bases at the eave. Faceted on
  * purpose -- `SEGMENTS` is low and every shell is flat-shaded.

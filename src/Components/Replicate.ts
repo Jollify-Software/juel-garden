@@ -14,7 +14,8 @@ import { GardenMesh } from "../GardenMesh";
  * array, indexed by position in
  * `positions`' `name:` prefix), `positions` (keyed `Vector3` list, e.g.
  * `"0: 1 0 1, 0: 3 0 1"` -- each entry's name is the index into `instances`),
- * `rotations` (keyed rotation list, same convention).
+ * `rotations` (keyed rotation list, same convention; optional). Without `instances` or
+ * `positions` it makes nothing (with a console warning).
  *
  * The sources may appear anywhere in the document (before or after this
  * element): it waits for the document to finish parsing and for each source
@@ -35,6 +36,10 @@ export class GardenReplicate extends GardenElement {
         // The source elements may come later in the markup than this one, so they may
         // not be parsed (or built) yet: wait for the document, then for each of them.
         await GardenElement.whenDocumentReady();
+        if (!this.instances?.length || !this.positions?.trim()) {
+            console.warn("garden-replicate: needs `instances` and `positions`, so nothing is made");
+            return;
+        }
         let els: GardenMesh[] = [];
         for (var id of this.instances) {
             let el = document.getElementById(id) as GardenMesh;
@@ -45,7 +50,7 @@ export class GardenReplicate extends GardenElement {
             els.push(el);
         }
         let posRay = Vector3Convert.keyedArray(this.positions)
-        let rotRay = Vector3Convert.keyedRotationArray(this.rotations);
+        let rotRay = this.rotations?.trim() ? Vector3Convert.keyedRotationArray(this.rotations) : [];
         Promise.all(
             els.map(x => x.whenReady)
         ).then(() => {
@@ -55,7 +60,7 @@ export class GardenReplicate extends GardenElement {
                 let rot = rotRay[i];
                 let mesh = meshes[parseInt(pos.name)].createInstance(`mesh-instance-${i}`);
                 mesh.position = pos.value;
-                mesh.rotation = rot.value;
+                if (rot) mesh.rotation = rot.value;
             }
         });
     }

@@ -12,10 +12,10 @@ import { GardenRoom } from "./Room";
  * Cuts a doorway-shaped hole into one or more other meshes via CSG, wherever
  * a hand-placed opening is needed (e.g. a rotated or curved join that
  * `<garden-structure>`'s automatic bounding-box detection can't handle --
- * see {@link GardenStructure}).
+ * see {@link "Components/Prefab/Structure"!GardenStructure}).
  *
  * Attributes: `between` (selector of the mesh(es) to cut into, see
- * {@link resolveElements}), `type` (`"square"`, the only type today; any
+ * {@link "Utils/resolveElements"!resolveElements}), `type` (`"square"`, the only type today; any
  * other value warns and cuts nothing),
  * `width`, `height` (default room wall height minus 1), `depth` (default
  * double wall thickness), `position`.

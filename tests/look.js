@@ -58,4 +58,24 @@ run(`
         return c.position.z - m.position.z;
     });
     check("setting orbitAngle = 0 puts the camera on the +Z side", side > 4, side.toFixed(2));
+
+    // A change rebuilds the camera, and removal disposes it: either way its look pad, frame
+    // observer and listeners go with it (they used to stay: two pads after a change).
+    const hooks = () => page.evaluate(() => ({ pads: document.querySelectorAll(".garden-look-pad").length,
+        frame: document.querySelector("garden-scene").scene.onBeforeRenderObservable.observers.length }));
+    const before = await hooks();
+    await page.evaluate(() => document.querySelector("garden-camera").setAttribute("radius", "7"));
+    await page.waitForTimeout(800);
+    const changed = await hooks();
+    check("a change rebuilds it with one look pad and no extra frame observer", changed.pads == 1 && changed.frame == before.frame, JSON.stringify({ before, changed }));
+    await page.evaluate(() => {
+        const arc = document.createElement("garden-camera");
+        arc.setAttribute("type", "arc");
+        const follow = document.querySelector("garden-camera");
+        follow.after(arc);
+        follow.remove();
+    });
+    await page.waitForTimeout(800);
+    const gone = await hooks();
+    check("removed, its look pad and frame observer go", gone.pads == 0 && gone.frame < changed.frame, JSON.stringify({ changed, gone }));
 });

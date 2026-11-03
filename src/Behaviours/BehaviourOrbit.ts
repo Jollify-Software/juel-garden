@@ -21,7 +21,7 @@ interface OrbitState {
 /**
  * Continuously orbits the mesh around its parent element's position. Also
  * exposes `enter(obj)`/`leave(obj)` on the element (used by
- * {@link GardenWaypoint} to join/leave a camera to the same orbit while
+ * {@link "Components/Waypoint"!GardenWaypoint} to join/leave a camera to the same orbit while
  * preserving its world position).
  *
  * Attributes: `orbit-angle` (radians per frame, default `0.002`).

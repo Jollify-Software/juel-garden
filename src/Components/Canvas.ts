@@ -42,6 +42,9 @@ export class GardenCanvas extends GardenMesh {
         this.canvas = new Vector2(512, 256);
     }
 
+    /** The texture the last build drew on. */
+    private drawn: DynamicTexture;
+
     updated() {
         setTimeout(() => {
         let scene = this.getScene();
@@ -64,7 +67,11 @@ export class GardenCanvas extends GardenMesh {
             mat = new StandardMaterial('mat', scene);
             mesh.material = mat;
         }
-        let canvas = new DynamicTexture('canvas', {
+        // Built again for a change, the last build's texture goes (on a mesh's material it
+        // would otherwise stay in the scene, one more per change).
+        if (this.drawn && scene.textures.includes(this.drawn))
+            this.drawn.dispose();
+        let canvas = this.drawn = new DynamicTexture('canvas', {
             width: this.canvas.x,
             height: this.canvas.y
         }, scene);
@@ -90,7 +97,8 @@ export class GardenCanvas extends GardenMesh {
         switch (this.content) {
             case 'text':
                 let lines = this.textContent.trim().split('\n');
-                let p = this.point;
+                // A copy: moving `point` itself put the text lower on every rebuild.
+                let p = this.point.clone();
                 p.y += 50;
                 let colours = this.foreground.split(' ');
                 for (var i = 0; i < lines.length; i++) {

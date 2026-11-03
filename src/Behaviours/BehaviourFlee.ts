@@ -10,10 +10,10 @@ import { IBehaviourTarget } from "../IBehaviourTarget";
  * once, at apply-time, as its "home") otherwise -- so a scattered group
  * ambles back together afterwards instead of drifting off indefinitely.
  * Works against any {@link IBehaviourTarget} -- a `GardenMesh`'s `Mesh`, or
- * (applied once per placed sprite -- see {@link GardenSprite}) one instance
- * of a `<garden-sprite>` group via {@link SpriteBehaviourTarget}. A no-op
+ * (applied once per placed sprite -- see {@link "Components/Sprite"!GardenSprite}) one instance
+ * of a `<garden-sprite>` group via {@link "Behaviours/SpriteBehaviourTarget"!SpriteBehaviourTarget}. A no-op
  * unless `flee-target` is set. Pair with `terrain` (see
- * {@link BehaviourTerrain}) to also rest on a heightmap while fleeing --
+ * {@link "Behaviours/BehaviourTerrain"!BehaviourTerrain}) to also rest on a heightmap while fleeing --
  * the two run as independent observers over disjoint axes (this one only
  * ever touches x/z), so there's no ordering dependency between them.
  *

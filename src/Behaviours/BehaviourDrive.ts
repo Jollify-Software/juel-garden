@@ -15,8 +15,8 @@ import { IBehaviourTarget } from "../IBehaviourTarget";
  * Keyboard-driven (WASD/arrow keys) forward/back movement and left/right
  * steering, e.g. for a drivable car -- works against any
  * {@link IBehaviourTarget} (a `GardenMesh`'s `Mesh`, or one instance of a
- * `<garden-sprite>` group via {@link SpriteBehaviourTarget}). Pair with
- * `suspension` (see {@link BehaviourSuspension}) to also follow terrain, and
+ * `<garden-sprite>` group via {@link "Behaviours/SpriteBehaviourTarget"!SpriteBehaviourTarget}). Pair with
+ * `suspension` (see {@link "Behaviours/BehaviourSuspension"!BehaviourSuspension}) to also follow terrain, and
  * a `<garden-camera type="follow" target="#id">` to chase it.
  *
  * Attributes: `drive-speed` (max units/second, default `0.15`), `drive-turn`
@@ -50,9 +50,12 @@ export function BehaviourDrive(el: GardenElement, target: IBehaviourTarget, attr
     // rotation.y actually written to the mesh, never to the movement math.
     let facingOffset = Tools.ToRadians(Number(el.getAttribute("drive-facing-offset") ?? 0));
 
+    // Each build listens afresh; the last build's listeners go with it (a rebuild or a removal).
     let keys = new Set<string>();
-    window.addEventListener("keydown", e => keys.add(e.key.toLowerCase()));
-    window.addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+    let listening = new AbortController();
+    window.addEventListener("keydown", e => keys.add(e.key.toLowerCase()), { signal: listening.signal });
+    window.addEventListener("keyup", e => keys.delete(e.key.toLowerCase()), { signal: listening.signal });
+    el.whenDisposed(() => listening.abort());
 
     let speed = 0;
     let heading = target.rotation.y;

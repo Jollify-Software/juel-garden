@@ -24,7 +24,7 @@ export enum StepType{
     STEP_HEIGHT
 }
 
-/** Entry point {@link GardenStairs} calls into -- `curved`/`straight` generators. @category Shape Functions */
+/** Entry point {@link "Components/Prefab/Stairs"!GardenStairs} calls into -- `curved`/`straight` generators. @category Shape Functions */
 export module StairsFunctions {
     export var curved = CurvedStairs;
     export var straight = StraightStairs;

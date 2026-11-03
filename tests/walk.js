@@ -1,7 +1,8 @@
 // Browser test of the `walk` behaviour: camera-relative movement from real key presses,
 // turning to face the way it goes, running, `enabled`, the touch joystick, ground-following
 // on a height map, Havok's character controller (falls, stops at a wall) and the
-// `collisions` fallback. Run after a build: npm run test:walk.
+// `collisions` fallback, and that walk and drive let go of the keyboard when removed. Run after
+// a build: npm run test:walk.
 const { run } = require("./harness");
 
 const pos = id => `document.getElementById("${id}").mesh.position.asArray().map(n => +n.toFixed(2))`;
@@ -63,6 +64,30 @@ run(`
     after = await get("p");
     check("dragging the thumb pad up walks forward", after.p[2] - before.p[2] > 1, JSON.stringify([before.p, after.p]));
 
+    // A rebuild for a change keeps the one input and pad; removed for good, the pad and the
+    // keyboard listeners go; added back, it walks again with a pad of its own.
+    const pads = () => page.evaluate(() => document.querySelectorAll(".garden-walk-joystick").length);
+    const oldInput = await page.evaluate(() => (window.oldInput = document.getElementById("p").walker.input, 1));
+    await page.evaluate(() => document.getElementById("p").setAttribute("width", "0.7"));
+    await page.waitForTimeout(500);
+    const kept = await page.evaluate(() => document.getElementById("p").walker.input == window.oldInput);
+    check("a change keeps the walker's input and one pad", oldInput && kept && await pads() == 1, `kept ${kept}, pads ${await pads()}`);
+    await page.evaluate(() => { window.walkerEl = document.getElementById("p"); window.walkerEl.remove(); });
+    await page.waitForTimeout(300);
+    await page.keyboard.down("w");
+    await page.waitForTimeout(100);
+    const heard = await page.evaluate(() => window.oldInput.keys.size);
+    await page.keyboard.up("w");
+    check("removed for good: no walk pad, keys no longer heard", await pads() == 0 && heard == 0, `pads ${await pads()}, keys heard ${heard}`);
+    await page.evaluate(() => document.querySelector("garden-scene").appendChild(window.walkerEl));
+    await page.waitForTimeout(500);
+    before = await get("p");
+    await hold(["w"], 800);
+    after = await get("p");
+    const fresh = await page.evaluate(() => document.getElementById("p").walker.input != window.oldInput);
+    check("added back: walks again with a new input and one pad", after.p[2] - before.p[2] > 0.8 && fresh && await pads() == 1,
+        `${JSON.stringify([before.p, after.p])} fresh ${fresh}, pads ${await pads()}`);
+
     // Height map: the walker stays on the ground.
     await open(`
 <garden-scene>
@@ -121,4 +146,30 @@ run(`
     await hold(["w"], 2500);
     const slid = await page.evaluate(new Function(`return ${pos("p")}`));
     check("collisions: falls to the floor and stops at the wall", Math.abs(slid[1] - 0.9) < 0.15 && slid[2] > 2.5 && slid[2] < 3.5 - 0.25, JSON.stringify(slid));
+
+    // `drive` listens to the keyboard afresh on each build: a rebuild and a removal take the
+    // last build's listeners back (counted on window through the DevTools protocol).
+    await open(`
+<garden-scene>
+  <garden-camera type="arc" position="0 6 -12"></garden-camera>
+  <garden-light></garden-light>
+  <garden-box id="car" width="1" height="0.5" depth="2" position="0 0.25 0" drive></garden-box>
+</garden-scene>`);
+    const cdp = await page.context().newCDPSession(page);
+    const keydowns = async () => {
+        const { result } = await cdp.send("Runtime.evaluate", { expression: "window" });
+        const { listeners } = await cdp.send("DOMDebugger.getEventListeners", { objectId: result.objectId });
+        return listeners.filter(l => l.type == "keydown").length;
+    };
+    const first = await keydowns();
+    for (const speed of ["0.2", "0.25"]) {
+        await page.evaluate(s => document.getElementById("car").setAttribute("drive-speed", s), speed);
+        await page.waitForTimeout(300);
+    }
+    const rebuilt = await keydowns();
+    await page.evaluate(() => document.getElementById("car").remove());
+    await page.waitForTimeout(300);
+    const removed = await keydowns();
+    check("drive: a rebuild keeps one set of key listeners, a removal takes it back", first >= 1 && rebuilt == first && removed == first - 1,
+        `keydown listeners ${first} -> ${rebuilt} after two changes -> ${removed} after removal`);
 });

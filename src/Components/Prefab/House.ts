@@ -3,6 +3,22 @@ import { customElement } from "lit/decorators.js";
 import { GardenMesh } from "../../GardenMesh";
 
 /**
+ * Watches the elements inside a house that merges its children's meshes into one: the merge
+ * consumes those meshes, so a child's own rebuild (its `colour` or `width` changed) would
+ * leave the merged mesh as it was and a loose copy of the child beside it. A change of an
+ * attribute anywhere inside `host` rebuilds `host` instead, which has its children built
+ * again and merges them anew. Observe on connect, disconnect on disconnect.
+ *
+ * @category Components - Prefabs
+ */
+export function mergedChildrenWatcher(host: GardenMesh): MutationObserver {
+    return new MutationObserver(records => {
+        if (records.some(r => r.target != host && !/^(id|class|style|slot|data-.*|aria-.*)$/.test(r.attributeName)))
+            host.requestUpdate();
+    });
+}
+
+/**
  * A ready-made textured box house with a prism roof, merged into a single
  * mesh -- a direct port of the classic Babylon.js "village" tutorial house.
  * Has no configurable attributes; use `position`/`rotation`/`scale` to place
@@ -17,6 +33,18 @@ import { GardenMesh } from "../../GardenMesh";
  */
 @customElement("garden-house")
 export class GardenHouse extends GardenMesh {
+    private childWatcher = mergedChildrenWatcher(this);
+
+    connectedCallback() {
+        super.connectedCallback();
+        this.childWatcher.observe(this, { attributes: true, subtree: true });
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.childWatcher.disconnect();
+    }
+
     /**
      * The merge below consumes the walls' and roof's own meshes, so a rebuild has them
      * built again first (they're children: generated, or the author's).

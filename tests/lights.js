@@ -57,4 +57,19 @@ run(`
     await page.waitForTimeout(250);
     const b = await page.evaluate(() => document.getElementById("pulse").light.intensity);
     check("<garden-animation property=\"intensity\"> animates a light", a != b, `${a} -> ${b}`);
+
+    // type="hemispheric" is another name for "hemi".
+    const names = await page.evaluate(async () => {
+        const out = {};
+        for (const type of ["hemi", "hemispheric"]) {
+            const el = document.createElement("garden-light");
+            el.setAttribute("type", type);
+            document.querySelector("garden-scene").appendChild(el);
+            await el.updateComplete;
+            out[type] = el.light?.getClassName() ?? null;
+            el.remove();
+        }
+        return out;
+    });
+    check("type=\"hemispheric\" builds a hemispheric light, as \"hemi\" does", names.hemi == "HemisphericLight" && names.hemispheric == "HemisphericLight", JSON.stringify(names));
 });

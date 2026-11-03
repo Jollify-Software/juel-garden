@@ -12,7 +12,7 @@ import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
  * in scene units: positive bulges toward `rotate90(end - start)` (the chord
  * direction turned 90 degrees anticlockwise in XZ, i.e. `(dx, dz) -> (-dz, dx)`),
  * negative bulges the other way. A room wall slot picks the endpoint order so
- * that positive always bulges *outward* from the room (see {@link GardenRoom}).
+ * that positive always bulges *outward* from the room (see {@link "Components/Prefab/Room"!GardenRoom}).
  *
  * Returns `[start, ...interior, end]` with `segments` spans (so `segments + 1`
  * points). A zero/near-zero sagitta returns just `[start, end]` -- a straight

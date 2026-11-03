@@ -9,7 +9,7 @@ import { GardenInfo } from "./Info";
  * `<garden-animation>` id, it's a toggle: plays the animation on the first
  * click, stops it on the next (the target animation should be left without
  * `event="load"`, or given some other event value, so
- * {@link GardenMesh.modifyMesh} doesn't also auto-play it at build time).
+ * {@link "GardenMesh"!GardenMesh.modifyMesh} doesn't also auto-play it at build time).
  * Without `target` -- or for any listener that wants the click regardless --
  * it's a plain button: every click dispatches a `click` event on the
  * `<garden-button>` element itself (bubbling, so an `onclick="..."` attribute
@@ -79,6 +79,8 @@ export class GardenButton extends GardenControl {
         });
 
         info.container.appendChild(btn);
+        // Rebuilt for a change, or removed for good, the button leaves the card (no second one).
+        this.whenDisposed(() => btn.remove());
     }
 }
 

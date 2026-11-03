@@ -33,10 +33,10 @@ export interface GoToOptions {
 
 /**
  * Moves the camera around a scene from a link -- the in-scene half of
- * {@link GardenLink}. A jump to an element by id flies the camera there and
+ * {@link "Components/Link"!GardenLink}. A jump to an element by id flies the camera there and
  * pushes a `#id` history entry carrying the camera pose, so the browser's back
  * button flies back to where the visitor was, and a page opened as
- * `mall.html#shop-12` starts inside that shop. {@link GardenScene} installs
+ * `mall.html#shop-12` starts inside that shop. {@link "Components/Scene"!GardenScene} installs
  * the history handling once its camera is ready.
  *
  * @category Navigation
@@ -155,7 +155,7 @@ export module Navigation {
     /**
      * Back/forward and deep links: `#id` in the address names a scene element
      * to start at, and a history entry pushed by {@link goTo} carries the exact
-     * pose to return to. Called by {@link GardenScene} once its camera exists.
+     * pose to return to. Called by {@link "Components/Scene"!GardenScene} once its camera exists.
      */
     export function install(scene: Scene) {
         let follow = (state: any, duration?: number) => {
@@ -168,7 +168,10 @@ export module Navigation {
                 goTo(scene, el, { history: false, duration });
         };
         follow(history.state, 0);
-        window.addEventListener("popstate", evt => follow(evt.state));
+        let onPopState = (evt: PopStateEvent) => follow(evt.state);
+        window.addEventListener("popstate", onPopState);
+        // A scene removed for good (and one built again when added back) leaves no listener behind.
+        scene.onDisposeObservable.addOnce(() => window.removeEventListener("popstate", onPopState));
     }
 
     /** The scene element the address's `#id` names, if any -- other hashes (an app's `#/route`) are left alone. */

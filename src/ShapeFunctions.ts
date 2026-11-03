@@ -5,7 +5,7 @@ import { Utility } from "./Utility";
 /**
  * A small library of reusable point-list generators, callable directly from
  * markup inside a `points`/`shape` attribute via `Shape.xxx(...)` (see
- * {@link Vector3Convert.array}) -- e.g. `points="Shape.triangle()"`.
+ * {@link "Converters/Vector3Convert"!Vector3Convert.array}) -- e.g. `points="Shape.triangle()"`.
  *
  * @category Shape Functions
  */

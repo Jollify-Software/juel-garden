@@ -22,7 +22,7 @@ import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
 
 /**
  * Assembles a flat-shaded Babylon `Mesh` from a raw vert/face/uv list --
- * shared by {@link CurvedStairs} and {@link StraightStairs}.
+ * shared by {@link "ShapeFunctions/CurvedStairs"!CurvedStairs} and {@link "ShapeFunctions/StraightStairsFunction"!StraightStairs}.
  *
  * @category Shape Functions
  */

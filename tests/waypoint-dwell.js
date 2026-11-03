@@ -73,6 +73,33 @@ run(`
         });
     });
     check("the reticle's ring and disc have dark edges on the camera", edges.every(e => e && e.onCamera && e.dark && !e.pickable), JSON.stringify(edges));
+    // Removed for good, the waypoint takes its observers, reticle and ring with it (clicks
+    // flew the camera on, and they stayed in the scene); added back, it builds them again.
+    const removal = await page.evaluate(async () => {
+        const wait = ms => new Promise(r => setTimeout(r, ms));
+        const w = document.querySelector("garden-waypoint"), cam = w.parentElement, s = document.querySelector("garden-scene").scene;
+        const count = () => ({ pointer: s.onPointerObservable.observers.length, frame: s.onBeforeRenderObservable.observers.length,
+            markers: s.meshes.filter(m => m.name.startsWith("waypoint-")).length,
+            materials: s.materials.filter(m => m.name.startsWith("waypoint-")).length });
+        await wait(1500); // any fly done: a fly adds a frame observer of its own while it flies
+        const built = count();
+        // dwell is 0 by now (above), so built again it has the next-stop ring only.
+        w.remove();
+        await wait(200);
+        const gone = count();
+        cam.appendChild(w);
+        await wait(1500);
+        const back = count();
+        const at = w.index;
+        w.next();
+        return { built, gone, back, moved: w.index != at };
+    });
+    check("a waypoint removed for good leaves no observers, reticle or ring",
+        removal.gone.pointer == removal.built.pointer - 1 && removal.gone.frame == removal.built.frame - 1
+        && removal.built.markers == 5 && removal.gone.markers == 0 && removal.gone.materials == 0, JSON.stringify(removal));
+    check("…and added back builds them again and flies",
+        removal.back.pointer == removal.built.pointer && removal.back.frame == removal.built.frame
+        && removal.back.markers == removal.back.materials && removal.back.markers >= 1 && removal.moved, JSON.stringify(removal));
     if (process.env.SHOT) {
         await page.evaluate(() => { const w = document.querySelector("garden-waypoint"); w.dwell = 600; });
         await lookAt("a");

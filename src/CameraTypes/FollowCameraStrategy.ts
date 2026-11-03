@@ -93,6 +93,10 @@ export interface ShowOptions {
  * place (an angle needs `free-look`). The look controls are ignored while it
  * shows something. See {@link ShowOptions}.
  *
+ * Disposing the camera (its element removed, or rebuilt for a change) takes
+ * back its look pad, key and pointer listeners and per-frame chase, and ends
+ * a swing under way.
+ *
  * @example
  * ```ts
  * const camera = (document.querySelector("garden-camera") as any).camera;
@@ -174,13 +178,18 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
         return (<any>cam).swingTo(to, options.seconds ?? (options.keepAngle ? 0.5 : 1.6));
     };
     Object.defineProperty(cam, "showing", { get: () => !!showing });
+    // Everything below that hooks into the page or the scene is taken back when the camera is
+    // disposed (its element removed, or rebuilt for a change): the listeners through `hooks`,
+    // the frame observer and the look pad at the end.
+    let hooks = new AbortController();
+    let listening = { signal: hooks.signal };
     let keys = new Set<string>();
     window.addEventListener("keydown", e => {
         let t = e.target as HTMLElement;
         if (!(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))) keys.add(e.key.toLowerCase());
-    });
-    window.addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
-    window.addEventListener("blur", () => keys.clear());
+    }, listening);
+    window.addEventListener("keyup", e => keys.delete(e.key.toLowerCase()), listening);
+    window.addEventListener("blur", () => keys.clear(), listening);
     let pad: ThumbPad = null;
     /** The look sticks' turn (x, right) and tilt (y, up) now, each -1..1. */
     let lookInput = () => {
@@ -211,19 +220,19 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
     let drag: { id: number, x: number, y: number } = null;
     canvas?.addEventListener("pointerdown", e => {
         if (state.freeLook && !drag) drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
-    });
+    }, listening);
     canvas?.addEventListener("pointermove", e => {
         if (!drag || e.pointerId != drag.id || orbitAngle == null) return;
         orbitAngle += (e.clientX - drag.x) * 0.006;
         state.heightOffset = Math.max(0.3, Math.min(state.radius * 2, state.heightOffset + (e.clientY - drag.y) * 0.02));
         drag.x = e.clientX;
         drag.y = e.clientY;
-    });
+    }, listening);
     let endDrag = (e: PointerEvent) => { if (drag?.id == e.pointerId) drag = null; };
-    canvas?.addEventListener("pointerup", endDrag);
-    canvas?.addEventListener("pointercancel", endDrag);
+    canvas?.addEventListener("pointerup", endDrag, listening);
+    canvas?.addEventListener("pointercancel", endDrag, listening);
 
-    scene.onBeforeRenderObservable.add(() => {
+    let frame = scene.onBeforeRenderObservable.add(() => {
         let target = state.chaseTarget;
         if (!target) {
             return;
@@ -304,6 +313,15 @@ export const FollowCameraStrategy: ICameraTypeStrategy = (el, scene) => {
         cam.position.addInPlace(velocity.scale(dt));
 
         cam.setTarget(lookAt.add(new Vector3(0, state.lookOffset, 0)));
+    });
+
+    cam.onDisposeObservable.addOnce(() => {
+        hooks.abort();
+        frame.remove();
+        pad?.dispose();
+        pad = null;
+        // A swing under way ends, so a page awaiting `swingTo()`/`unshow()` isn't left waiting.
+        endSwing();
     });
 
     return cam;

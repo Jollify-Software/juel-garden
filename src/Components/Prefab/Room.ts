@@ -63,7 +63,7 @@ const WALL_SIDES: WallSide[] = ["north", "east", "south", "west"];
  * A room: a floor plus walls, merged into one mesh with a `MultiMaterial` so
  * each surface can carry its own colour or texture. Combine several under a
  * `<garden-structure>` to have shared walls auto-cut into doorways (see
- * {@link GardenStructure}), or add a `<garden-roof>` child.
+ * {@link "Components/Prefab/Structure"!GardenStructure}), or add a `<garden-roof>` child.
  *
  * With no children a room is a plain rectangular box (`width` x `depth` x
  * `height`). Any of its four sides can instead be a `<garden-wall
@@ -176,8 +176,8 @@ export class GardenRoom extends GardenMesh {
 
     /**
      * The room's wall-outline centreline in local space (open ring, no repeated
-     * closing point), set by {@link buildWithWallSlots} / {@link buildRotunda} /
-     * {@link buildPolygon}.
+     * closing point), set by the private builders `buildWithWallSlots` /
+     * `buildRotunda` / `buildPolygon`.
      * `<garden-structure>` reads it to auto-join a curved room to a neighbour,
      * since such a room's bounding box bulges past its real wall line. Left
      * undefined for a plain box room (the box test handles those).
@@ -557,7 +557,7 @@ export class GardenRoom extends GardenMesh {
      * a later cut doesn't survive it.
      *
      * For the two-slot model (rotunda or `<garden-wall>` slots -- see
-     * {@link twoSlotModel}) there is no north/east/south/west geometry to classify;
+     * the private `twoSlotModel` flag) there is no north/east/south/west geometry to classify;
      * submeshes are split floor vs. wall by height alone.
      */
     fixMaterialIndices(): void {

@@ -1,6 +1,7 @@
 import { Animation } from "@babylonjs/core/Animations/animation";
 import { Camera } from "@babylonjs/core/Cameras/camera";
 import { PointerEventTypes } from "@babylonjs/core/Events/pointerEvents";
+import type { PointerInfo } from "@babylonjs/core/Events/pointerEvents";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
@@ -23,7 +24,7 @@ import { GardenMesh } from "../GardenMesh";
  * Must be a child of `<garden-camera>`.
  *
  * Attributes: `waypoints` (a selector resolving the tour stops, see
- * {@link resolveElements}), `offset` (a `Vector3` added to every stop's
+ * {@link "Utils/resolveElements"!resolveElements}), `offset` (a `Vector3` added to every stop's
  * position, e.g. eye height; none if unset), `speed` (the fly-to
  * animation's speed ratio: 1, the default, takes about 3.3 s, 2 twice as
  * fast; headsets want 2 or more), `dwell` (look-and-hold: milliseconds of
@@ -37,8 +38,10 @@ import { GardenMesh } from "../GardenMesh";
  * with Ctrl, Alt or Meta, are left alone).
  *
  * A stop with a `look-at` attribute (a selector, or an `"x y z"` point) is faced on
- * arrival, the camera turning as it flies; without one the camera aims at the
- * scene's origin as it sets off (Parterre's slide platforms look at their panels).
+ * arrival, the camera turning as it flies, and at start on the first stop; without
+ * one the camera aims at the scene's origin as it sets off, or looks level (+Z) when
+ * the origin is straight below or above it (Parterre's slide platforms look at their
+ * panels; its first automatic platform is at the origin).
  *
  * Methods: {@link next} and {@link previous} fly along the order;
  * {@link go} flies to a stop by its index. Each move fires
@@ -67,6 +70,12 @@ export class GardenWaypoint extends GardenElement {
     private lookedMs = 0;
     /** The stops are being resolved: a second update meanwhile (another property set before the document was ready) leaves them to it. */
     private resolving = false;
+    /** The `waypoints` selector last given, kept to build again after removal for good. */
+    private selector: string;
+    /** What a build added to the scene, for {@link dispose}. */
+    private built: { scene: Scene, pointer: Observer<PointerInfo>, frame: Observer<Scene> } | null = null;
+    /** The reticle's and next-stop ring's meshes. */
+    private markers: Mesh[] = [];
 
     connectedCallback() {
         super.connectedCallback();
@@ -94,12 +103,18 @@ export class GardenWaypoint extends GardenElement {
     };
 
     async updated() {
-        if (typeof this.waypoints !== 'string' || this.resolving)
+        if (this.resolving)
+            return;
+        // A new selector builds; otherwise only an element added back after removal for good
+        // (which disposed the last build) builds again from the one it had.
+        if (typeof this.waypoints === 'string')
+            this.selector = this.waypoints;
+        else if (this.built || !this.selector)
             return;
 
         // Read before any await: by the time this one resumes, another update may have
         // replaced the string with the resolved stops (the `n.trim is not a function` race).
-        const selector = this.waypoints;
+        const selector = this.selector;
         this.resolving = true;
         this.beginBuild();
         try {
@@ -114,9 +129,16 @@ export class GardenWaypoint extends GardenElement {
             this.waypoints = await GardenElement.resolveReady<GardenMesh>(selector);
 
             let scene = this.getScene();
-            this.setPosition(this.waypoints[this.index].getPosition());
+            // On the first stop, facing its `look-at` as arriving there would (a selector waits
+            // for its element: a platform's panel is built after the platform).
+            const first = this.waypoints[this.index];
+            const look = first?.getAttribute("look-at")?.trim();
+            if (look && !/^[-+\d.eE\s]+$/.test(look))
+                await GardenElement.resolveReady(look).catch(() => undefined);
+            this.setPosition(first.getPosition(), this.lookPointOf(first));
 
-            scene.onPointerObservable.add((pointerInfo) => {
+            this.disposeBuilt();
+            const pointer = scene.onPointerObservable.add((pointerInfo) => {
                 switch (pointerInfo.type) {
                     case PointerEventTypes.POINTERDOWN:
                         if (pointerInfo.pickInfo.hit) {
@@ -128,11 +150,33 @@ export class GardenWaypoint extends GardenElement {
             });
 
             this.buildMarkers();
-            scene.onBeforeRenderObservable.add(() => this.onFrame());
+            const frame = scene.onBeforeRenderObservable.add(() => this.onFrame());
+            this.built = { scene, pointer, frame };
         } finally {
             this.resolving = false;
             this.endBuild();
         }
+    }
+
+    /** Removed for good: its observers, reticle and next-stop ring leave the scene. */
+    protected dispose() {
+        this.disposeBuilt();
+        super.dispose();
+    }
+
+    private disposeBuilt() {
+        if (!this.built)
+            return;
+        // The scene it was built in: once removed, getScene() finds none up the page.
+        const scene = this.built.scene;
+        scene.onPointerObservable.remove(this.built.pointer);
+        scene.onBeforeRenderObservable.remove(this.built.frame);
+        this.built = null;
+        for (const m of this.markers)
+            if (!m.isDisposed()) m.dispose(false, true);
+        this.markers = [];
+        this.reticle = null;
+        this.nextRing = null;
     }
 
     /** The stop a picked mesh belongs to (its own mesh, or one of its children). */
@@ -184,11 +228,13 @@ export class GardenWaypoint extends GardenElement {
             // The edge grows with the disc: a child of it, a little behind.
             edge.parent = this.reticle;
             edge.position.z = d * 0.0005;
+            this.markers.push(outline, ring, edge, this.reticle);
         }
         if (this.highlightNext) {
             this.nextRing = MeshBuilder.CreateTorus("waypoint-next", { diameter: 1.6, thickness: 0.08, tessellation: 48 }, scene);
             this.nextRing.material = unlit("waypoint-next", "#ffd166", 0.9);
             this.nextRing.isPickable = false;
+            this.markers.push(this.nextRing);
             this.placeNextRing();
         }
     }
@@ -323,12 +369,17 @@ export class GardenWaypoint extends GardenElement {
         return target?.getPosition?.() ?? undefined;
     }
 
-    setPosition(pos: Vector3) {
+    /** Puts the camera on a stop (plus `offset`), facing `lookAt` when given, else the origin. */
+    setPosition(pos: Vector3, lookAt?: Vector3) {
         if (this.offset)
             pos = pos.add(this.offset);
 
         (<any>this.parentElement).setPosition(pos);
-        this.lookAtOrigin();
+        let camera = (<any>this.parentElement).camera;
+        if (lookAt && camera && 'setTarget' in camera)
+            camera.setTarget(lookAt);
+        else
+            this.lookAtOrigin();
     }
 
     // A fresh FreeCamera keeps whatever rotation it was constructed with (facing
@@ -337,10 +388,15 @@ export class GardenWaypoint extends GardenElement {
     // whatever that stop is meant to show. The waypoint markers/content in these
     // tours tend to sit near the world origin, so aiming there on every move is a
     // reasonable default look direction without needing a per-waypoint "look at".
+    // A stop at (or right above) the origin would aim the camera straight down at it:
+    // then it looks level, ahead (+Z), instead.
     lookAtOrigin() {
         let camera = (<any>this.parentElement).camera;
-        if (camera && 'setTarget' in camera)
-            camera.setTarget(Vector3.Zero());
+        if (!camera || !('setTarget' in camera))
+            return;
+        let at = camera.position as Vector3;
+        let level = Math.hypot(at.x, at.z) < 0.5 * Math.abs(at.y) || Math.hypot(at.x, at.z) < 0.01;
+        camera.setTarget(level ? new Vector3(at.x, at.y, at.z + 1) : Vector3.Zero());
     }
 
     /** Flies to the next stop in order (after the last, the first). */

@@ -9,6 +9,7 @@ import { PhysicsEventType, PhysicsMotionType, PhysicsShapeType } from "@babylonj
 import { PointerEventTypes } from "@babylonjs/core/Events/pointerEvents";
 import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
+import { Node } from "@babylonjs/core/node";
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import "@babylonjs/core/Meshes/thinInstanceMesh";
@@ -90,7 +91,7 @@ const shapeByTag: {[tag: string]: PhysicsShapeType} = {
  *
  * `layer-mask` (a number, `0x...` hex allowed) is the mesh's Babylon `layerMask`
  * (its parts' too): only cameras whose `layer-mask` shares a bit with it see it
- * (see {@link GardenCamera}).
+ * (see {@link "Components/Camera"!GardenCamera}).
  *
  * Script API: {@link impulse}, {@link getVelocity}, {@link setVelocity},
  * {@link stop}, {@link teleport}, {@link removePhysics}, and the underlying
@@ -172,6 +173,7 @@ export abstract class GardenMesh extends GardenElement {
      * element's share included); a physics body is teleported there.
      */
     applyTransform() {
+        this.reflectTransform();
         if (!this.mesh)
             return;
         let { position, rotation, scaling } = Modifier.transformOf(this);
@@ -191,6 +193,37 @@ export abstract class GardenMesh extends GardenElement {
         }
     }
 
+    /**
+     * A `position`, `rotation` or `scale` property set from code (`box.position = new Vector3(1, 0, 2)`)
+     * onto its attribute, which is what the build and {@link applyTransform} read (a parent element's
+     * share is added there). The values keep the attribute's units: `rotation` in degrees. A property
+     * that came from its attribute is left alone, so an expression such as `(Math.PI) 0 0` stays.
+     *
+     * @example
+     * ```js
+     * const box = document.querySelector("garden-box");
+     * box.position = new BABYLON.Vector3(0, 1, -2); // moves the box; its attribute now reads "0 1 -2"
+     * ```
+     */
+    private reflectTransform() {
+        for (let key of ["position", "rotation", "scale"]) {
+            let value = this[key] as Vector3;
+            if (!value || ![value.x, value.y, value.z].every(n => typeof n == "number" && !isNaN(n)))
+                continue;
+            let attr = this.getAttribute(key);
+            let parsed = attr == null ? null : Vector3Convert.fromString(attr);
+            if (parsed && parsed.x == value.x && parsed.y == value.y && parsed.z == value.z)
+                continue;
+            this.setAttribute(key, `${value.x} ${value.y} ${value.z}`);
+        }
+    }
+
+    /** A transform property set from code reaches the attribute before the build or move reads it. */
+    protected shouldUpdate(changed: Map<PropertyKey, unknown>): boolean {
+        this.reflectTransform();
+        return super.shouldUpdate(changed);
+    }
+
     /** Before a rebuild for a change: the body goes too (setMesh replaces the mesh itself). */
     protected unbuild() {
         this.removePhysics();
@@ -199,13 +232,14 @@ export abstract class GardenMesh extends GardenElement {
 
     setMesh(mesh: Mesh) {
         this.removePhysics();
-        let orphans: TransformNode[] = [];
+        let orphans: Node[] = [];
         let worn: Set<Material> = new Set();
         if (this.mesh) {
-            // Other elements' nodes move onto the new mesh; this build's own parts (a wall's
-            // caps) were made again with it, so the old ones go.
-            orphans = this.mesh.getChildTransformNodes(true).concat(this.mesh.getChildMeshes(true))
-                .filter(node => this.belongsToOther(node));
+            // Other elements' nodes, and nodes a page or game hung on the mesh after it was
+            // built (a character's model, a light), move onto the new mesh; this build's own
+            // parts (a wall's caps) were made again with it, so the old ones go.
+            orphans = this.mesh.getChildren(undefined, true)
+                .filter(node => this.belongsToOther(node) || !this.builtParts.has(node));
             worn = this.disposeBuilt(this.mesh, orphans);
         }
 
@@ -238,7 +272,11 @@ export abstract class GardenMesh extends GardenElement {
         if (this.hasAttribute("physics"))
             this.attachPhysics(mesh);
         GardenMesh.disposeUnworn(worn);
+        this.builtParts = new WeakSet<Node>([mesh as Node].concat(mesh.getDescendants(false)));
     }
+
+    /** What this element's last build made (anything else under its mesh was added later). */
+    private builtParts = new WeakSet<Node>();
 
     /** `grid`: the mesh's thin instances, in a block of nx x ny x nz, and their `instance-colours`. */
     private makeGrid(mesh: Mesh) {
@@ -310,7 +348,7 @@ export abstract class GardenMesh extends GardenElement {
         return turns;
     }
 
-    private belongsToOther(node: TransformNode): boolean {
+    private belongsToOther(node: Node): boolean {
         let el = (<any>node).element;
         return el != null && el != this;
     }
@@ -319,10 +357,10 @@ export abstract class GardenMesh extends GardenElement {
      * Disposes `mesh` and this build's own parts under it, leaving `keep` (other
      * elements' nodes); gives back the materials they wore, for {@link disposeUnworn}.
      */
-    private disposeBuilt(mesh: Mesh, keep: TransformNode[] = []): Set<Material> {
+    private disposeBuilt(mesh: Mesh, keep: Node[] = []): Set<Material> {
         let worn = new Set<Material>();
-        let parts = [mesh as TransformNode].concat(mesh.getDescendants(false, node =>
-            !keep.some(k => k == node || node.isDescendantOf(k))) as TransformNode[]);
+        let parts = [mesh as Node].concat(mesh.getDescendants(false, node =>
+            !keep.some(k => k == node || node.isDescendantOf(k))));
         for (let part of parts)
             for (let material of GardenMesh.materialsOf(part))
                 worn.add(material);
@@ -334,7 +372,7 @@ export abstract class GardenMesh extends GardenElement {
         return worn;
     }
 
-    private static materialsOf(node: TransformNode): Material[] {
+    private static materialsOf(node: Node): Material[] {
         let material = (<any>node).material as Material;
         if (!material) return [];
         return material instanceof MultiMaterial ? [material as Material].concat(material.subMaterials.filter(m => m)) : [material];
@@ -344,7 +382,7 @@ export abstract class GardenMesh extends GardenElement {
      * Disposes the materials in `materials` that no mesh wears any more, unless a
      * `<garden-material>` owns them, with their textures unless a `<garden-texture>` owns those.
      */
-    private static disposeUnworn(materials: Set<Material>) {
+    protected static disposeUnworn(materials: Set<Material>) {
         for (let material of materials) {
             if (GardenMaterial.owned.has(material) || material.getBindedMeshes().length ||
                 !material.getScene()?.materials.includes(material))
@@ -558,11 +596,20 @@ export abstract class GardenMesh extends GardenElement {
         // Wait for that step to begin first: called from inside the physics step (a
         // garden-rest or garden-collide listener), an after-physics observer added now
         // would run in this same pass, before the body ever got the new transform.
+        // Only the latest teleport hands the body back: an earlier one's clean-up can run
+        // after a later teleport (one from an after-physics listener registered before it),
+        // and would switch the pre-step off before the body ever got the later position.
         body.disablePreStep = false;
+        const teleport = ++this.teleports;
         const scene = this.getScene();
         scene.onBeforePhysicsObservable.addOnce(() =>
-            scene.onAfterPhysicsObservable.addOnce(() => body.disablePreStep = true));
+            scene.onAfterPhysicsObservable.addOnce(() => {
+                if (teleport == this.teleports) body.disablePreStep = true;
+            }));
     }
+
+    /** How many times teleport() has been called: only the latest one's clean-up runs. */
+    private teleports = 0;
 
     /** Disposes the physics body (e.g. a ball that has been potted). The mesh stays. */
     removePhysics() {

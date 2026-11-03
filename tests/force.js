@@ -58,4 +58,79 @@ run(`
     await page.evaluate(() => { pull.stop(); whirl.stop(); });
     const stopped = await page.evaluate(() => pull.active || whirl.active);
     check("stop() turns a field off", !stopped);
+
+    // event="load" waits for a frame after its build: one added and left in goes off once; one
+    // removed in that wait doesn't (and its field isn't left on with nothing to stop it).
+    const late = await page.evaluate(async () => {
+        const scene = document.querySelector("garden-scene"), out = {};
+        for (const remove of [false, true]) {
+            const f = document.createElement("garden-force");
+            for (const [k, v] of Object.entries({ type: "updraft", position: "40 0 40", radius: "2", event: "load", show: "" }))
+                f.setAttribute(k, v);
+            let fired = 0;
+            f.addEventListener("garden-force", () => fired++);
+            scene.appendChild(f);
+            await f.updateComplete;
+            await f.whenReady;
+            const frame = scene.scene.getFrameId();
+            if (remove) f.remove();
+            const sameFrame = scene.scene.getFrameId() == frame;
+            await new Promise(r => setTimeout(r, 500));
+            out[remove ? "removed" : "kept"] = { fired, sameFrame, active: f.active };
+            if (!remove) f.remove();
+        }
+        out.shown = scene.scene.meshes.filter(m => m.name == "force").length;
+        return out;
+    });
+    check("an event=\"load\" force added later goes off once", late.kept.fired == 1 && late.kept.active, JSON.stringify(late));
+    check("one removed before its first frame doesn't go off", late.removed.sameFrame && late.removed.fired == 0 &&
+        !late.removed.active && late.shown == 0, JSON.stringify(late));
+
+    // A change after an event="load" force went off: a field that's on stays on with the new
+    // values (no second garden-force); an explosion, or a field whose duration ran out, isn't
+    // set off again.
+    const changed = await page.evaluate(async () => {
+        const scene = document.querySelector("garden-scene"), wait = ms => new Promise(r => setTimeout(r, ms));
+        const make = attrs => {
+            const f = document.createElement("garden-force");
+            for (const [k, v] of Object.entries({ position: "40 0 -40", radius: "2", event: "load", ...attrs }))
+                f.setAttribute(k, v);
+            f.fired = 0;
+            f.addEventListener("garden-force", () => f.fired++);
+            scene.appendChild(f);
+            return f;
+        };
+        const field = make({ type: "updraft" }), blast = make({ type: "explosion" }), brief = make({ type: "vortex", duration: "200" });
+        await wait(600);
+        const before = { field: field.active, briefActive: brief.active };
+        for (const f of [field, blast, brief]) f.setAttribute("radius", "3");
+        await wait(300);
+        const out = {
+            before,
+            field: { fired: field.fired, active: field.active },
+            blast: { fired: blast.fired },
+            brief: { fired: brief.fired, active: brief.active },
+        };
+        for (const f of [field, blast, brief]) f.remove();
+
+        // A field on for a duration keeps what's left of it after a change, not a fresh one.
+        const timed = make({ type: "gravity", duration: "1000" });
+        await new Promise(r => timed.addEventListener("garden-force", r, { once: true }));
+        const start = performance.now();
+        await wait(500);
+        timed.setAttribute("strength", "5");
+        await wait(250);
+        out.timed = { at750: timed.active };
+        await wait(1000 - (performance.now() - start) + 250);
+        out.timed.after = timed.active;
+        out.timed.ms = Math.round(performance.now() - start);
+        timed.remove();
+        return out;
+    });
+    check("a change keeps an on field on with the new values, without going off again",
+        changed.before.field && changed.field.active && changed.field.fired == 1, JSON.stringify(changed));
+    check("a change doesn't set off an explosion again, or a field whose duration ran out",
+        changed.blast.fired == 1 && changed.brief.fired == 1 && !changed.before.briefActive && !changed.brief.active, JSON.stringify(changed));
+    check("a field changed part-way through its duration goes off when the first duration ends",
+        changed.timed.at750 && !changed.timed.after, JSON.stringify(changed.timed));
 });

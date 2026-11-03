@@ -21,7 +21,7 @@ import { StepType } from "./Stairs";
  */
 
 /**
- * Generates a straight staircase mesh. Used by {@link GardenStairs} when no
+ * Generates a straight staircase mesh. Used by {@link "Components/Prefab/Stairs"!GardenStairs} when no
  * `curvature` attribute is set. Ported from the kitfox.com stairs generator.
  *
  * @category Shape Functions

@@ -40,5 +40,7 @@ export class GardenText extends GardenControl {
         this.applyProperties(el);
 
         parent.container.appendChild(el);
+        // Rebuilt for a change, or removed for good, the row leaves the card (no second row).
+        this.whenDisposed(() => el.remove());
     }
 }

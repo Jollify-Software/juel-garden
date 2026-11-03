@@ -1,5 +1,5 @@
 /**
- * The shape every entry in {@link OptionsBuilder}'s and {@link Modifier}'s
+ * The shape every entry in {@link "Options/OptionsBuilder"!OptionsBuilder}'s and {@link "Modifiers/Modifier"!Modifier}'s
  * attribute maps implements: read one named attribute off `attr` and write
  * the converted value into `options` (mutated in place), ready to be spread
  * onto a Babylon `MeshBuilder` options object or assigned straight onto a

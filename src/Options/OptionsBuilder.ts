@@ -11,7 +11,7 @@ import { OptionsVector3ArraySetter } from "./OptionsVector3ArraySetter";
  * Builds the plain options object handed to a Babylon `MeshBuilder.Create*`
  * call (and a few other shared numeric/converter attributes, like camera
  * tuning) from an element's attributes, dispatching each to its
- * {@link ISetter}. Called by {@link GardenElement.buildOptions}.
+ * {@link ISetter}. Called by {@link "GardenElement"!GardenElement.buildOptions}.
  *
  * @category Options
  */
