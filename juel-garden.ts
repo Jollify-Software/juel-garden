@@ -44,6 +44,7 @@ export * from "./src/Components/Box";
 export * from "./src/Components/Torus";
 export * from "./src/Components/TorusKnot";
 export * from "./src/Components/Pipeline";
+export * from "./src/Components/Glow";
 export * from "./src/Components/PostProcess";
 export * from "./src/Components/NodeGeometry";
 export * from "./src/Components/Sphere";

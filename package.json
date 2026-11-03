@@ -81,6 +81,8 @@
     "test:arc-camera": "node tests/arc-camera.js",
     "test:grab": "node tests/grab.js",
     "test:node-material": "node tests/node-material.js",
+    "test:mesh-emitter": "node tests/mesh-emitter.js",
+    "test:glow": "node tests/glow.js",
     "test:pipeline": "node tests/pipeline.js",
     "test:device-environment": "node tests/device-environment.js",
     "test:shadow-casters": "node tests/shadow-casters.js",
