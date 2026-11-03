@@ -180,7 +180,8 @@ export class GardenWaypoint extends GardenElement {
     }
 
     /** The stop a picked mesh belongs to (its own mesh, or one of its children). */
-    private stopOf(mesh: AbstractMesh | null | undefined): GardenMesh | undefined {
+    /** The stop whose platform `mesh` is (or is part of); a tap there goes to it. */
+    stopOf(mesh: AbstractMesh | null | undefined): GardenMesh | undefined {
         for (let m = mesh; m; m = m.parent instanceof AbstractMesh ? m.parent : null) {
             const wp = this.waypoints.find(x => x.mesh == m);
             if (wp) return wp;

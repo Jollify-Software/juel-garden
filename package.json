@@ -40,6 +40,7 @@
     "copy-wasm": "node -e \"require('fs').copyFileSync('node_modules/@babylonjs/havok/lib/esm/HavokPhysics.wasm','dist/HavokPhysics.wasm')\"",
     "test:physics": "node tests/physics-zero-g.js",
     "test:link": "node tests/link.js",
+    "test:touch-move": "node tests/touch-move.js",
     "test:model": "node tests/model.js",
     "copy-decoders": "node -e \"require('fs').cpSync('vendor/decoders','dist/decoders',{recursive:true,filter:f=>!f.endsWith('.md')})\"",
     "test:polygon": "node tests/polygon.js",

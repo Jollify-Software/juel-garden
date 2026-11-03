@@ -16,7 +16,23 @@ export interface ThumbPadOptions {
     onStart?: () => void;
     onMove?: () => void;
     onEnd?: () => void;
+    /**
+     * `floating` only: after this many milliseconds untouched, the resting ring fades out
+     * altogether (it still comes back under the thumb). Left out, it stays faded in its corner.
+     */
+    idleFade?: number;
+    /**
+     * `floating` only: a quick touch that doesn't move (a tap, not a push of the stick) is
+     * passed here, with the stick left untouched, so whatever is under the finger can take it.
+     */
+    onTap?: (x: number, y: number) => void;
 }
+
+/** A touch shorter than this (ms), that moves less than {@link TapSlop} px, is a tap. */
+const TapTime = 300;
+const TapSlop = 10;
+/** The resting ring's opacity in `floating` mode. */
+const RestOpacity = ".45";
 
 /**
  * An on-screen thumb pad for touch screens: a ring in a bottom corner with a
@@ -63,12 +79,15 @@ export class ThumbPad {
             host.appendChild(zone);
             grab = zone;
             base.style.pointerEvents = "none";
-            base.style.opacity = ".45";
+            base.style.opacity = RestOpacity;
+            base.style.transition = "opacity .6s";
         }
         host.appendChild(base);
+        this.rest();
 
         let pointer: number = null;
         let centre = { x: 0, y: 0 };
+        let down = { x: 0, y: 0, t: 0 };
         let move = (e: PointerEvent) => {
             let dx = e.clientX - centre.x, dy = e.clientY - centre.y;
             let max = size / 2, length = Math.hypot(dx, dy);
@@ -82,11 +101,14 @@ export class ThumbPad {
             if (pointer != null) return;
             pointer = e.pointerId;
             grab.setPointerCapture(pointer);
+            down = { x: e.clientX, y: e.clientY, t: performance.now() };
+            clearTimeout(this.fadeTimer);
             if (o.mode == "floating") {
                 // The ring jumps to the thumb.
                 base.style.left = `${e.clientX - size / 2}px`;
                 base.style.top = `${e.clientY - size / 2}px`;
                 base.style.right = base.style.bottom = "auto";
+                base.style.transition = "none"; // under the thumb at once; it fades out slowly
                 base.style.opacity = "1";
             }
             let r = base.getBoundingClientRect();
@@ -108,12 +130,28 @@ export class ThumbPad {
                 base.style.left = base.style.right = base.style.top = base.style.bottom = "";
                 base.style[o.side] = "24px";
                 base.style.bottom = "24px";
-                base.style.opacity = ".45";
+                this.rest();
             }
             o.onEnd?.();
+            let tap = e.type == "pointerup" && performance.now() - down.t < TapTime
+                && Math.hypot(e.clientX - down.x, e.clientY - down.y) < TapSlop;
+            if (tap && o.mode == "floating")
+                o.onTap?.(e.clientX, e.clientY);
         };
         grab.addEventListener("pointerup", end);
         grab.addEventListener("pointercancel", end);
+    }
+
+    private fadeTimer: any;
+
+    /** Back to resting: faded in its corner, then (with `idleFade`) gone until touched. */
+    private rest() {
+        if (this.options.mode != "floating") return;
+        this.element.style.transition = "opacity .6s";
+        this.element.style.opacity = RestOpacity;
+        clearTimeout(this.fadeTimer);
+        if (this.options.idleFade != null)
+            this.fadeTimer = setTimeout(() => { if (!this.active) this.element.style.opacity = "0"; }, this.options.idleFade);
     }
 
     /** Shows or hides it (hidden, it lets go and ignores touches). */
@@ -129,6 +167,7 @@ export class ThumbPad {
     }
 
     dispose() {
+        clearTimeout(this.fadeTimer);
         this.element.remove();
         this.zone?.remove();
     }
