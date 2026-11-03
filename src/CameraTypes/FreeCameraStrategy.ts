@@ -4,8 +4,10 @@ import { VirtualJoysticksCamera } from "@babylonjs/core/Cameras/virtualJoysticks
 import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 
 /**
- * `type="free"`: WASD/arrow-key + mouse-look free-fly camera, or a
- * touch-joystick camera on a tablet when `touch="true"` (the default).
+ * `type="free"`: WASD/arrow-key + mouse-look free-fly camera. On a touch screen
+ * `touch="true"` (the default) adds tap-the-floor and a fading thumbstick to walk
+ * ({@link "CameraTypes/CameraTouchMove"!CameraTouchMove}, built by the camera element);
+ * `touch="joysticks"` is Babylon's two on-screen joysticks instead (tablets only).
  * `keys="arrows"`: the arrow keys only; `keys="none"`: no keys. See
  * {@link "Components/Camera"!GardenCamera}.
  *
@@ -15,7 +17,7 @@ export const FreeCameraStrategy: ICameraTypeStrategy = (el, scene) => {
     let cam: FreeCamera;
     const userAgent = navigator.userAgent.toLowerCase();
     const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/.test(userAgent);
-    if (el.touch == 'true' && isTablet && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+    if (el.touch == 'joysticks' && isTablet && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
         cam = new VirtualJoysticksCamera("camera", new Vector3(0, 5, -10), scene);
     } else {
         cam = new FreeCamera("camera", new Vector3(0, 5, -10), scene);

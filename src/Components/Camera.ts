@@ -6,6 +6,8 @@ import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { customElement, property } from "lit/decorators.js";
 import { CameraJump } from "../CameraTypes/CameraJump";
+import { CameraTouchMove } from "../CameraTypes/CameraTouchMove";
+import { ThumbstickRegistry } from "../Utils/ThumbstickRegistry";
 import { CameraTypeStrategies } from "../CameraTypes/CameraTypeStrategies";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
@@ -36,6 +38,12 @@ import { GardenScene } from "./Scene";
  * `height-offset`, `rotation-offset`, `look-offset`, `camera-stiffness`,
  * `camera-damping`, `free-look`, `look-pad`, `look-speed` (the last eight are `type="follow"`-specific), `ellipsoid`/`touch`
  * and `keys` (`"arrows"` or `"none"`: not W/A/S/D) (`type="free"`-specific).
+ *
+ * `touch` (`type="free"`): on a touch screen, `true` (the default) lets the visitor walk without
+ * keys: tap the floor to glide there, or use the thumbstick that a touch at the bottom left puts
+ * under the thumb (it shows faded when the scene opens, then fades out until touched); drag
+ * elsewhere to look. `always` does the same with a mouse (a tap is a click), `false` turns it off,
+ * `joysticks` is Babylon's on-screen joysticks instead ({@link CameraTouchMove}).
  *
  * `jump` (a `type="free"` camera, or any other built on Babylon's `FreeCamera`): Space jumps.
  * Its value is the height in metres (`jump="1.2"`; empty or bare, 1). With `collisions` it
@@ -254,9 +262,14 @@ export class GardenCamera extends GardenElement {
     /** Space's jump, for a camera with `jump`. */
     jumper: CameraJump;
 
+    /** Tap-to-walk and the fading thumbstick, for a `type="free"` camera on a touch screen. */
+    touchMove: CameraTouchMove;
+
     private disposeCamera() {
         this.jumper?.dispose();
         this.jumper = null;
+        this.touchMove?.dispose();
+        this.touchMove = null;
         if (!this.camera) return;
         let scene = this.camera.getScene();
         this.wasActive = scene.activeCamera == this.camera;
@@ -332,6 +345,12 @@ export class GardenCamera extends GardenElement {
             let height = parseFloat(this.getAttribute("jump"));
             this.jumper = new CameraJump(this.camera, scene, Number.isFinite(height) && height > 0 ? height : 1);
         }
+
+        let touch = (this.touch ?? "true").toLowerCase();
+        if ((this.type ?? "").toLowerCase() == "free" && this.camera instanceof FreeCamera && controls != "false" && !viewport
+            && (touch == "always" || (touch == "true" && CameraTouchMove.wanted()))
+            && ThumbstickRegistry.controlling("camera").length == 0)
+            this.touchMove = new CameraTouchMove(this.camera, scene, sceneEl.canvas, touch == "always");
 
         if (target && !point && "setTarget" in this.camera && !("chaseTarget" in this.camera)) {
             // An arc camera orbiting an element: it follows the mesh.
