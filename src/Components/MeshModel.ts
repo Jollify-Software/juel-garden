@@ -50,6 +50,10 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
  *   once the model loads, so a group a page starts itself (`group.start()`)
  *   moves nothing unless the page also sets `group.weight = 1`. A `.babylon` file's named
  *   skeleton ranges are animations too. Changed later, it cross-fades to the new one.
+ * - `click-play`: animations a click (or tap) on the model plays, one each click, in turn:
+ *   `"Open, Close"` opens a hinged box on the first click and closes it on the next. Each plays
+ *   once and holds its last frame (or goes back to `animation`, if it has one); a click while
+ *   one is playing waits for it. Empty or bare: every animation, in the file's order.
  * - `blend`: the cross-fade time, seconds, when `animation`/`play` or `weights` change
  *   (default 0.25; 0 cuts).
  * - `weights`: several animations playing at once, each at its own weight,
@@ -117,6 +121,7 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     @property({ type: Number }) fit: number;
     @property() base: string;
     @property() animation: string;
+    @property({ attribute: "click-play" }) clickPlay: string;
     @property({ type: Number, attribute: "load-distance" }) loadDistance: number;
 
     animationGroups: AnimationGroup[] = [];
@@ -202,6 +207,29 @@ export class GardenMeshModel extends GardenSkeletonMesh {
     }
 
     /** The model's animation names. */
+    /** Which of `click-play`'s animations the next click plays. */
+    private clickTurn = 0;
+    private clickPlaying = false;
+    private onPick = () => {
+        if (!this.hasAttribute("click-play") || this.clickPlaying) return;
+        let list = (this.clickPlay ?? "").split(",").map(s => s.trim()).filter(s => s);
+        if (!list.length) list = this.animationNames;
+        if (!list.length) return;
+        let name = list[this.clickTurn++ % list.length];
+        this.clickPlaying = true;
+        this.playOnce(name).finally(() => this.clickPlaying = false);
+    };
+
+    connectedCallback() {
+        super.connectedCallback();
+        this.addEventListener("garden-pick", this.onPick);
+    }
+
+    disconnectedCallback() {
+        this.removeEventListener("garden-pick", this.onPick);
+        super.disconnectedCallback();
+    }
+
     get animationNames(): string[] {
         return this.animationGroups.map(g => g.name);
     }

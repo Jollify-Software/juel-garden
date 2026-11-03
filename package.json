@@ -41,6 +41,7 @@
     "test:physics": "node tests/physics-zero-g.js",
     "test:link": "node tests/link.js",
     "test:touch-move": "node tests/touch-move.js",
+    "test:click-play": "node tests/click-play.js",
     "test:model": "node tests/model.js",
     "copy-decoders": "node -e \"require('fs').cpSync('vendor/decoders','dist/decoders',{recursive:true,filter:f=>!f.endsWith('.md')})\"",
     "test:polygon": "node tests/polygon.js",
