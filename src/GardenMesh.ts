@@ -93,6 +93,10 @@ const shapeByTag: {[tag: string]: PhysicsShapeType} = {
  * (its parts' too): only cameras whose `layer-mask` shares a bit with it see it
  * (see {@link "Components/Camera"!GardenCamera}).
  *
+ * `rendering-group` (0 to 3, default 0) is the mesh's Babylon `renderingGroupId` (its
+ * parts' too): each group draws over the ones before it, so a mesh in group 1 is never
+ * hidden by anything in group 0 (a halo of particles in group 0 stays behind it).
+ *
  * Script API: {@link impulse}, {@link getVelocity}, {@link setVelocity},
  * {@link stop}, {@link teleport}, {@link removePhysics}, and the underlying
  * Babylon {@link physicsAggregate}.
@@ -151,7 +155,8 @@ export abstract class GardenMesh extends GardenElement {
     getMaterial() {
         return this.mesh?.material;
     }
-    setMaterial(material: Material) {
+    /** `part`: a `<garden-material part>`'s value, for a mesh made of named parts (a model). */
+    setMaterial(material: Material, _part?: string) {
         this.mesh.material = material;
     }
 
@@ -264,6 +269,11 @@ export abstract class GardenMesh extends GardenElement {
             let mask = Number(this.getAttribute("layer-mask").trim());
             for (let part of [mesh as any].concat(mesh.getChildMeshes(false)))
                 part.layerMask = Number.isFinite(mask) ? mask >>> 0 : 0x0FFFFFFF;
+        }
+        if (this.hasAttribute("rendering-group")) {
+            let group = Number(this.getAttribute("rendering-group").trim());
+            for (let part of [mesh as any].concat(mesh.getChildMeshes(false)))
+                part.renderingGroupId = Number.isInteger(group) && group >= 0 && group <= 3 ? group : 0;
         }
 
         if (this.hasAttribute("grid"))
@@ -726,7 +736,7 @@ export abstract class GardenMesh extends GardenElement {
                         // mesh on Babylon's default grey material.
                         let materialEl = el as GardenMaterial;
                         await materialEl.whenReady;
-                        this.setMaterial(materialEl.material);
+                        this.setMaterial(materialEl.material, materialEl.getAttribute('part'));
                     }
                 }
 

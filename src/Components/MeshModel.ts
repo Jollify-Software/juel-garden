@@ -73,7 +73,11 @@ import { toStandardMaterials } from "../Utils/StandardMaterials";
  *   `load-distance` loads quietly unless this is `"true"`.
  *
  * A `<garden-material>` child (a node or shader material, say) dresses every
- * part of the model that has geometry, in place of the file's materials.
+ * part of the model that has geometry, in place of the file's materials; with
+ * `part="name"` (or several names) only the parts of those names, so each part can
+ * wear its own. `<garden-particle part="name">` emits from a part's surface, and
+ * `<garden-animation part="name">` animates a part (or, with `morph`, one of its
+ * morph targets). {@link getPart} finds a part by name.
  *
  * Script API: {@link play}`(name, { blend, loop, speed })` cross-fades to a
  * named animation (`loop: false` plays it once, then goes back to the
@@ -315,11 +319,29 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         this.mixer?.stop(blend);
     }
 
-    /** A `<garden-material>` child dresses every part of the model that has geometry. */
-    setMaterial(material: Material) {
-        for (let mesh of this.loadedMeshes)
+    /**
+     * A `<garden-material>` child dresses every part of the model that has geometry, or with
+     * `part` (names, separated by spaces) only the parts of those names.
+     */
+    setMaterial(material: Material, part?: string) {
+        let names = part?.trim() ? part.trim().split(/\s+/) : null;
+        for (let mesh of names ? names.map(name => this.getPart(name)).filter(m => m) : this.loadedMeshes)
             if (mesh.getTotalVertices() > 0)
                 mesh.material = material;
+    }
+
+    /**
+     * The loaded part (a mesh, or an empty node) with this name -- exactly, else in any case --
+     * or null, also before the model has loaded. `<garden-particle part>`, `<garden-material part>`
+     * and `<garden-animation part>` find their parts with it.
+     */
+    getPart(name: string): AbstractMesh | null {
+        if (!name)
+            return null;
+        let lower = name.toLowerCase();
+        return this.loadedMeshes.find(m => m.name == name && !m.isDisposed())
+            ?? this.loadedMeshes.find(m => m.name.toLowerCase() == lower && !m.isDisposed())
+            ?? null;
     }
 
     /** Removed for good: the loaded meshes, skeletons and animations go; added back, it loads again. */

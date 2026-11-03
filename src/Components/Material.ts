@@ -8,6 +8,10 @@ import { Color3Convert } from "../Converters/Color3Convert";
 import { GardenElement } from "../GardenElement";
 import { isSampler, setUniform, shaderDeclarations, shaderSource, ShaderUniform, uniformNamed, uniformTexture, UniformValue } from "../Utils/shaderSource";
 import { GardenTexture } from "./Texture";
+import { GardenGlow } from "./Glow";
+import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import { GlowLayer } from "@babylonjs/core/Layers/glowLayer";
+import { Material } from "@babylonjs/core/Materials/material";
 
 /**
  * The vertex shader a `<garden-material>` with only a `fragment` gets: the mesh drawn where it
@@ -65,6 +69,17 @@ const colourConverter = {
  * loaded), and `input-<name>="value"` sets its input block of that name: a
  * number, or 2–4 numbers for a vector or colour).
  *
+ * **Glow:** in a scene with a `<garden-glow>`, `glow` draws the meshes wearing this material
+ * into the glow with the material itself (Babylon's `referenceMeshToUseItsOwnMaterial`), not
+ * with an emissive colour, which a node material hasn't got; `glow-input="name"` (a node
+ * material's input block) is set to 1 while the glow is drawn and 0 otherwise, so the graph
+ * can draw only its glowing parts there (and implies `glow`).
+ *
+ * **Animating it:** a `<garden-animation target="this material's id">` animates
+ * `material.<property>` (the Babylon material's), or `inputs.<name>`, a node material's input
+ * block by its name: see {@link animationTarget}. A `part` attribute, inside a
+ * `<garden-mesh-model>`, dresses only the model's parts of those names.
+ *
  * **Shaders** (game effects: a force field, a pulse, a dissolve): `vertex` and `fragment` give
  * GLSL for a Babylon `ShaderMaterial`, each the `#id` of a `<script>` in the page or a URL, or
  * written in a child `<script type="x-shader/x-vertex">` / `"x-shader/x-fragment"`. With only a
@@ -120,6 +135,86 @@ export class GardenMaterial extends GardenElement {
     /** Values a game gave {@link setUniform}: kept for a rebuild. */
     private uniformValues = new Map<string, UniformValue>();
     private uniformTextures = new Map<string, Texture>();
+
+    private _animationTarget: { readonly material: Material, readonly inputs: { [name: string]: any }, animations: any[] };
+
+    /**
+     * What a `<garden-animation>` aimed at this element animates: `material` (the Babylon
+     * material, whichever build it is) and `inputs`, whose properties are a node material's
+     * input blocks' values by name (any case): `inputs.glowStrength` reads and sets that block's
+     * `value`. A true/false block is set true from 0.5 up, so a float animation can flip it.
+     */
+    get animationTarget() {
+        if (!this._animationTarget) {
+            let el = this;
+            let inputs = new Proxy({}, {
+                get: (_, name) => typeof name == "string" ? el.inputBlock(name)?.value : undefined,
+                set: (_, name, value) => {
+                    let block = typeof name == "string" ? el.inputBlock(name) : null;
+                    if (block)
+                        block.value = typeof block.value == "boolean" ? value >= 0.5 || value === true : value;
+                    return true;
+                },
+            });
+            this._animationTarget = { get material() { return el.material; }, inputs, animations: [] };
+        }
+        return this._animationTarget;
+    }
+
+    /** A node material's input block by name (exactly, else in any case), or null. */
+    inputBlock(name: string): any {
+        let material = this.material as any;
+        if (!(material instanceof NodeMaterial))
+            return null;
+        let block: any = material.getBlockByName(name);
+        if (!block) {
+            let lower = name.toLowerCase();
+            block = material.attachedBlocks.find(b => b.name?.toLowerCase() == lower);
+        }
+        return block && "value" in block ? block : null;
+    }
+
+    /**
+     * `glow`/`glow-input`: each mesh drawn with this material is drawn into the scene's glow
+     * layer with it, once the mesh is first drawn (and again for a new glow layer).
+     */
+    private glowWithOwnMaterial(material: Material) {
+        let scene = this.getScene();
+        let inputName = this.getAttribute("glow-input");
+        let seen = new WeakMap<GlowLayer, Set<AbstractMesh>>();
+        let all: [GlowLayer, AbstractMesh][] = [];
+        this.observe(material.onBindObservable, mesh => {
+            let layer = GardenGlow.layerOf(scene);
+            if (!layer)
+                return;
+            let meshes = seen.get(layer);
+            if (!meshes) {
+                seen.set(layer, meshes = new Set());
+                if (inputName) {
+                    if (!this.inputBlock(inputName))
+                        console.warn(`<garden-material glow-input="${inputName}">: no input block of that name.`);
+                    let flip = (on: number) => (drawn: AbstractMesh) => {
+                        if (drawn.material == material) {
+                            let block = this.inputBlock(inputName);
+                            if (block) block.value = typeof block.value == "boolean" ? !!on : on;
+                        }
+                    };
+                    this.observe(layer.onBeforeRenderMeshToEffect, flip(1));
+                    this.observe(layer.onAfterRenderMeshToEffect, flip(0));
+                }
+            }
+            if (!meshes.has(mesh)) {
+                meshes.add(mesh);
+                all.push([layer, mesh]);
+                layer.referenceMeshToUseItsOwnMaterial(mesh);
+            }
+        });
+        this.whenDisposed(() => {
+            for (let [layer, mesh] of all)
+                if (GardenGlow.layerOf(scene) == layer)
+                    layer.unReferenceMeshFromUsingItsOwnMaterial(mesh);
+        });
+    }
 
     /** Materials a `<garden-material>` built: a mesh's rebuild or removal leaves them alone. */
     static owned = new WeakSet<object>();
@@ -245,6 +340,8 @@ export class GardenMaterial extends GardenElement {
             material.backFaceCulling = false;
         }
         this.wear(material);
+        if (this.hasAttribute("glow") || this.hasAttribute("glow-input"))
+            this.glowWithOwnMaterial(material);
         this.endBuild();
     }
 
