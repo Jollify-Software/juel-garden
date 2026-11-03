@@ -1,4 +1,7 @@
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { LinesMesh } from "@babylonjs/core/Meshes/linesMesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Color3Convert } from "../Converters/Color3Convert";
 import { customElement } from "lit/decorators.js";
 import { GardenMesh } from "../GardenMesh";
 
@@ -23,8 +26,11 @@ import { GardenMesh } from "../GardenMesh";
 @customElement("garden-line")
 export class GardenLine extends GardenMesh {
     updated() {
-        this.setMesh(
-            MeshBuilder.CreateLines("triangle", <any>this.buildOptions(), this.getScene())
-        );
+        let lines = MeshBuilder.CreateLines("triangle", <any>this.buildOptions(), this.getScene());
+        this.setMesh(lines);
+        // A line draws with its own shader and `color`, not a material's diffuse colour.
+        let colour = this.getAttribute("colour")?.trim();
+        if (colour && this.mesh instanceof LinesMesh)
+            this.mesh.color = colour.startsWith("#") ? Color3.FromHexString(colour) : Color3Convert.fromString(colour) ?? this.mesh.color;
     }
 }

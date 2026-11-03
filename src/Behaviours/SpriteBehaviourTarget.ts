@@ -2,6 +2,7 @@ import { Scene } from "@babylonjs/core/scene";
 import { Sprite } from "@babylonjs/core/Sprites/sprite";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { IBehaviourTarget } from "../IBehaviourTarget";
+import type { GardenElement } from "../GardenElement";
 
 /**
  * Adapts one Babylon `Sprite` instance (from a `<garden-sprite>` group) to
@@ -44,9 +45,22 @@ export class SpriteBehaviourTarget implements IBehaviourTarget {
         (this.sprite.position as Vector3).copyFrom(v);
     }
 
-    attachRotationSync(scene: Scene) {
-        scene.onBeforeRenderObservable.add(() => {
-            this.sprite.angle = this.rotation.y;
-        });
+    /**
+     * Only a change a Behaviour made goes onto `sprite.angle`, so an `angle` set otherwise
+     * (the element's `angle`, a `<garden-action>`, code) stays. With `owner`, the observer
+     * goes when the owner's build is disposed.
+     */
+    attachRotationSync(scene: Scene, owner?: GardenElement) {
+        let synced = this.rotation.y;
+        let sync = () => {
+            if (this.rotation.y != synced) {
+                synced = this.rotation.y;
+                this.sprite.angle = synced;
+            }
+        };
+        if (owner)
+            owner.observe(scene.onBeforeRenderObservable, sync);
+        else
+            scene.onBeforeRenderObservable.add(sync);
     }
 }

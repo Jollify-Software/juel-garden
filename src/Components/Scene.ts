@@ -4,7 +4,7 @@ import { CreateAudioEngineAsync } from "@babylonjs/core/AudioV2/webAudio/webAudi
 import { Engine } from "@babylonjs/core/Engines/engine";
 import { IAction } from "@babylonjs/core/Actions/action";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { Scene } from "@babylonjs/core/scene";
+import { Scene, ScenePerformancePriority } from "@babylonjs/core/scene";
 import { Tools } from "@babylonjs/core/Misc/tools";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { LitElement } from "lit";
@@ -18,6 +18,7 @@ import { Navigation } from "../Navigation";
 import { Utility } from "../Utility";
 import { tween } from "../Utils/tween";
 import { Color3Convert } from "../Converters/Color3Convert";
+import { PickHit, PickOptions, pickAlong, pickAt } from "../Utils/picking";
 
 // Babylon requests images (textures, etc.) with crossOrigin="anonymous" by default,
 // which Chromium refuses outright for file:// URLs -- "file" isn't a scheme it allows
@@ -46,6 +47,30 @@ Tools.CorsBehavior = (url: string) => (/^https?:\/\//i.test(String(url)) ? "anon
  * grey), `fog-start`/`fog-end` (for `linear`). All can change at any time;
  * {@link fogTo} eases them for a storm that closes in and clears, and a
  * `<garden-animation property="fogDensity">` inside the scene animates them.
+ *
+ * `ambient-colour` (live) is the scene's ambient light, added to every material by
+ * its own `ambient-colour` (see {@link GardenMaterial}).
+ *
+ * **Picking** (what's under the pointer, what's along a line): {@link pick} and
+ * {@link pickRay} give the element hit -- a mesh's, a model's (any of its parts) or a
+ * pickable `<garden-sprite>`'s -- with the point, normal, distance, and which sprite or
+ * `grid` copy. Pressing on something fires **`garden-pick`** on its element (it bubbles),
+ * `detail` the same hit: a `<garden-action trigger="garden-pick">` reacts to it in markup.
+ *
+ * **Resolution** (phones and tablets): `scaling="2"` draws the scene at half the
+ * canvas's size (Babylon's hardware scaling level) and lets the browser stretch it,
+ * `"1.5"` at two thirds; below 1 it draws more finely than the canvas (sharper on a
+ * high-density screen, and slower). Live, so a game can drop it when frames are slow.
+ * `<garden-pipeline fsr>` upscales a smaller picture more sharply.
+ *
+ * **Many meshes**: `performance="intermediate"` or `"aggressive"` is Babylon's scene
+ * performance priority (`scene.performancePriority`), trading conveniences for speed with
+ * thousands of meshes. Both stop picking as the pointer moves (hover actions,
+ * `pointerOver`/`pointerOut`; a press still picks) and stop clearing the canvas each frame,
+ * so the scene needs a sky, skybox or environment that fills the view. `"aggressive"`
+ * also draws every mesh without testing it against the view and keeps the render lists
+ * between frames: a mesh added later, or made visible, may not show until the priority is
+ * set again. `"compatible"` (the default) is Babylon's usual behaviour. Live.
  *
  * @example
  * ```html
@@ -80,6 +105,11 @@ export class GardenScene extends LitElement {
     @property({ attribute: "fog-colour" }) fogColour: string;
     @property({ type: Number, attribute: "fog-start" }) fogStart: number;
     @property({ type: Number, attribute: "fog-end" }) fogEnd: number;
+    @property({ attribute: "ambient-colour" }) ambientColour: string;
+    /** How much smaller than the canvas the scene is drawn: Babylon's hardware scaling level. */
+    @property({ type: Number }) scaling: number;
+    /** Babylon's scene performance priority: `compatible` (default), `intermediate` or `aggressive`. */
+    @property() performance: string;
     /**
      * The scene lives inside the page instead of taking over the window: the page keeps
      * scrolling and its own margins, and the scene fills its own box, which the page sizes
@@ -152,8 +182,26 @@ export class GardenScene extends LitElement {
 
     updated(changed: Map<PropertyKey, unknown>) {
         this.applyFog();
+        if (this.scene && this.ambientColour)
+            this.scene.ambientColor = this.ambientColour.startsWith("#") ? Color3.FromHexString(this.ambientColour) : Color3Convert.fromString(this.ambientColour);
+        if (this.engine && this.engine.getHardwareScalingLevel() != (this.scaling > 0 ? this.scaling : 1))
+            this.engine.setHardwareScalingLevel(this.scaling > 0 ? this.scaling : 1);
         if (changed.has("embedded") && this.scene)
             this.applyEmbedded();
+        if (this.scene) {
+            let priority = GardenScene.performancePriority(this.performance);
+            if (this.scene.performancePriority != priority)
+                this.scene.performancePriority = priority;
+        }
+    }
+
+    /** `performance` as Babylon's priority: 0 backward compatible, 1 intermediate, 2 aggressive. */
+    static performancePriority(value: string): ScenePerformancePriority {
+        switch ((value ?? "").trim().toLowerCase()) {
+            case "intermediate": return ScenePerformancePriority.Intermediate;
+            case "aggressive": return ScenePerformancePriority.Aggressive;
+            default: return ScenePerformancePriority.BackwardCompatible;
+        }
     }
 
     /** Scenes in the document that take over the whole window (no `embedded`). */
@@ -223,6 +271,26 @@ export class GardenScene extends LitElement {
         }
         GardenScene.updatePageStyles();
         this.engine?.resize();
+    }
+
+    /**
+     * What's under the screen point `x`, `y` (canvas pixels; default the pointer):
+     * meshes and pickable sprites, the nearest. `options.ignore` leaves out elements (an
+     * element, a list, or a selector); `options.sprites: false` looks at meshes only.
+     */
+    pick(x?: number, y?: number, options: PickOptions = {}): PickHit | null {
+        if (!this.scene) return null;
+        return pickAt(this.scene, x ?? this.scene.pointerX, y ?? this.scene.pointerY, options);
+    }
+
+    /**
+     * The first mesh or pickable sprite along a line from `origin` in `direction` (world
+     * space), at most `length` away: an aim line, a line of sight. Unlike
+     * {@link GardenPhysics.raycast} it needs no physics and sees what's drawn.
+     */
+    pickRay(origin: Vector3, direction: Vector3, length?: number, options: PickOptions = {}): PickHit | null {
+        if (!this.scene) return null;
+        return pickAlong(this.scene, origin, direction, length, options);
     }
 
     private applyFog() {
@@ -330,22 +398,16 @@ export class GardenScene extends LitElement {
             setupScene();
         }
 
-        this.scene.onPointerDown = (evt, pickResult) => {
-            // We try to pick an object
-            // An imported model's meshes hang under the element's own holder
-            // mesh, so walk up to the nearest node that belongs to an element.
-            let node: any = pickResult?.hit ? pickResult.pickedMesh : null;
-            while (node && !("element" in node))
-                node = node.parent;
-            if (node) {
-                const el = node.element;
-                // Type safety: check if el is a GardenMesh and has activate
-                if (el && typeof el.activate === "function") {
-                    this.selectedElement = el as GardenMesh;
-                    el.activate();
-                } else {
-                    console.warn("Picked mesh does not have a valid GardenMesh element.");
-                }
+        this.scene.onPointerDown = (evt) => {
+            // Meshes and pickable sprites alike; a model's parts give the model's element.
+            let hit = this.pick();
+            let el: any = hit?.element;
+            if (!el)
+                return;
+            el.dispatchEvent(new CustomEvent("garden-pick", { bubbles: true, detail: { ...hit, event: evt } }));
+            if (hit.mesh && typeof el.activate === "function") {
+                this.selectedElement = el as GardenMesh;
+                el.activate();
             }
         };
     }

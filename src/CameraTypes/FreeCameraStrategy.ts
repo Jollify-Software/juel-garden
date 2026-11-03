@@ -5,7 +5,8 @@ import { ICameraTypeStrategy } from "../ICameraTypeStrategy";
 
 /**
  * `type="free"`: WASD/arrow-key + mouse-look free-fly camera, or a
- * touch-joystick camera on a tablet when `touch="true"` (the default). See
+ * touch-joystick camera on a tablet when `touch="true"` (the default).
+ * `keys="arrows"`: the arrow keys only; `keys="none"`: no keys. See
  * {@link "Components/Camera"!GardenCamera}.
  *
  * @category Camera Types
@@ -29,10 +30,17 @@ export const FreeCameraStrategy: ICameraTypeStrategy = (el, scene) => {
     if (el.speed)
         cam.speed = el.speed;
 
-    cam.keysUp.push(87);    //W
-    cam.keysDown.push(83);  //S
-    cam.keysLeft.push(65);  //A
-    cam.keysRight.push(68); //D
+    // `keys="arrows"` leaves W/A/S/D to the page (a `<garden-action trigger="keydown">`);
+    // `keys="none"` moves it by mouse and touch only.
+    let keys = el.getAttribute("keys");
+    if (keys == "none")
+        cam.keysUp = cam.keysDown = cam.keysLeft = cam.keysRight = [];
+    else if (keys != "arrows") {
+        cam.keysUp.push(87);    //W
+        cam.keysDown.push(83);  //S
+        cam.keysLeft.push(65);  //A
+        cam.keysRight.push(68); //D
+    }
 
     return cam;
 }

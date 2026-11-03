@@ -140,7 +140,10 @@ export class GardenSky extends GardenMesh {
             return;
         }
         if (this.environment) {
-            let texture = new CubeTexture(this.environment, scene);
+            // A prefiltered .dds is linear (an .env says so itself), as Babylon's own helper loads it.
+            let texture = /\.dds([?#]|$)/i.test(this.environment)
+                ? CubeTexture.CreateFromPrefilteredData(this.environment, scene)
+                : new CubeTexture(this.environment, scene);
             if (this.getAttribute("lighting") != "false")
                 scene.environmentTexture = texture;
             let turn = Number(this.getAttribute("turn"));

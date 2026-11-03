@@ -24,7 +24,9 @@ function applyAction(action: ActionInfo, mesh: Mesh, scene: Scene) {
     console.log('Value')
     console.log(value)
     let act = action.action(target ? null : mesh, target, value ?? action.value);
-    switch (action.applyOn) {
+    // Babylon only sends keys to the scene's action manager.
+    let key = act.trigger == ActionManager.OnKeyDownTrigger || act.trigger == ActionManager.OnKeyUpTrigger;
+    switch (key ? 'scene' : action.applyOn) {
         case 'scene':
             if (!scene.actionManager) {
                 scene.actionManager = new ActionManager(scene);
