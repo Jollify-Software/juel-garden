@@ -75,6 +75,7 @@
     "test:camera-jump": "node tests/camera-jump.js",
     "test:follow": "node tests/follow.js",
     "test:named-animations": "node tests/named-animations.js",
+    "test:root-motion": "node tests/root-motion.js",
     "test:near": "node tests/near.js",
     "test:lights": "node tests/lights.js",
     "test:arc-camera": "node tests/arc-camera.js",
