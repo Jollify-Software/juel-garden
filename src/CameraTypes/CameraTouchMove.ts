@@ -20,7 +20,8 @@ const WalkSpeed = 2.2;
  * visitor can't press W or the arrow keys, so
  *
  * - **tap the floor** to glide there (as Street View and venue tours do): a tap on anything that
- *   faces up, in reach, that isn't a waypoint's platform or a link (those still do their own thing);
+ *   faces up, in reach, that isn't a waypoint's platform, a link or a model with `click-play`
+ *   (those still do their own thing);
  * - **a floating thumbstick**, bottom left: a touch there puts the stick under the thumb, push to
  *   walk (forward and back, sideways). It shows faded when the scene opens, so the visitor knows
  *   it's there, then fades out altogether after a few seconds untouched: nothing covers the view.
@@ -99,7 +100,7 @@ export class CameraTouchMove {
         let scale = this.scene.getEngine().getRenderWidth() / (r.width || 1);
         let hit = pickAt(this.scene, (x - r.left) * scale, (y - r.top) * scale, { sprites: false });
         if (!hit?.mesh || !hit.normal || hit.distance > MaxTapWalk) return;
-        if (hit.normal.y < FloorUp || this.handledElsewhere(hit.mesh)) return;
+        if (hit.normal.y < FloorUp || this.handledElsewhere(hit.mesh) || hit.element?.hasAttribute?.("click-play")) return;
 
         // Keep the eye height the camera has now, over whatever it stands on.
         let under = pickAlong(this.scene, this.camera.position, new Vector3(0, -1, 0), 50, { sprites: false });
