@@ -131,6 +131,7 @@
     "test:model-viewer": "node tests/model-viewer.js",
     "test:model-viewer:viewer": "npm run build:viewer && node tests/model-viewer.js --viewer",
     "test:no-webgl": "node tests/no-webgl.js",
+    "test:dispose-baseline": "node tests/dispose-baseline.js",
     "test:bare-elements": "node tests/bare-elements.js",
     "test:house-remerge": "node tests/house-remerge.js",
     "test:elements-entries": "npm run build:lib && npm run build:viewer && node tests/elements-entries.js"
