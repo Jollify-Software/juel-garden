@@ -208,6 +208,10 @@ back button flies back out, and another page can link straight to
 </garden-info>
 ```
 
+A `<garden-webxr>` asks another site for something only on entering VR: the list of
+real controllers, from `immersive-web.github.io`. Refused, or offline, the session
+carries on with Babylon's generic controllers. Nothing is requested on load.
+
 In a headset `#id` jumps teleport instead of flying, and on browsers with WebXR
 navigation (Meta Quest Browser) `<garden-webxr>` re-enters VR on the next
 page, so visitors can walk from scene to scene without leaving VR. Every

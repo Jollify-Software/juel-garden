@@ -117,6 +117,46 @@ function check(name, ok, info = "") {
         const xrChange = await buttons("change");
         check("a <garden-webxr> changed twice has one button and a new experience", xrChange.first == 1 && xrChange.changed == 1 &&
             xrChange.newXr && xrChange.teleport, JSON.stringify(xrChange));
+
+        // The controller list from another site: nothing on load, asked for on entering VR, and a
+        // refusal stops nothing. Uses Babylon's real enterXRAsync; the stand-in then refuses the session.
+        const profiles = await (async () => {
+            const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
+            page.on("pageerror", e => errors.push(e.message));
+            const asked = [];
+            await page.route("https://immersive-web.github.io/**", route => { asked.push(route.request().url()); route.abort(); });
+            await page.route(LOCAL + "/**", route => {
+                const p = decodeURIComponent(new globalThis.URL(route.request().url()).pathname);
+                if (p == "/xr.html")
+                    return route.fulfill({ status: 200, contentType: "text/html", body: `<!DOCTYPE html><html><head>
+<script>Object.defineProperty(navigator, "xr", { configurable: true, value: { isSessionSupported: async () => true,
+  addEventListener() {}, removeEventListener() {}, requestSession: async () => { throw new Error("stand-in"); } } });</script>
+<script src="/dist/juel-garden.js"></script></head><body><garden-scene>
+  <garden-camera type="arc" radius="10"></garden-camera><garden-light></garden-light>
+  <garden-ground width="10" height="10"></garden-ground><garden-webxr></garden-webxr>
+</garden-scene></body></html>` });
+                const f = path.join(ROOT, p);
+                if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory())
+                    return route.fulfill({ status: 404, body: "" });
+                route.fulfill({ status: 200, body: fs.readFileSync(f), contentType: TYPES[path.extname(f).toLowerCase()] || "application/octet-stream" });
+            });
+            await page.goto(LOCAL + "/xr.html", { waitUntil: "load" });
+            await page.waitForFunction(() => !!document.querySelector("garden-webxr").xr, null, { timeout: 30000 });
+            await page.waitForFunction(() => document.querySelector("garden-scene").scene?.getFrameId() > 30, null, { timeout: 30000 });
+            await page.waitForTimeout(1000);
+            const onLoad = asked.length;
+            const stillThere = await page.evaluate(async () => {
+                const el = document.querySelector("garden-webxr");
+                await el.xr.baseExperience.enterXRAsync("immersive-vr", "local-floor").catch(() => {});
+                await new Promise(r => setTimeout(r, 500));
+                return !!el.xr;
+            });
+            await page.waitForTimeout(500);
+            await page.close();
+            return { onLoad, onEnter: asked.length, url: asked[0] ?? "", stillThere };
+        })();
+        check("nothing is asked of another site on load", profiles.onLoad == 0, JSON.stringify(profiles));
+        check("entering VR asks for the controller list, and a refusal stops nothing", profiles.onEnter >= 1 && /profilesList\.json$/.test(profiles.url) && profiles.stillThere, JSON.stringify(profiles));
         check("no page errors", errors.length == 0, JSON.stringify(errors));
     } finally {
         await browser.close();
