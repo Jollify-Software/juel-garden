@@ -58,6 +58,7 @@ run(`
     // Dragged right (-x seen from -z... the camera looks along +z, so screen right is +x) and up.
     check("let go: it flies on the way it was dragged (garden-release says how fast)",
         c.after.release && c.after.release[0] > 0.5 && c.after.v[0] > 0.5, JSON.stringify(c.after));
+    // On the left of the screen, where a touch screen's walking stick sits: a mouse still reaches the box (test:touch-move).
     const d = await drag("dead", await screen(-3, 0.5, 0));
     check("grab-throw=\"0\" drops it dead", d.after.release && Math.hypot(...d.after.release) == 0 && d.after.motion == 2, JSON.stringify(d.after));
 

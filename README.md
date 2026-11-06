@@ -208,6 +208,8 @@ back button flies back out, and another page can link straight to
 </garden-info>
 ```
 
+On a touch screen, a free camera's walking stick takes fingers on the left half of the screen. A mouse or pen goes through to the scene, unless `touch="always"` has the mouse stand in for a finger (`test:touch-move`).
+
 A `<garden-webxr>` asks another site for something only on entering VR: the list of
 real controllers, from `immersive-web.github.io`. Refused, or offline, the session
 carries on with Babylon's generic controllers. Nothing is requested on load.

@@ -26,6 +26,11 @@ export interface ThumbPadOptions {
      * passed here, with the stick left untouched, so whatever is under the finger can take it.
      */
     onTap?: (x: number, y: number) => void;
+    /**
+     * `floating` only: only fingers use it. A mouse or pen goes through its half of the screen to what's underneath, so on
+     * a touch screen with a mouse attached, the left of a scene can still be clicked, dragged and looked round with.
+     */
+    touchOnly?: boolean;
 }
 
 /** A touch shorter than this (ms), that moves less than {@link TapSlop} px, is a tap. */
@@ -78,6 +83,13 @@ export class ThumbPad {
             zone.style.cssText = `position:fixed;${o.side}:0;bottom:0;width:50%;height:80%;touch-action:none;z-index:9;user-select:none;`;
             host.appendChild(zone);
             grab = zone;
+            if (o.touchOnly) {
+                // A mouse arrives before it presses, so the press itself lands on the canvas. The first touch after
+                // that goes to the canvas too, as the stick's zone only comes back as it lands.
+                zone.addEventListener("pointerover", e => { if (e.pointerType != "touch") zone.style.pointerEvents = "none"; });
+                this.fingerBack = e => { if (e.pointerType == "touch") zone.style.pointerEvents = ""; };
+                window.addEventListener("pointerdown", this.fingerBack, true);
+            }
             base.style.pointerEvents = "none";
             base.style.opacity = RestOpacity;
             base.style.transition = "opacity .6s";
@@ -143,6 +155,7 @@ export class ThumbPad {
     }
 
     private fadeTimer: any;
+    private fingerBack: (e: PointerEvent) => void = null;
 
     /** Back to resting: faded in its corner, then (with `idleFade`) gone until touched. */
     private rest() {
@@ -168,6 +181,7 @@ export class ThumbPad {
 
     dispose() {
         clearTimeout(this.fadeTimer);
+        if (this.fingerBack) window.removeEventListener("pointerdown", this.fingerBack, true);
         this.element.remove();
         this.zone?.remove();
     }

@@ -11,7 +11,7 @@ run(`
   <garden-light></garden-light>
   <garden-ground width="200" height="200" collisions></garden-ground>
   <garden-box id="wall" width="6" height="3" depth="0.3" position="3 1.5 30" collisions></garden-box>
-</garden-scene>`, async ({ page, check, errors }) => {
+</garden-scene>`, async ({ page, check, errors, open }) => {
     await page.waitForFunction(() => document.getElementById("cam").touchMove);
     await page.waitForTimeout(1200); // settle on the ground
     const pos = () => page.evaluate(() => document.getElementById("cam").camera.position.asArray().map(n => +n.toFixed(2)));
@@ -59,5 +59,44 @@ run(`
     await page.evaluate(() => document.getElementById("cam").setAttribute("touch", "false"));
     await page.waitForFunction(() => document.getElementById("cam").camera && !document.getElementById("cam").touchMove);
     check("touch=\"false\": no stick", await page.locator(".garden-touch-walk").count() == 0);
+    // The default, touch="true", on a touch screen: only a finger uses the stick. A mouse goes through to the scene.
+    await open(`<garden-scene>
+  <garden-camera id="cam" type="free" position="0 1.6 -8" target="0 1 0"></garden-camera>
+  <garden-light></garden-light>
+  <garden-ground width="40" height="40"></garden-ground>
+</garden-scene>`);
+    await page.waitForFunction(() => document.getElementById("cam").touchMove);
+    const cdp = await page.context().newCDPSession(page);
+    const touch = async (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type == "touchEnd" ? [] : [{ x, y }] });
+    const padOn = () => page.evaluate(() => document.getElementById("cam").touchMove.pad.active);
+    const under = (x, y) => page.evaluate(([x, y]) => document.elementFromPoint(x, y).tagName, [x, y]);
+    await page.evaluate(() => { window.__downs = []; document.querySelector("garden-scene").canvas.addEventListener("pointerdown", e => __downs.push(e.pointerType)); });
+
+    await touch("touchStart", 150, 500);
+    await page.waitForTimeout(100);
+    check("a visitor's first touch on the left takes the stick", await padOn());
+    await touch("touchEnd");
+    await page.waitForTimeout(100);
+
+    await page.mouse.move(150, 480);
+    await page.mouse.move(150, 500);
+    await page.waitForTimeout(100);
+    check("a mouse there is over the scene, not the stick's zone", (await under(150, 500)) == "CANVAS", await under(150, 500));
+    await page.mouse.down();
+    await page.waitForTimeout(100);
+    const mouseStick = await padOn();
+    check("a mouse press there doesn't take the stick", !mouseStick);
+    await page.mouse.up();
+    check("...it reaches the scene", (await page.evaluate(() => __downs)).includes("mouse"), JSON.stringify(await page.evaluate(() => __downs)));
+
+    await touch("touchStart", 150, 500);
+    await page.waitForTimeout(100);
+    await touch("touchEnd");
+    await page.waitForTimeout(100);
+    await touch("touchStart", 150, 500);
+    await page.waitForTimeout(100);
+    check("a finger gets the stick back after a mouse", await padOn());
+    await touch("touchEnd");
+
     check("no page errors", errors.length == 0, errors.join(" | "));
 });
