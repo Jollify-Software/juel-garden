@@ -27,7 +27,8 @@ const WalkSpeed = 2.2;
  *   it's there, then fades out altogether after a few seconds untouched: nothing covers the view.
  * - **drag** anywhere else looks round (the camera's own touch input).
  *
- * Not built on a desktop, or when a `<garden-thumbstick controls="camera">` is on the page.
+ * Not built on a desktop, or when a `<garden-thumbstick controls="camera">` is on the page. A mouse or pen on a touch
+ * screen goes straight through the stick's half to the scene, unless `touch="always"` has the mouse stand in for a finger.
  * See {@link "Components/Camera"!GardenCamera}.
  *
  * @category Camera Types
@@ -52,7 +53,7 @@ export class CameraTouchMove {
 
     constructor(private camera: FreeCamera, private scene: Scene, private canvas: HTMLCanvasElement, private anyPointer = false) {
         this.pad = new ThumbPad(document.body, {
-            side: "left", className: "garden-touch-walk", mode: "floating", idleFade: IdleFade,
+            side: "left", className: "garden-touch-walk", mode: "floating", idleFade: IdleFade, touchOnly: !anyPointer,
             // A tap on the stick's half of the screen: let the scene have it (a waypoint, a
             // link), then walk there if it was the floor.
             onTap: (x, y) => {
