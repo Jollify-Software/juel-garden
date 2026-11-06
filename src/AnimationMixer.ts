@@ -269,6 +269,44 @@ export class AnimationMixer {
         }
     }
 
+    /**
+     * Puts the model at once at the first or last frame of `name` and holds it there, with nothing
+     * playing: for a presentation's Back, or to jump to where an animation ends when the viewer prefers
+     * reduced motion. Returns false (with a warning) if there is no such animation.
+     *
+     * @example
+     * ```js
+     * model.mixer.pose("Open", "start"); // the lid is shut again
+     * ```
+     */
+    pose(name: string, at: "start" | "end" = "end"): boolean {
+        let group = this.group(name);
+        if (!group) {
+            console.warn(`No animation "${name}"; this model has: ${this.names.join(", ")}`);
+            return false;
+        }
+        this.settleOnce(false);
+        this.current = null;
+        this.oneShot = false;
+        this.lastLoop = null;
+        this.fades = [];
+        for (let other of this.groups.values()) {
+            other.onAnimationGroupEndObservable.clear();
+            other.weight = 0;
+            other.stop();
+        }
+        let frame = at == "start" ? group.from : group.to;
+        for (let { target, animation } of group.targetedAnimations) {
+            let path = animation.targetPropertyPath;
+            let owner = target;
+            for (let key of path.slice(0, -1))
+                owner = owner?.[key];
+            if (owner)
+                owner[path[path.length - 1]] = animation.evaluate(frame);
+        }
+        return true;
+    }
+
     /** Sets the playing animation's speed without restarting it. */
     setSpeed(speed: number) {
         let group = this.group(this.current);

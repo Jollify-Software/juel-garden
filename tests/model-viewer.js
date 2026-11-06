@@ -154,6 +154,31 @@ ${filler}`, async ({ page, check, errors, frames, open }) => {
         return { ok, angle: lidAngle() };
     });
     check("playOnce(\"Close\") resolves and holds closed", close.ok === true && close.angle < 0.5, JSON.stringify(close));
+    // pose(): at once, with nothing playing, and a later playOnce still works from there.
+    const posed = await page.evaluate(async () => {
+        const v = document.getElementById("viewer");
+        const settle = () => new Promise(r => setTimeout(r, 300));
+        const end = v.pose("Open", "end");
+        await settle();
+        const atEnd = lidAngle();
+        const start = v.pose("Open", "start");
+        await settle();
+        const atStart = lidAngle();
+        const missing = v.pose("Nope", "end");
+        await settle();
+        const afterMissing = lidAngle();
+        const playing = v.model.mixer.current;
+        const again = await v.playOnce("Open");
+        await settle();
+        const reopened = lidAngle();
+        v.pose("Open", "start");
+        await settle();
+        return { end, atEnd, start, atStart, missing, afterMissing, playing, again, reopened };
+    });
+    check("pose(\"Open\", \"end\") holds the lid open at once", posed.end === true && posed.atEnd > 100, JSON.stringify(posed));
+    check("pose(\"Open\", \"start\") shuts it again, with nothing playing", posed.start === true && posed.atStart < 0.5 && posed.playing === null, JSON.stringify(posed));
+    check("control: pose() of a name the file hasn't got is false and moves nothing", posed.missing === false && posed.afterMissing < 0.5, JSON.stringify(posed));
+    check("playOnce still plays after a pose", posed.again === true && posed.reopened > 100, JSON.stringify(posed));
     // A second page: a poster until the first frame, a coloured background, auto-rotate that
     // stops when touched. The model is held back until the poster has been seen.
     let release;

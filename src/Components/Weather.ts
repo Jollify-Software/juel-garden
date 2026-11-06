@@ -16,13 +16,16 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector";
  * - `dust-devil` is a spinning column of dust standing on its parent mesh
  *   (move the mesh with `track` or `wander` and the whirlwind travels).
  *
+ * - `fire`, `smoke` and `sparks` rise from their parent mesh or node. Babylon's own
+ *   `effect="fire"` fetches its pictures from another site; these fetch nothing.
+ *
  * `density` (0 = none, 1 = the preset's normal amount, more for a storm)
  * scales how many particles are emitted, and can change at any time.
  *
  * @category Components
  */
 export module Weather {
-    export const Presets = ["rain", "snow", "sand", "dust-devil"];
+    export const Presets = ["rain", "snow", "sand", "dust-devil", "fire", "smoke", "sparks"];
 
     let textures = new WeakMap<Scene, DynamicTexture>();
 
@@ -166,6 +169,70 @@ export module Weather {
                 observer = scene.onBeforeRenderObservable.add(() => {
                     emitterNode.rotation.y += spin * Math.min(scene.getEngine().getDeltaTime(), 50) / 1000;
                 });
+                break;
+            }
+            case "fire":
+            case "smoke":
+            case "sparks": {
+                let spread = (name == "smoke" ? 0.3 : 0.25) * scale;
+                ps = new ParticleSystem(`garden-${name}`, name == "smoke" ? 500 : name == "fire" ? 1200 : 400, scene);
+                baseRate = name == "smoke" ? 40 : name == "fire" ? 300 : 60;
+                // In world space, so what has risen stays where it rose if the parent moves.
+                emitterNode = new Mesh(`garden-${name}-emitter`, scene);
+                emitterNode.isVisible = false;
+                if (anchor) emitterNode.parent = anchor;
+                ps.emitter = emitterNode;
+                // The pre-warm below runs before the first frame: without this it emits at the scene's origin.
+                anchor?.computeWorldMatrix(true);
+                emitterNode.computeWorldMatrix(true);
+                ps.minEmitBox = new Vector3(-spread, 0, -spread);
+                ps.maxEmitBox = new Vector3(spread, name == "fire" ? 0.15 * scale : 0, spread);
+                let lean = wind.scale(0.3);
+                let side = name == "sparks" ? 0.6 : 0.2;
+                ps.direction1 = new Vector3(lean.x - side, 1, lean.z - side);
+                ps.direction2 = new Vector3(lean.x + side, 1, lean.z + side);
+                ps.gravity = name == "sparks" ? new Vector3(0, -2.5, 0) : Vector3.Zero();
+                if (name == "fire") {
+                    ps.minEmitPower = 0.9 * scale;
+                    ps.maxEmitPower = 1.8 * scale;
+                    ps.minLifeTime = 0.35;
+                    ps.maxLifeTime = 0.8;
+                    ps.minSize = 0.2 * scale;
+                    ps.maxSize = 0.5 * scale;
+                    // Added, so the middle of the flame burns white where the particles overlap.
+                    ps.blendMode = ParticleSystem.BLENDMODE_ADD;
+                    ps.addColorGradient(0, new Color4(1, 0.75, 0.3, 0));
+                    ps.addColorGradient(0.15, new Color4(1, 0.55, 0.12, 0.8));
+                    ps.addColorGradient(0.65, new Color4(0.9, 0.2, 0.03, 0.45));
+                    ps.addColorGradient(1, new Color4(0.3, 0.03, 0, 0));
+                } else if (name == "smoke") {
+                    ps.minEmitPower = 0.5 * scale;
+                    ps.maxEmitPower = 0.9 * scale;
+                    ps.minLifeTime = 3;
+                    ps.maxLifeTime = 5;
+                    ps.minSize = 0.5 * scale;
+                    ps.maxSize = 1.2 * scale;
+                    ps.minAngularSpeed = -0.4;
+                    ps.maxAngularSpeed = 0.4;
+                    ps.blendMode = ParticleSystem.BLENDMODE_STANDARD;
+                    ps.addColorGradient(0, new Color4(0.35, 0.35, 0.35, 0));
+                    ps.addColorGradient(0.2, new Color4(0.35, 0.35, 0.35, 0.4));
+                    ps.addColorGradient(1, new Color4(0.55, 0.55, 0.55, 0));
+                } else {
+                    ps.minEmitPower = 2.5 * scale;
+                    ps.maxEmitPower = 4.5 * scale;
+                    ps.minLifeTime = 0.6;
+                    ps.maxLifeTime = 1.4;
+                    ps.minSize = 0.03 * scale;
+                    ps.maxSize = 0.07 * scale;
+                    ps.blendMode = ParticleSystem.BLENDMODE_ADD;
+                    ps.addColorGradient(0, new Color4(1, 0.9, 0.5, 1));
+                    ps.addColorGradient(0.7, new Color4(1, 0.5, 0.1, 1));
+                    ps.addColorGradient(1, new Color4(0.6, 0.1, 0, 0));
+                }
+                // `colour` tints the whole of it.
+                if (options.colour)
+                    ps.textureMask = options.colour;
                 break;
             }
             default:

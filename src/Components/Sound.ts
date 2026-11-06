@@ -19,8 +19,10 @@ import { GardenElement } from "../GardenElement";
  * - `rolloff` -- how fast it falls (default 1).
  * - `max-distance` (or the older `maxdistance`) -- beyond this it falls no
  *   further; only used by the `linear` model.
- * - `distance-model` -- `inverse` (the default), `linear` or `exponential`.
- *   Setting only `max-distance` picks `linear`, as the old `<garden-sound>` did.
+ * - `distance-model` -- `inverse`, `linear` or `exponential`. Setting only `max-distance`
+ *   picks `linear`, as the old `<garden-sound>` did. **With neither, it's Babylon's own default,
+ *   `linear` over 10 km, so the volume hardly falls at all:** for "louder nearer" say
+ *   `distance-model="inverse"` or set `max-distance`.
  * - `directional="inner outer"` -- a cone in degrees, for a voice facing
  *   one way: full volume inside `inner`, fading to `directional-volume`
  *   (default 0) at `outer` and beyond. Points the way the parent faces.

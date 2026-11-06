@@ -432,6 +432,11 @@ export class GardenMeshModel extends GardenSkeletonMesh {
         return this.mixer?.playOnce(name, options) ?? Promise.resolve(false);
     }
 
+    /** Holds the model at the first or last frame of `name`, at once, with nothing playing. See {@link AnimationMixer.pose}. */
+    pose(name: string, at?: "start" | "end"): boolean {
+        return this.mixer?.pose(name, at) ?? false;
+    }
+
     /** Stops the animations, fading out over `blend` seconds (default 0.25). */
     stopAnimation(blend?: number) {
         this.mixer?.stop(blend);

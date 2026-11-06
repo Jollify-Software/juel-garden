@@ -43,6 +43,11 @@ import { GardenScene } from "./Scene";
  *   loading screen. {@link loaded} is a Promise for the model (`true` loaded, `false`
  *   not), there from the start. The model's `garden-model-load`, `garden-model-error` and
  *   `garden-model-progress` events bubble out of the viewer.
+ * - **Deferred:** `deferred` builds no scene and holds no WebGL context, for a page with more
+ *   models than a browser allows contexts (about 16), such as a slide deck: it shows `poster`, or
+ *   the frame it last drew ({@link still}). Taking the attribute away builds the scene and
+ *   loads the model; adding it again keeps a still, disposes the scene and lets the context go.
+ *   {@link loaded} waits until the model has been asked for. Without the attribute nothing changes.
  * - **No WebGL:** if the browser can't start WebGL, the viewer builds no scene: it shows
  *   `poster` and the page's own content marked `slot="fallback"` (hidden otherwise), the
  *   poster above the content when there are both, or else a short message; it gets the
@@ -67,6 +72,8 @@ import { GardenScene } from "./Scene";
 export class GardenModelViewer extends LitElement {
     /** The model's URL (glTF/GLB, or anything `<garden-mesh-model>` loads). */
     @property() src: string;
+    /** The file type (`glb`, `.gltf`), for a `src` whose URL doesn't end in one: a `data:` or `blob:` URL. */
+    @property() extension: string;
     /** `transparent` (the default) or a colour. */
     @property() background: string;
     /** `standard`: the model's PBR materials become StandardMaterials (see `<garden-mesh-model>`). */
@@ -85,6 +92,14 @@ export class GardenModelViewer extends LitElement {
     @property({ type: Number }) beta: number;
     /** The camera's start distance from the model's centre, in metres (default: fits the model). */
     @property({ type: Number }) radius: number;
+    /** Build no scene, and hold no WebGL context, until this is taken away (see above). */
+    @property({ type: Boolean }) deferred: boolean;
+
+    /**
+     * The frame the viewer last drew before it was deferred, as a data URL; `undefined` if it
+     * hasn't drawn the model yet. What a deferred viewer shows when it has no `poster`.
+     */
+    still: string;
 
     private sceneEl: GardenScene;
     private cameraEl: GardenCamera;
@@ -188,6 +203,19 @@ export class GardenModelViewer extends LitElement {
         return this.modelEl?.playOnce(name, options) ?? Promise.resolve(false);
     }
 
+    /**
+     * Holds the model at the first or last frame of a named animation, at once, with nothing
+     * playing: the state before a step, or its end when the viewer prefers reduced motion.
+     *
+     * @example
+     * ```js
+     * viewer.pose("Open", "start"); // the lid is shut again
+     * ```
+     */
+    pose(name: string, at?: "start" | "end"): boolean {
+        return this.modelEl?.pose(name, at) ?? false;
+    }
+
     /** Stops the playing animation. */
     stopAnimation(blend?: number) {
         this.modelEl?.stopAnimation(blend);
@@ -252,54 +280,25 @@ export class GardenModelViewer extends LitElement {
         document.head.appendChild(styles);
     }
 
+    /** The picture over the viewer while it has no frame of its own: `poster`, else its last frame. */
+    private makePoster() {
+        let src = this.poster || this.still;
+        if (!src || this.posterEl)
+            return;
+        this.posterEl = document.createElement("img");
+        this.posterEl.className = "garden-model-viewer-poster";
+        this.posterEl.alt = "";
+        this.posterEl.src = src;
+    }
+
     firstUpdated() {
         GardenModelViewer.injectStyles();
-        if (this.poster) {
-            this.posterEl = document.createElement("img");
-            this.posterEl.className = "garden-model-viewer-poster";
-            this.posterEl.alt = "";
-            this.posterEl.src = this.poster;
-        }
+        this.makePoster();
         if (!GardenModelViewer.webglAvailable) {
             this.showNoWebgl();
             return;
         }
 
-        let sceneEl = document.createElement("garden-scene") as GardenScene;
-        sceneEl.setAttribute("embedded", "");
-        let cameraEl = document.createElement("garden-camera") as GardenCamera;
-        cameraEl.setAttribute("type", "arc");
-        let hemi = document.createElement("garden-light");
-        hemi.setAttribute("type", "hemi");
-        hemi.setAttribute("intensity", "0.8");
-        let sun = document.createElement("garden-light");
-        sun.setAttribute("type", "directional");
-        // From above and in front (the camera starts at +z), a little to one side.
-        sun.setAttribute("direction", "-1 -2 -2");
-        sun.setAttribute("intensity", "0.6");
-        let modelEl = document.createElement("garden-mesh-model") as GardenMeshModel;
-        modelEl.setAttribute("animation", "none");
-        modelEl.setAttribute("loading-screen", "false");
-        if (this.materials) modelEl.setAttribute("materials", this.materials);
-        if (this.src) modelEl.setAttribute("src", this.src);
-        sceneEl.append(cameraEl, hemi, sun, modelEl);
-
-        this.sceneEl = sceneEl;
-        this.cameraEl = cameraEl;
-        this.modelEl = modelEl;
-
-        modelEl.addEventListener("garden-model-load", e => {
-            if (e.target == modelEl) {
-                this.settleLoaded(true);
-                this.onModelLoad();
-            }
-        });
-        modelEl.addEventListener("garden-model-error", e => {
-            if (e.target == modelEl) {
-                this.settleLoaded(false);
-                this.removePoster();
-            }
-        });
         // The wheel scrolls the page unless Ctrl/⌘ is held: stopped here, on the way down,
         // the camera never sees it and the browser scrolls as usual. A wheel that zooms
         // mustn't scroll the page (or zoom it, with Ctrl) as well: the camera is attached
@@ -318,6 +317,51 @@ export class GardenModelViewer extends LitElement {
         if (!this.hasAttribute("role")) this.setAttribute("role", "img");
         this.addEventListener("keydown", e => this.onKey(e));
 
+        if (this.deferred) {
+            if (this.posterEl) this.append(this.posterEl);
+            return;
+        }
+        this.startScene();
+    }
+
+    /** Builds the scene and starts loading the model. */
+    private startScene() {
+        let sceneEl = document.createElement("garden-scene") as GardenScene;
+        sceneEl.setAttribute("embedded", "");
+        let cameraEl = document.createElement("garden-camera") as GardenCamera;
+        cameraEl.setAttribute("type", "arc");
+        let hemi = document.createElement("garden-light");
+        hemi.setAttribute("type", "hemi");
+        hemi.setAttribute("intensity", "0.8");
+        let sun = document.createElement("garden-light");
+        sun.setAttribute("type", "directional");
+        // From above and in front (the camera starts at +z), a little to one side.
+        sun.setAttribute("direction", "-1 -2 -2");
+        sun.setAttribute("intensity", "0.6");
+        let modelEl = document.createElement("garden-mesh-model") as GardenMeshModel;
+        modelEl.setAttribute("animation", "none");
+        modelEl.setAttribute("loading-screen", "false");
+        if (this.materials) modelEl.setAttribute("materials", this.materials);
+        if (this.extension) modelEl.setAttribute("extension", this.extension);
+        if (this.src) modelEl.setAttribute("src", this.src);
+        sceneEl.append(cameraEl, hemi, sun, modelEl);
+
+        this.sceneEl = sceneEl;
+        this.cameraEl = cameraEl;
+        this.modelEl = modelEl;
+
+        modelEl.addEventListener("garden-model-load", e => {
+            if (e.target == modelEl && this.modelEl == modelEl) {
+                this.settleLoaded(true);
+                this.onModelLoad();
+            }
+        });
+        modelEl.addEventListener("garden-model-error", e => {
+            if (e.target == modelEl && this.modelEl == modelEl) {
+                this.settleLoaded(false);
+                this.removePoster();
+            }
+        });
         this.append(sceneEl);
         if (this.posterEl)
             this.append(this.posterEl);
@@ -332,13 +376,58 @@ export class GardenModelViewer extends LitElement {
         this.resizeObserver.observe(this);
     }
 
+    /**
+     * Keeps the frame on show as {@link still}, disposes the scene and lets its WebGL context go
+     * at once: Babylon's dispose leaves that to the garbage collector, too late for a browser
+     * that counts live contexts. The next start begins afresh, from the start view.
+     */
+    private stopScene() {
+        let sceneEl = this.sceneEl, canvas = sceneEl.querySelector("canvas");
+        // Only once its shaders are ready: until then a frame has nothing in it, and an empty
+        // picture would hide nothing but say "this is the model".
+        if (this.framed && canvas && this.scene?.isReady()) {
+            // Drawn here, in the same task: a WebGL canvas is blank to read otherwise.
+            try {
+                this.scene?.render();
+                this.still = canvas.toDataURL("image/webp", 0.9);
+            } catch { /* no still, then: the poster or nothing */ }
+        }
+        if (this.rotateObserver) this.scene?.onBeforeRenderObservable.remove(this.rotateObserver);
+        this.rotateObserver = null;
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = null;
+        this.sceneEl = this.cameraEl = this.modelEl = null;
+        this.framed = false;
+        this.touched = false;
+        if (this.loadedSettled)
+            this.newLoaded();
+        this.removePoster();
+        this.makePoster();
+        if (this.posterEl) this.append(this.posterEl);
+        // Removed, the scene disposes its engine in a microtask (GardenScene): this one runs after it.
+        sceneEl.remove();
+        queueMicrotask(() => {
+            let gl = canvas?.getContext("webgl2") || canvas?.getContext("webgl");
+            gl?.getExtension("WEBGL_lose_context")?.loseContext();
+        });
+    }
+
     updated(changed: Map<PropertyKey, unknown>) {
         if (changed.has("label") || changed.has("src")) {
             let label = this.label || (this.src ?? "").split(/[?#]/)[0].split("/").pop();
             if (label) this.setAttribute("aria-label", label);
         }
+        if (changed.has("deferred") && GardenModelViewer.webglAvailable) {
+            if (this.deferred && this.sceneEl) this.stopScene();
+            else if (!this.deferred && !this.sceneEl) {
+                this.startScene();
+                return;
+            }
+        }
         if (!this.modelEl)
             return;
+        if (changed.has("extension") && this.extension)
+            this.modelEl.setAttribute("extension", this.extension);
         if (changed.has("src") && this.src && this.modelEl.getAttribute("src") != this.src) {
             this.framed = false;
             // A model already loaded (or failed): the new one gets its own Promise. One still

@@ -120,6 +120,7 @@ The page sizes it with CSS (300 px wide and 2:1 by default).
 | Attribute | Default | What it does |
 |---|---|---|
 | `src` | | The model (glTF/GLB, or anything `<garden-mesh-model>` loads). |
+| `extension` | | The file type (`glb`, `.gltf`), for a `src` that doesn't end in one: a `data:` or `blob:` URL. |
 | `background` | `transparent` | The page shows through; or a colour (`#rrggbb` or a name). |
 | `alpha`, `beta` | front, from a little above | The start angles, in radians, as `<garden-camera>`. A change after load turns the camera. |
 | `radius` | fits the model | The start distance from the model's centre, in metres. A change after load moves the camera (removed: fits again). |
@@ -131,6 +132,11 @@ The page sizes it with CSS (300 px wide and 2:1 by default).
 
 Keyboard: the viewer is a tab stop with a focus ring; arrow keys turn the model 10° a
 press and `+`/`-` zoom.
+
+Deferred: `deferred` builds no scene and holds no WebGL context, for a page with more models than a browser
+allows contexts (about 16), such as a slide deck. It shows `poster`, or the frame it last drew (`still`). Taking
+the attribute away builds the scene and loads the model; adding it again keeps a still, disposes the scene and
+lets the context go at once. `loaded` waits until the model has been asked for.
 
 No WebGL: if the browser can't start WebGL, the viewer builds no scene. It shows `poster`
 and the page's own content marked `slot="fallback"` inside it (hidden while WebGL works),
@@ -327,7 +333,7 @@ and walk-throughs with guides and talking exhibits (the plan is
 | `<garden-camera type="free" keys>` | `keys="arrows"` leaves W/A/S/D to the page (a game's own controls), `keys="none"` takes no keys |
 | `<garden-action trigger="keydown">` | Keyboard actions: `trigger="keydown"`/`"keyup"`, `key="a ArrowLeft"` (any case, `space`; empty for any key), e.g. `type="increment" property="position.x" value="-0.1"` inside a mesh; a held key repeats (`test:key-action`) |
 | `<garden-camera near far>` | Clip planes in metres, any camera type (`minZ`/`maxZ`; Babylon's defaults 1 and 10000 when unset): `near="0.01"` for a small model seen from close by. A change applies in place. Test: `node tests/camera-clip.js` |
-| `<garden-camera type="free" collisions jump>` | Space jumps, `jump="1.2"` metres high (bare: 1), for a visitor walking round a venue: it bumps its head on ceilings and lands on what's below; only while standing, never while typing in a form field. Opt-in, so games keep Space. Test: `node tests/camera-jump.js` |
+| `<garden-camera type="free" collisions jump>` | Space jumps, `jump="1.2"` metres high (bare: 1), for a visitor walking round a venue: it bumps its head on ceilings and lands on what's below; only while standing, never while typing in a form field. Opt-in, so games keep Space. `jump-button` adds a Jump button on the right for a visitor with no Space bar: bare or `true` on a touch screen only, `always` with a mouse too; a page can set `camera.jumpButton.visible`. Test: `node tests/camera-jump.js` |
 | `<garden-camera type="device">` | Turns with the phone or tablet it's on (a phone in a viewer); a free camera on a desktop. `target="x y z"` aims a free or device camera too |
 | `<garden-sky environment>` | A prefiltered `.env`/`.dds` cube as the sky and the light PBR materials (glTF models) reflect; `blur`, `lighting="false"`, `backdrop="false"` (light only: the background is `colour`), `turn` (degrees). `environment="default"`: Babylon's default environment (backdrop, ground fitted under the models once they load, and light) |
 | `<garden-material node>` | A node material (the Node Material Editor's output) from a JSON file or `#ID` on Babylon's snippet server: shaders, water, anti-tiling grounds; `<garden-texture block="name">` fills a texture block, `input-<name>` sets an input block |
@@ -525,7 +531,7 @@ and the pieces that keep a phone's frame rate up:
 | `<garden-scene performance>` | Babylon's scene performance priority for thousands of meshes: `intermediate` stops picking as the pointer moves (hover actions; a press still picks) and clearing the canvas (the scene needs a sky or environment); `aggressive` also skips the view test and keeps render lists between frames (set it again after adding meshes); `compatible` (default) is Babylon's usual. Live (`test:performance-priority`) |
 | `<garden-camera ortho>` | An orthographic camera: bare, one unit is a canvas pixel; `ortho="5"`, 5 units above and below the centre. With `viewport="0 0 1 1"` and a `layer-mask`, a HUD drawn over the main camera: a crosshair, a gun sight (`test:hud`) |
 | `<garden-particle texture-mask>` | Babylon's `textureMask` (`"r g b a"`, multiplies the image); a custom system directly in the scene plays with `event="load"`; a changed attribute rebuilds the system (`test:particle-mask`) |
-| `<garden-texture>` | `sampling` (`nearest`, `bilinear`, `trilinear`), `wrap` (`repeat`, `clamp`, `mirror`; two words for u and v), `mipmaps="false"`, `invert-y="false"`: crisp lookup tables for shaders, pixel art (`test:texture-options`) |
+| `<garden-texture>` | `sampling` (`nearest`, `bilinear`, `trilinear`), `wrap` (`repeat`, `clamp`, `mirror`; two words for u and v), `mipmaps="false"`, `invert-y="false"`, `turn` (degrees about the picture's middle, on a plain mesh; a dome reads `rotation` instead, and unset changes nothing): crisp lookup tables for shaders, pixel art (`test:texture-options`) |
 | `<garden-mesh-model>` + `<garden-material>` | A material child dresses every part of the model: a node or shader material on a glTF's meshes; `part="name"` (names) dresses only those parts, so each part wears its own; `getPart(name)` finds a part (`test:glow`) |
 | `<garden-particle part>` / `surface` | Particles from a mesh's surface (Babylon's `MeshParticleEmitter`): `surface` from the parent mesh, `part="name"` from a model's named part once it has loaded; along the normals, or `direction1`/`direction2` (`use-normals` to say outright) (`test:mesh-emitter`) |
 | `<garden-particle colour-gradients>` | Colour over a particle's life, `"0 r g b a, 0.4 #rrggbbaa, 1 r g b a"`; `noise-strength` (+ `noise-speed`, `-octaves`, `-persistence`, `-brightness`, `-size`) for Perlin turbulence; `sprite-cell`, `sprite-cells`, `sprite-speed`, `sprite-random-start` for a sprite sheet; `blend` (`oneone`, `add`, `standard`, `multiply`, `multiplyadd`), `local`, `rendering-group`, `invert-y`, min/max scale and initial rotation; `cycle="on off"` plays and stops it in turn (`test:mesh-emitter`) |

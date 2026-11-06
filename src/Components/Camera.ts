@@ -6,7 +6,9 @@ import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { customElement, property } from "lit/decorators.js";
 import { CameraJump } from "../CameraTypes/CameraJump";
+import { CameraJumpButton } from "../CameraTypes/CameraJumpButton";
 import { CameraTouchMove } from "../CameraTypes/CameraTouchMove";
+import { ThumbPad } from "../Utils/ThumbPad";
 import { ThumbstickRegistry } from "../Utils/ThumbstickRegistry";
 import { CameraTypeStrategies } from "../CameraTypes/CameraTypeStrategies";
 import { Vector3Convert } from "../Converters/Vector3Convert";
@@ -49,6 +51,10 @@ import { GardenScene } from "./Scene";
  * Its value is the height in metres (`jump="1.2"`; empty or bare, 1). With `collisions` it
  * bumps its head on ceilings and lands on what's below, as a visitor walking round a venue
  * would. Only while standing, and not while typing in a form field ({@link CameraJump}).
+ *
+ * `jump-button` (with `jump`): a Jump button on the screen, for a visitor with no Space bar. Bare or
+ * `true`, on a touch screen only; `always`, with a mouse too; `false` or left out, none. Not on a
+ * camera with a `viewport` or `controls="false"` ({@link CameraJumpButton}).
  *
  * `rotation` (degrees, `"x y z"`) turns a `free` (or other non-orbiting)
  * camera: `"0 90 0"` looks along +x, `"90 0 0"` straight down.
@@ -104,6 +110,8 @@ export class GardenCamera extends GardenElement {
     @property() touch: string;
     /** Space jumps, this high in metres (empty: 1); see the class notes. */
     @property() jump: string;
+    /** A Jump button on the screen: bare or `true` on a touch screen, `always` with a mouse too; see the class notes. */
+    @property({ attribute: "jump-button" }) jumpButtonMode: string;
     /**
      * The near clip plane, in metres (the camera's `minZ`). Babylon's default is 1, which
      * clips a small model seen from close by; `near="0.01"` shows a 60 cm model from 1 m.
@@ -262,10 +270,15 @@ export class GardenCamera extends GardenElement {
     /** Space's jump, for a camera with `jump`. */
     jumper: CameraJump;
 
+    /** The on-screen button, for a camera with `jump-button`; a page can set its `visible`. */
+    jumpButton: CameraJumpButton;
+
     /** Tap-to-walk and the fading thumbstick, for a `type="free"` camera on a touch screen. */
     touchMove: CameraTouchMove;
 
     private disposeCamera() {
+        this.jumpButton?.dispose();
+        this.jumpButton = null;
         this.jumper?.dispose();
         this.jumper = null;
         this.touchMove?.dispose();
@@ -344,6 +357,10 @@ export class GardenCamera extends GardenElement {
         if (this.hasAttribute("jump") && this.camera instanceof FreeCamera) {
             let height = parseFloat(this.getAttribute("jump"));
             this.jumper = new CameraJump(this.camera, scene, Number.isFinite(height) && height > 0 ? height : 1);
+            let button = this.getAttribute("jump-button")?.toLowerCase();
+            if (button != null && button != "false" && controls != "false" && !viewport
+                && (button == "always" || ThumbPad.touchScreen))
+                this.jumpButton = new CameraJumpButton(document.body, this.jumper, this.camera, scene);
         }
 
         let touch = (this.touch ?? "true").toLowerCase();

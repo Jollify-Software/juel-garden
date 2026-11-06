@@ -38,6 +38,10 @@ export class GardenTexture extends GardenElement {
     // it. Left at Babylon's own default (1, no repeat) when unset.
     @property({ type: Number, attribute: "u-scale" }) uScale: number;
     @property({ type: Number, attribute: "v-scale" }) vScale: number;
+    // Degrees to turn the picture on a plain mesh, about its middle. Separate from `rotation`,
+    // which only a dome reads (it bakes that into its own UVs): `turn` leaves a dome alone, and unset
+    // changes nothing. For a face whose mesh lays the picture sideways: Babylon's box does on its x faces.
+    @property({ type: Number }) turn: number;
 
     @property() sampling: string;
     @property() wrap: string;
@@ -82,6 +86,8 @@ export class GardenTexture extends GardenElement {
             texture.uScale = this.uScale;
         if (this.vScale)
             texture.vScale = this.vScale;
+        if (this.turn)
+            texture.wAng = this.turn * Math.PI / 180;
         // Rebuilt for a change: every material slot holding the old texture gets this one.
         let old = this.texture;
         this.texture = texture;
