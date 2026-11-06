@@ -4,6 +4,9 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Observer } from "@babylonjs/core/Misc/observable";
 import { Scene } from "@babylonjs/core/scene";
 
+/** Metres below everything in the scene at which a camera has fallen off the world and goes back to where it started. */
+const LostBelow = 15;
+
 /** Babylon's collision threshold with a walking camera: below it, a step that slides along a stair or wall is dropped. Its own default is 0.001. */
 const WalkingEpsilon = 0.0001;
 
@@ -15,14 +18,19 @@ const WalkingEpsilon = 0.0001;
  * centimetre or less, so its threshold is lowered while one of these is about.
  *
  * `applyGravity` still says whether it falls, so a jump in the air, or a page looking from above, turns it off as they always did.
+ * A camera that walks off the edge of the world doesn't fall for ever: well below everything in the scene, it's back where it started.
  * See {@link "Components/Camera"!GardenCamera}.
  *
  * @category Camera Types
  */
 export class CameraFall {
     private observer: Observer<Scene>;
+    private start: Vector3;
+    private startRotation: Vector3;
 
     constructor(private camera: FreeCamera, private scene: Scene, private metresASecond: number) {
+        this.start = camera.position.clone();
+        this.startRotation = camera.rotation.clone();
         AbstractEngine.CollisionsEpsilon = Math.min(AbstractEngine.CollisionsEpsilon, WalkingEpsilon);
         let move = FreeCamera.prototype._collideWithWorld.bind(camera);
         camera._collideWithWorld = (displacement: Vector3) => {
@@ -39,6 +47,18 @@ export class CameraFall {
         if (!camera.applyGravity || !camera.checkCollisions || !this.scene.collisionsEnabled || this.scene.activeCamera != camera) return;
         let seconds = Math.min(this.scene.getEngine().getDeltaTime() / 1000, 0.1);
         camera._collideWithWorld(new Vector3(0, -this.metresASecond * seconds, 0));
+        if (camera.position.y < this.start.y - LostBelow && this.fellOffTheWorld()) {
+            camera.position.copyFrom(this.start);
+            camera.rotation.copyFrom(this.startRotation);
+            camera.cameraDirection.setAll(0);
+        }
+    }
+
+    /** Worked out only once it has already dropped a long way, so a deep basement still counts as somewhere to be. */
+    private fellOffTheWorld(): boolean {
+        let camera = this.camera;
+        let lowest = this.scene.getWorldExtends(mesh => mesh.isEnabled() && mesh.isVisible && mesh.checkCollisions && mesh.getTotalVertices() > 0).min.y;
+        return camera.position.y < lowest - LostBelow;
     }
 
     dispose() {

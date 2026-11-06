@@ -60,6 +60,7 @@ import { GardenScene } from "./Scene";
  *
  * `fall` (a camera built on Babylon's `FreeCamera`, with `collisions`): falls this many metres a second, at any frame rate. The scene's
  * `gravity` is a drop per frame, so on a fast screen it beats a slow walk's smaller step, and the camera can't climb stairs.
+ * Walking off the edge of the world, it goes back to where it started.
  *
  * `hint` (a `type="free"` camera): a line of words on how to move, until the visitor has taken a few
  * steps or for 15 seconds. Bare, the words suit the device; or `hint="Your own words"`; `false` or left

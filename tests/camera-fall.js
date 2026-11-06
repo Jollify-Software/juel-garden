@@ -54,6 +54,15 @@ run(scene(5), async ({ page, check, open }) => {
         check(`fall="5": about 5 m in a second at ${fps} fps`, rate > 4.5 && rate < 5.5, String(rate));
     }
 
+    // Off the edge of the world, it comes back to where it started.
+    const back = await page.evaluate(() => new Promise(resolve => {
+        const cam = document.getElementById("cam").camera, s = cam.getScene();
+        cam.position.set(100, 5, 100);
+        const until = Date.now() + 12000;
+        const o = s.onBeforeRenderObservable.add(() => { if (cam.position.x == 0 || Date.now() > until) { s.onBeforeRenderObservable.remove(o); resolve([cam.position.x, +cam.position.y.toFixed(1), cam.position.z]); } });
+    }));
+    check("off the edge of the world: back where it started", back[0] == 0 && back[2] == 3, JSON.stringify(back));
+
     // A page turning gravity off stops the fall: the app's Overview looks from above with this.
     const still = await page.evaluate(() => new Promise(resolve => {
         const cam = document.getElementById("cam").camera, s = cam.getScene();
