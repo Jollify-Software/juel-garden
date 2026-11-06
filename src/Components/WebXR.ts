@@ -1,7 +1,9 @@
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import type { Scene } from "@babylonjs/core/scene";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
+import { WebXRState } from "@babylonjs/core/XR/webXRTypes";
 import { WebXRFeatureName } from "@babylonjs/core/XR/webXRFeaturesManager";
+import { WebXRMotionControllerManager } from "@babylonjs/core/XR/motionController/webXRMotionControllerManager";
 import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
 import { PhysicsImpostor } from "@babylonjs/core/Physics/v1/physicsImpostor";
 import { GardenPhysics } from "./Physics";
@@ -37,6 +39,10 @@ import { GardenScene } from "./Scene";
  * re-enters VR straight away where the browser supports WebXR navigation
  * (the `sessiongranted` event, e.g. Meta Quest Browser), so a visitor can
  * walk from scene to scene without taking the headset off.
+ *
+ * The page asks another site for something only on entering VR: the list of real
+ * controllers, at `immersive-web.github.io`. Nothing is requested on load, and without it
+ * (offline, or refused) the session carries on with Babylon's generic controllers.
  *
  * @example
  * ```html
@@ -138,7 +144,12 @@ export class GardenWebXR extends GardenElement {
                 this.xr = await scene.createDefaultXRExperienceAsync({
                     uiOptions: { sessionMode: this.mode === "ar" ? "immersive-ar" : "immersive-vr" },
                     floorMeshes,
-                    disableTeleportation: !this.teleportation
+                    disableTeleportation: !this.teleportation,
+                    // Not on load: a visitor at a desktop never asks another site for anything.
+                    inputOptions: { disableOnlineControllerRepository: true }
+                });
+                this.xr.baseExperience?.onStateChangedObservable.add(state => {
+                    if (state === WebXRState.ENTERING_XR) this.useOnlineControllers();
                 });
             } catch (err) {
                 // No WebXR support (browser, device, or non-secure context) -- the desktop
@@ -150,6 +161,17 @@ export class GardenWebXR extends GardenElement {
         } finally {
             this.endBuild();
         }
+    }
+
+    /**
+     * Entering VR: the visitor's real controllers, from the WebXR input profiles site. Offline,
+     * or refused, Babylon's own generic controllers stand in, and the session carries on.
+     */
+    private useOnlineControllers() {
+        WebXRMotionControllerManager.UseOnlineRepository = true;
+        WebXRMotionControllerManager.UpdateProfilesList().catch(() => {
+            WebXRMotionControllerManager.UseOnlineRepository = false;
+        });
     }
 
     /** The controllers' (and the headset's) bodies, with `physics-controllers`. */
