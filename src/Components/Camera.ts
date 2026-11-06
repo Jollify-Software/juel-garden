@@ -6,6 +6,7 @@ import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { customElement, property } from "lit/decorators.js";
 import { CameraJump } from "../CameraTypes/CameraJump";
+import { CameraHint } from "../CameraTypes/CameraHint";
 import { CameraJumpButton } from "../CameraTypes/CameraJumpButton";
 import { CameraTouchMove } from "../CameraTypes/CameraTouchMove";
 import { ThumbPad } from "../Utils/ThumbPad";
@@ -55,6 +56,14 @@ import { GardenScene } from "./Scene";
  * `jump-button` (with `jump`): a Jump button on the screen, for a visitor with no Space bar. Bare or
  * `true`, on a touch screen only; `always`, with a mouse too; `false` or left out, none. Not on a
  * camera with a `viewport` or `controls="false"` ({@link CameraJumpButton}).
+ *
+ * `hint` (a `type="free"` camera): a line of words on how to move, until the visitor has taken a few
+ * steps or for 15 seconds. Bare, the words suit the device; or `hint="Your own words"`; `false` or left
+ * out, none. Not on a camera with a `viewport` or `controls="false"` ({@link CameraHint}).
+ *
+ * **The keys work from the start.** Babylon reads the keyboard from the canvas, so in a page that's only
+ * a scene the camera takes the focus as it attaches. Not in a frame or an `embedded` scene, where the
+ * focus belongs to the page around it, and never from something the visitor is already in.
  *
  * `rotation` (degrees, `"x y z"`) turns a `free` (or other non-orbiting)
  * camera: `"0 90 0"` looks along +x, `"90 0 0"` straight down.
@@ -112,6 +121,8 @@ export class GardenCamera extends GardenElement {
     @property() jump: string;
     /** A Jump button on the screen: bare or `true` on a touch screen, `always` with a mouse too; see the class notes. */
     @property({ attribute: "jump-button" }) jumpButtonMode: string;
+    /** Words on how to move, for a while (bare: the device's own); see the class notes. */
+    @property() hint: string;
     /**
      * The near clip plane, in metres (the camera's `minZ`). Babylon's default is 1, which
      * clips a small model seen from close by; `near="0.01"` shows a 60 cm model from 1 m.
@@ -251,6 +262,14 @@ export class GardenCamera extends GardenElement {
         this.observe(engine.onResizeObservable, fit);
     }
 
+    /** Babylon reads the keys from the canvas: a page that's only a scene gives it the focus, unless the visitor is already in something. */
+    private static takeKeys(sceneEl: GardenScene) {
+        if (sceneEl.embedded || window.top != window || !sceneEl.canvas) return;
+        let active = document.activeElement;
+        if (active && active != document.body) return;
+        sceneEl.canvas.focus({ preventScroll: true });
+    }
+
     /** The `<garden-scene>` it was built in. */
     private sceneEl: Element;
 
@@ -273,10 +292,15 @@ export class GardenCamera extends GardenElement {
     /** The on-screen button, for a camera with `jump-button`; a page can set its `visible`. */
     jumpButton: CameraJumpButton;
 
+    /** The words on how to move, for a camera with `hint`; a page can set its `visible`. */
+    moveHint: CameraHint;
+
     /** Tap-to-walk and the fading thumbstick, for a `type="free"` camera on a touch screen. */
     touchMove: CameraTouchMove;
 
     private disposeCamera() {
+        this.moveHint?.dispose();
+        this.moveHint = null;
         this.jumpButton?.dispose();
         this.jumpButton = null;
         this.jumper?.dispose();
@@ -351,8 +375,10 @@ export class GardenCamera extends GardenElement {
         GardenCamera.arrange(sceneEl, scene);
 
         let controls = this.getAttribute("controls");
-        if (controls != "false" && (!viewport || controls != null))
+        if (controls != "false" && (!viewport || controls != null)) {
             this.camera.attachControl(sceneEl.canvas, true);
+            GardenCamera.takeKeys(sceneEl);
+        }
 
         if (this.hasAttribute("jump") && this.camera instanceof FreeCamera) {
             let height = parseFloat(this.getAttribute("jump"));
@@ -362,6 +388,11 @@ export class GardenCamera extends GardenElement {
                 && (button == "always" || ThumbPad.touchScreen))
                 this.jumpButton = new CameraJumpButton(document.body, this.jumper, this.camera, scene);
         }
+
+        let hint = this.getAttribute("hint");
+        if (hint != null && hint.toLowerCase() != "false" && (this.type ?? "").toLowerCase() == "free" && this.camera instanceof FreeCamera
+            && controls != "false" && !viewport)
+            this.moveHint = new CameraHint(document.body, hint || CameraHint.words(CameraTouchMove.wanted(), !!this.jumper), this.camera, scene);
 
         let touch = (this.touch ?? "true").toLowerCase();
         if ((this.type ?? "").toLowerCase() == "free" && this.camera instanceof FreeCamera && controls != "false" && !viewport

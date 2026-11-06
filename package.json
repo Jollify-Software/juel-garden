@@ -78,6 +78,7 @@
     "test:sound": "node tests/sound.js",
     "test:walk": "node tests/walk.js",
     "test:camera-jump": "node tests/camera-jump.js",
+    "test:camera-hint": "node tests/camera-hint.js",
     "test:follow": "node tests/follow.js",
     "test:named-animations": "node tests/named-animations.js",
     "test:root-motion": "node tests/root-motion.js",
