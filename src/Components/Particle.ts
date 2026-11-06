@@ -29,6 +29,8 @@ import { Weather } from "./Weather";
  * systems that need no image and play at once (see {@link Weather}). Rain,
  * snow and sand fall or blow round the camera; a dust devil spins on its
  * parent mesh, so it travels when the mesh does (`track`, `wander`).
+ * `"fire"`, `"smoke"` and `"sparks"` rise from the parent, also with no image, so unlike
+ * `effect="fire"` they ask no other site for anything.
  * `wind` (`"x y z"`, units/second) blows sand and leans rain and snow;
  * `size` scales the particles; `density` (0 = none, 1 = normal, 2 = a storm)
  * can be set from code at any time, e.g. ramped up as a storm builds.
