@@ -6,6 +6,7 @@ import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { customElement, property } from "lit/decorators.js";
 import { CameraJump } from "../CameraTypes/CameraJump";
+import { CameraFall } from "../CameraTypes/CameraFall";
 import { CameraHint } from "../CameraTypes/CameraHint";
 import { CameraJumpButton } from "../CameraTypes/CameraJumpButton";
 import { CameraTouchMove } from "../CameraTypes/CameraTouchMove";
@@ -56,6 +57,9 @@ import { GardenScene } from "./Scene";
  * `jump-button` (with `jump`): a Jump button on the screen, for a visitor with no Space bar. Bare or
  * `true`, on a touch screen only; `always`, with a mouse too; `false` or left out, none. Not on a
  * camera with a `viewport` or `controls="false"` ({@link CameraJumpButton}).
+ *
+ * `fall` (a camera built on Babylon's `FreeCamera`, with `collisions`): falls this many metres a second, at any frame rate. The scene's
+ * `gravity` is a drop per frame, so on a fast screen it beats a slow walk's smaller step, and the camera can't climb stairs.
  *
  * `hint` (a `type="free"` camera): a line of words on how to move, until the visitor has taken a few
  * steps or for 15 seconds. Bare, the words suit the device; or `hint="Your own words"`; `false` or left
@@ -121,6 +125,8 @@ export class GardenCamera extends GardenElement {
     @property() jump: string;
     /** A Jump button on the screen: bare or `true` on a touch screen, `always` with a mouse too; see the class notes. */
     @property({ attribute: "jump-button" }) jumpButtonMode: string;
+    /** Falls this many metres a second, at any frame rate, in place of the scene's per-frame `gravity`; see the class notes. */
+    @property({ type: Number }) fall: number;
     /** Words on how to move, for a while (bare: the device's own); see the class notes. */
     @property() hint: string;
     /**
@@ -292,6 +298,9 @@ export class GardenCamera extends GardenElement {
     /** The on-screen button, for a camera with `jump-button`; a page can set its `visible`. */
     jumpButton: CameraJumpButton;
 
+    /** The steady fall, for a camera with `fall`. */
+    faller: CameraFall;
+
     /** The words on how to move, for a camera with `hint`; a page can set its `visible`. */
     moveHint: CameraHint;
 
@@ -299,6 +308,8 @@ export class GardenCamera extends GardenElement {
     touchMove: CameraTouchMove;
 
     private disposeCamera() {
+        this.faller?.dispose();
+        this.faller = null;
         this.moveHint?.dispose();
         this.moveHint = null;
         this.jumpButton?.dispose();
@@ -388,6 +399,9 @@ export class GardenCamera extends GardenElement {
                 && (button == "always" || ThumbPad.touchScreen))
                 this.jumpButton = new CameraJumpButton(document.body, this.jumper, this.camera, scene);
         }
+
+        if (this.fall > 0 && this.camera instanceof FreeCamera)
+            this.faller = new CameraFall(this.camera, scene, this.fall);
 
         let hint = this.getAttribute("hint");
         if (hint != null && hint.toLowerCase() != "false" && (this.type ?? "").toLowerCase() == "free" && this.camera instanceof FreeCamera
