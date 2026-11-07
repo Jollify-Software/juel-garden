@@ -144,6 +144,11 @@ the poster above the content when there are both, or else a short message; it ge
 `no-webgl` attribute, `loaded` resolves `false` and it fires `garden-model-error`. With
 fallback content the viewer drops `role="img"`, so screen readers reach its links.
 
+A model that can't load: the same `slot="fallback"` content takes the empty scene's place,
+with a `load-failed` attribute, until a model does load. With no such content the scene
+stays. A page opened straight from disk is the usual case, as a browser won't let it read
+the model's file.
+
 Script: `loaded` (a Promise, there from the start: `true` once the model has loaded, `false`
 if it failed or there's no WebGL; a new `src` makes a new one), `animationNames`,
 `play(name, options)`, `playOnce(name)` (a Promise that resolves when the one-shot ends;
