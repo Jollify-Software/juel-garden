@@ -48,6 +48,10 @@ import { GardenScene } from "./Scene";
  *   the frame it last drew ({@link still}). Taking the attribute away builds the scene and
  *   loads the model; adding it again keeps a still, disposes the scene and lets the context go.
  *   {@link loaded} waits until the model has been asked for. Without the attribute nothing changes.
+ * - **A model that can't load:** the page's `slot="fallback"` content takes the empty scene's
+ *   place, with a `load-failed` attribute (a CSS hook), until a model does load. With no such
+ *   content the scene stays. A page opened straight from disk is the usual case, as a browser
+ *   won't let it read the model's file.
  * - **No WebGL:** if the browser can't start WebGL, the viewer builds no scene: it shows
  *   `poster` and the page's own content marked `slot="fallback"` (hidden otherwise), the
  *   poster above the content when there are both, or else a short message; it gets the
@@ -244,7 +248,10 @@ export class GardenModelViewer extends LitElement {
                 object-fit: contain;
                 pointer-events: none;
             }
-            garden-model-viewer:not([no-webgl]) > [slot="fallback"] {
+            garden-model-viewer:not([no-webgl]):not([load-failed]) > [slot="fallback"] {
+                display: none;
+            }
+            garden-model-viewer[load-failed] > garden-scene {
                 display: none;
             }
             /* No WebGL, with a poster and the page's fallback content: the poster above, the
@@ -352,6 +359,7 @@ export class GardenModelViewer extends LitElement {
 
         modelEl.addEventListener("garden-model-load", e => {
             if (e.target == modelEl && this.modelEl == modelEl) {
+                this.removeAttribute("load-failed");
                 this.settleLoaded(true);
                 this.onModelLoad();
             }
@@ -360,6 +368,9 @@ export class GardenModelViewer extends LitElement {
             if (e.target == modelEl && this.modelEl == modelEl) {
                 this.settleLoaded(false);
                 this.removePoster();
+                // The page's own words, rather than an empty scene. With none, the scene stays, as it did.
+                if (this.querySelector(':scope > [slot="fallback"]'))
+                    this.setAttribute("load-failed", "");
             }
         });
         this.append(sceneEl);
