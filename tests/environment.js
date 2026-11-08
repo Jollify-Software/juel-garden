@@ -48,4 +48,15 @@ run(`
     check("the backdrop doesn't cast; the box does", sh.casters.length == 1 && !sh.casters.some(n => /^Background/.test(n)), JSON.stringify(sh));
     check("its ground receives shadows, its sky doesn't", sh.ground && !sh.sky, JSON.stringify(sh));
     check("shadow-blur: a blurred exponential shadow map with that kernel", sh.blur && sh.kernel == 16 && !sh.pcf, JSON.stringify(sh));
+
+    // <garden-sky environment>: how a .dds is read. The file never needs to load: Babylon says how it was asked
+    // to read it (a prefiltered texture is linear, gammaSpace false; a plain cube is gamma, gammaSpace true).
+    const read = async attrs => {
+        await open(`<garden-scene><garden-camera type="arc" position="0 2 -6"></garden-camera><garden-sky id="sky" lighting="true" ${attrs}></garden-sky></garden-scene>`);
+        await page.waitForFunction(() => document.querySelector("garden-scene").scene?.environmentTexture);
+        return page.evaluate(() => document.querySelector("garden-scene").scene.environmentTexture.gammaSpace);
+    };
+    check("a .dds is prefiltered (linear) unless it says otherwise", await read(`environment="sky.dds"`) === false);
+    check("environment-kind=\"cube\": a .dds as a plain gamma-space cube", await read(`environment="sky.dds" environment-kind="cube"`) === true);
+    check("environment-kind=\"prefiltered\" says the default out loud", await read(`environment="sky.dds" environment-kind="prefiltered"`) === false);
 });

@@ -37,7 +37,9 @@ import "@babylonjs/core/Helpers/sceneHelpers";
  * materials reflect -- a glTF model's metal and gloss look right only with one.
  * `blur` (0 sharp … 1, default 0) softens the sky; `lighting="false"` keeps it
  * as a backdrop only; `backdrop="false"` uses it as light only (the background
- * is then `colour`); `turn` (degrees) turns it round the vertical. `size` as below (default 1000). `environment="default"` is
+ * is then `colour`); `turn` (degrees) turns it round the vertical. `environment-kind` says how the
+ * file is read: `prefiltered` (linear data, the default for a `.dds`) or `cube` (a plain cube in gamma
+ * space, the default for anything else). `size` as below (default 1000). `environment="default"` is
  * Babylon's own (`scene.createDefaultEnvironment()`): a soft backdrop, a ground
  * fading out round the origin (`ground="false"` for none) and its light --
  * a model viewer in one line. `element.environmentHelper` is Babylon's helper.
@@ -141,7 +143,10 @@ export class GardenSky extends GardenMesh {
         }
         if (this.environment) {
             // A prefiltered .dds is linear (an .env says so itself), as Babylon's own helper loads it.
-            let texture = /\.dds([?#]|$)/i.test(this.environment)
+            // `environment-kind="cube"` says this .dds is a plain cube in gamma space instead.
+            let kind = this.getAttribute("environment-kind");
+            let prefiltered = kind ? kind != "cube" : /\.dds([?#]|$)/i.test(this.environment);
+            let texture = prefiltered
                 ? CubeTexture.CreateFromPrefilteredData(this.environment, scene)
                 : new CubeTexture(this.environment, scene);
             if (this.getAttribute("lighting") != "false")
