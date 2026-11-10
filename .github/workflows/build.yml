@@ -37,16 +37,55 @@ jobs:
       - name: Unit tests
         run: node tests/run-all.js --unit
 
+  # The tests that build a scene with Parterre (tests/parterre-*.js) need it checked out beside this repo, with
+  # jollify-packaging beside that (Parterre.Cli references it), and .NET. Both are private: the PARTERRE_TOKEN
+  # secret is a fine-grained token with read access to Jollify-Software/parterre and jollify-packaging. Without
+  # it those tests are skipped (tests/run-all.js says so), not failed.
   browser-tests:
     runs-on: ubuntu-latest
     continue-on-error: true
+    env:
+      HAS_PARTERRE_TOKEN: ${{ secrets.PARTERRE_TOKEN != '' }}
+    defaults:
+      run:
+        working-directory: juel-garden
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: juel-garden
+
+      - name: Check out parterre beside it
+        if: env.HAS_PARTERRE_TOKEN == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: Jollify-Software/parterre
+          token: ${{ secrets.PARTERRE_TOKEN }}
+          path: parterre
+
+      - name: Check out jollify-packaging beside that
+        if: env.HAS_PARTERRE_TOKEN == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: Jollify-Software/jollify-packaging
+          token: ${{ secrets.PARTERRE_TOKEN }}
+          path: jollify-packaging
+
+      - name: Setup .NET
+        if: env.HAS_PARTERRE_TOKEN == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Parterre's CLI once (the tests `dotnet run` it)
+        if: env.HAS_PARTERRE_TOKEN == 'true'
+        working-directory: parterre
+        run: dotnet build Parterre.Cli
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: juel-garden/package-lock.json
 
       - name: Install
         run: npm ci

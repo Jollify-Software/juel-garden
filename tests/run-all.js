@@ -21,6 +21,11 @@ const { spawn } = require("child_process");
 const HERE = __dirname;
 // Files in tests/ that are helpers, not tests.
 const NOT_TESTS = new Set(["harness.js", "gpu.js", "run-all.js"]);
+// Tests that build their scene with Parterre's CLI (they name Parterre.Cli) need the sibling checkout
+// C:\Jollify\parterre (../parterre) and dotnet. Without it they're skipped, and said so, not failed: CI
+// checks it out only when it has the PARTERRE_TOKEN secret (both repos are private).
+const PARTERRE_CLI = path.resolve(HERE, "..", "..", "parterre", "Parterre.Cli");
+const needsParterre = file => fs.readFileSync(file, "utf8").includes("Parterre.Cli");
 // Tests that need longer than the default limit, in seconds: examples opens every example page (about 90 s).
 const SLOW = { examples: 300 };
 
@@ -77,14 +82,20 @@ function runOne(test) {
 
 (async () => {
     const results = [];
+    const parterre = fs.existsSync(PARTERRE_CLI);
     for (const t of tests) {
         console.log(`\n=== ${t.name}`);
+        if (t.name != "unit" && !parterre && needsParterre(t.file)) {
+            console.log(`skipped: it builds its scene with Parterre, and there's no ${PARTERRE_CLI}`);
+            results.push({ ...t, ok: true, skipped: true, secs: 0 });
+            continue;
+        }
         results.push(await runOne(t));
     }
     console.log("\n=== Summary");
     for (const r of results)
-        console.log(`${r.ok ? "ok  " : "FAIL"}  ${r.name.padEnd(24)} ${r.secs.toFixed(1)}s${r.timedOut ? `  (stopped after ${limitFor(r)}s)` : r.ok ? "" : `  (exit ${r.code})`}`);
-    const failed = results.filter(r => !r.ok);
-    console.log(`${results.length - failed.length} of ${results.length} passed${failed.length ? `; failed: ${failed.map(r => r.name).join(", ")}` : ""}`);
+        console.log(`${r.skipped ? "skip" : r.ok ? "ok  " : "FAIL"}  ${r.name.padEnd(24)} ${r.skipped ? "(no ../parterre)" : `${r.secs.toFixed(1)}s`}${r.timedOut ? `  (stopped after ${limitFor(r)}s)` : r.ok ? "" : `  (exit ${r.code})`}`);
+    const failed = results.filter(r => !r.ok), skipped = results.filter(r => r.skipped);
+    console.log(`${results.length - failed.length - skipped.length} of ${results.length - skipped.length} passed${skipped.length ? ` (${skipped.length} skipped: no ../parterre)` : ""}${failed.length ? `; failed: ${failed.map(r => r.name).join(", ")}` : ""}`);
     process.exitCode = failed.length ? 1 : 0;
 })();
