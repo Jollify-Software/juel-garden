@@ -138,6 +138,7 @@
     "test:one-shot-hold": "node tests/one-shot-hold.js",
     "test:model-viewer": "node tests/model-viewer.js",
     "test:model-viewer-deferred": "node tests/model-viewer-deferred.js",
+    "test:model-view-sync": "node tests/model-view-sync.js",
     "test:model-viewer:viewer": "npm run build:viewer && node tests/model-viewer.js --viewer",
     "test:no-webgl": "node tests/no-webgl.js",
     "test:dispose-baseline": "node tests/dispose-baseline.js",

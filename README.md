@@ -138,6 +138,19 @@ allows contexts (about 16), such as a slide deck. It shows `poster`, or the fram
 the attribute away builds the scene and loads the model; adding it again keeps a still, disposes the scene and
 lets the context go at once. `loaded` waits until the model has been asked for.
 
+The view, for another screen: when a person turns or zooms the model (a drag, a pinch, the wheel, a key, and
+the camera's glide after them), the viewer fires `garden-view-change` (it bubbles), with `detail` = `{ alpha,
+beta, radius, target: { x, y, z } }`, at most 15 times a second and once more when it comes to rest. Never for
+`auto-rotate`, for framing, or for a view it was given. `setView(view, { ease })` moves the camera there over
+`ease` seconds (default 0.15; 0 jumps), within the zoom limits and the short way round, and stops `auto-rotate`
+as a touch does; a deferred viewer, or one still loading, keeps the view and starts there. `getView()` reads it.
+A presentation uses them to show the presenter's turn on the audience's screen:
+
+```js
+presenterViewer.addEventListener("garden-view-change", e => send(e.detail));
+onMessage(view => audienceViewer.setView(view));
+```
+
 No WebGL: if the browser can't start WebGL, the viewer builds no scene. It shows `poster`
 and the page's own content marked `slot="fallback"` inside it (hidden while WebGL works),
 the poster above the content when there are both, or else a short message; it gets the
@@ -152,7 +165,7 @@ the model's file.
 Script: `loaded` (a Promise, there from the start: `true` once the model has loaded, `false`
 if it failed or there's no WebGL; a new `src` makes a new one), `animationNames`,
 `play(name, options)`, `playOnce(name)` (a Promise that resolves when the one-shot ends;
-the model holds its last pose), `stopAnimation()`, `model`, `scene`, `camera`, `frame()`.
+the model holds its last pose), `stopAnimation()`, `getView()`, `setView(view, { ease })`, `model`, `scene`, `camera`, `frame()`.
 The model's `garden-model-load`, `garden-model-error` and `garden-model-progress` events
 bubble out of the viewer. A script placed after the viewer can run after its model has
 loaded, too late to hear `garden-model-load`: `await viewer.loaded` instead (the example
