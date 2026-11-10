@@ -56,6 +56,7 @@
     "test:spec-colour": "node tests/spec-colour.js",
     "test:particles": "node tests/particles.js",
     "test:parterre-stairs": "node tests/parterre-stairs.js",
+    "test:parterre-corners": "node tests/parterre-corners.js",
     "test:draco-opaque-origin": "node tests/draco-opaque-origin.js",
     "test:examples": "node tests/examples.js",
     "test:lean": "npm run build:lean && node tests/examples.js --lean",
