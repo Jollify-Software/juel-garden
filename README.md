@@ -557,7 +557,10 @@ and the pieces that keep a phone's frame rate up:
 `npm run dev` builds `dist/juel-garden.js` (with esbuild), the global bundle
 for a plain `<script>` tag: every element, plus all of Babylon as
 `window.BABYLON`. `npm run build` minifies it. Havok's WASM and the
-Draco/meshopt decoders are copied next to it.
+Draco/meshopt decoders are copied next to it. In a sandboxed frame with no origin
+of its own (`self.origin` is `"null"`, as the Jollify editor's preview is), the
+Draco `.wasm` can't be fetched from another origin without CORS, so there Draco
+uses its plain-JavaScript decoder from the same folder (`test:draco-opaque-origin`).
 
 In an app with a bundler, install the package (a git dependency works:
 `npm install github:Jollify-Software/juel-garden`; `prepare` builds it) and
