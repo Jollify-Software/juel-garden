@@ -19,8 +19,12 @@ const scriptSrc = (document.currentScript as HTMLScriptElement)?.src;
  * folder from: then it is `decoders/` beside the page, juel-garden's `dist/decoders/` copied there.
  */
 export function useLocalDecoders(base = scriptSrc ? new URL("decoders/", scriptSrc).href : "decoders/") {
+    // A sandboxed frame with no origin of its own (the Jollify editor's preview: `self.origin` is "null") can't
+    // fetch the .wasm from another origin, because browsers ask for CORS and a static host may not send it. A
+    // script needs no CORS, so there Draco uses its plain-JavaScript decoder instead: slower, the same model.
+    let opaque = typeof self != "undefined" && self.origin == "null" && !/^(data|blob):/.test(new URL(base, document.baseURI).protocol);
     DracoCompression.Configuration = {
-        decoder: {
+        decoder: opaque ? { fallbackUrl: base + "draco_decoder_gltf.js" } : {
             wasmUrl: base + "draco_wasm_wrapper_gltf.js",
             wasmBinaryUrl: base + "draco_decoder_gltf.wasm",
             fallbackUrl: base + "draco_decoder_gltf.js",
