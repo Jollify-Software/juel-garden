@@ -50,6 +50,7 @@
     "test:parterre-materials": "node tests/parterre-materials.js",
     "test:parterre-effects": "node tests/parterre-effects.js",
     "test:parterre-texture-upright": "node tests/parterre-texture-upright.js",
+    "test:parterre-texture-size": "node tests/parterre-texture-size.js",
     "test:rotunda": "node tests/rotunda.js",
     "test:stairs": "node tests/stairs.js",
     "test:spec-colour": "node tests/spec-colour.js",
