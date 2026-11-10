@@ -13,6 +13,20 @@ import { GardenMeshModel } from "./MeshModel";
 import { GardenScene } from "./Scene";
 
 /**
+ * A viewer's camera: `alpha` and `beta` (radians, as `<garden-camera>`), `radius` (metres from
+ * `target`) and `target`, the point it turns round (the model's centre, unless someone panned).
+ */
+export interface ModelView {
+    alpha: number;
+    beta: number;
+    radius: number;
+    target?: { x: number; y: number; z: number };
+}
+
+/** How often, at most, `garden-view-change` fires: 15 times a second. */
+const ViewEventGap = 1000 / 15;
+
+/**
  * One tag that shows a model inside an ordinary page: it builds its own embedded
  * `<garden-scene>`, an orbit camera, lights and a `<garden-mesh-model>` inside itself.
  * The page sizes it with CSS (`width`, `height`, `aspect-ratio`; 300 px wide and 2:1 by
@@ -35,6 +49,13 @@ import { GardenScene } from "./Scene";
  *   reduced motion (`prefers-reduced-motion: reduce`).
  * - **Keyboard:** the viewer takes focus (Tab), with a focus ring; arrow keys turn the model
  *   and `+`/`-` zoom. Screen readers hear `label` (default: the model's file name).
+ * - **The view, for another screen:** when a person turns or zooms the model (a drag, the wheel,
+ *   a pinch, a key, and the camera's glide after them), the viewer fires `garden-view-change`
+ *   (bubbling) with a {@link ModelView} as its `detail`, at most 15 times a second and once more
+ *   when it stops. Never for `auto-rotate`, for framing, or for a view it was given.
+ *   {@link setView} moves the camera to such a view, eased, and stops `auto-rotate`;
+ *   {@link getView} reads it. A presentation uses them to show the presenter's turn on the
+ *   audience's screen.
  * - **Animations:** {@link animationNames}, {@link play}, {@link playOnce} (a one-shot that
  *   holds its last frame, with a Promise) and {@link stopAnimation}. No animation plays on
  *   its own (the model loads with `animation="none"`) and no buttons are drawn: the page
@@ -111,6 +132,14 @@ export class GardenModelViewer extends LitElement {
     private posterEl: HTMLImageElement;
     private touched = false;
     private framed = false;
+    /** The view last set by the viewer itself (framing, {@link setView}): a camera there isn't a person's move. */
+    private placed: Nullable<ModelView> = null;
+    /** A view asked for before the model was framed, applied once it is. */
+    private pendingView: Nullable<ModelView> = null;
+    private viewObserver: Nullable<Observer<unknown>> = null;
+    private easeObserver: Nullable<Observer<Scene>> = null;
+    private lastViewEvent = 0;
+    private viewEventTimer = 0;
     private rotateObserver: Nullable<Observer<Scene>>;
     private resizeObserver: ResizeObserver;
     private resolveLoaded: (loaded: boolean) => void;
@@ -182,6 +211,99 @@ export class GardenModelViewer extends LitElement {
     /** The orbit camera. */
     get camera(): ArcRotateCamera {
         return this.cameraEl?.camera as ArcRotateCamera;
+    }
+
+    /**
+     * The camera's view now ({@link ModelView}). Before the model is framed (or while deferred),
+     * the view {@link setView} was given to apply when it is, or `null`.
+     */
+    getView(): Nullable<ModelView> {
+        let camera = this.camera;
+        if (!camera || !this.framed) return this.pendingView;
+        let t = camera.target;
+        return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, target: { x: t.x, y: t.y, z: t.z } };
+    }
+
+    /**
+     * Moves the camera to `view`, easing over `ease` seconds (default 0.15; 0 jumps), and stops
+     * `auto-rotate` for good, as a person's touch does. Fires no `garden-view-change`. Turns the
+     * short way round: an `alpha` a whole turn or more away (one viewer has turned on its own)
+     * doesn't spin the model round. Before the model is framed, or while deferred, it's kept and
+     * applied once the model is framed. A person's touch during the ease takes over.
+     */
+    setView(view: ModelView, options: { ease?: number } = {}): void {
+        this.touched = true;
+        let camera = this.camera;
+        if (!camera || !this.framed) {
+            this.pendingView = view;
+            return;
+        }
+        this.pendingView = null;
+        this.stopEase();
+        let from = this.getView();
+        let turn = 2 * Math.PI;
+        let to: ModelView = { ...view, alpha: view.alpha + turn * Math.round((from.alpha - view.alpha) / turn) };
+        // The camera's own glide from an earlier drag would carry on over the new view.
+        camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
+        camera.inertialPanningX = camera.inertialPanningY = 0;
+        let ease = Math.max(0, options.ease ?? 0.15) * 1000;
+        if (!ease || !this.scene) {
+            this.place(to);
+            return;
+        }
+        let start = performance.now();
+        let mix = (a: number, b: number, k: number) => a + (b - a) * k;
+        this.easeObserver = this.scene.onBeforeRenderObservable.add(() => {
+            let k = Math.min(1, (performance.now() - start) / ease);
+            let s = k * k * (3 - 2 * k);
+            let ft = from.target, tt = to.target ?? ft;
+            this.place({
+                alpha: mix(from.alpha, to.alpha, s), beta: mix(from.beta, to.beta, s), radius: mix(from.radius, to.radius, s),
+                target: { x: mix(ft.x, tt.x, s), y: mix(ft.y, tt.y, s), z: mix(ft.z, tt.z, s) },
+            });
+            if (k >= 1) this.stopEase();
+        });
+    }
+
+    /** Puts the camera at `view` and remembers it as the viewer's own. */
+    private place(view: ModelView) {
+        let camera = this.camera;
+        if (!camera) return;
+        // Within the camera's limits, as it would clamp them itself on the next frame (and that
+        // clamp would look like a person's move).
+        camera.alpha = view.alpha;
+        camera.beta = Math.min(Math.max(view.beta, camera.lowerBetaLimit ?? -Infinity), camera.upperBetaLimit ?? Infinity);
+        camera.radius = Math.min(Math.max(view.radius, camera.lowerRadiusLimit ?? 0), camera.upperRadiusLimit ?? Infinity);
+        if (view.target) camera.target.copyFromFloats(view.target.x, view.target.y, view.target.z);
+        this.placed = this.getView();
+    }
+
+    private stopEase() {
+        if (this.easeObserver) this.scene?.onBeforeRenderObservable.remove(this.easeObserver);
+        this.easeObserver = null;
+    }
+
+    /** The camera moved: a person's move (not the viewer's own) becomes a `garden-view-change`. */
+    private onViewChanged() {
+        if (!this.touched || !this.framed || this.easeObserver) return;
+        let now = this.getView(), placed = this.placed;
+        if (placed && Math.abs(now.alpha - placed.alpha) < 1e-6 && Math.abs(now.beta - placed.beta) < 1e-6
+            && Math.abs(now.radius - placed.radius) < 1e-6 * Math.max(1, placed.radius)
+            && (!placed.target || Math.hypot(now.target.x - placed.target.x, now.target.y - placed.target.y, now.target.z - placed.target.z) < 1e-6 * Math.max(1, placed.radius)))
+            return;
+        this.placed = null;
+        if (this.viewEventTimer) return;
+        let wait = this.lastViewEvent + ViewEventGap - performance.now();
+        if (wait <= 0) this.sendView();
+        // The last move before a pause is always sent: the timer reads the view when it fires.
+        else this.viewEventTimer = window.setTimeout(() => { this.viewEventTimer = 0; this.sendView(); }, wait);
+    }
+
+    private sendView() {
+        let view = this.camera && this.framed ? this.getView() : null;
+        if (!view) return;
+        this.lastViewEvent = performance.now();
+        this.dispatchEvent(new CustomEvent<ModelView>("garden-view-change", { detail: view, bubbles: true, composed: true }));
     }
 
     /** The model's animation names (empty until it has loaded). */
@@ -319,7 +441,7 @@ export class GardenModelViewer extends LitElement {
                 this.touched = true;
             }
         }, { capture: true, passive: false });
-        this.addEventListener("pointerdown", () => this.touched = true, { capture: true });
+        this.addEventListener("pointerdown", () => { this.touched = true; this.stopEase(); }, { capture: true });
         if (!this.hasAttribute("tabindex")) this.tabIndex = 0;
         if (!this.hasAttribute("role")) this.setAttribute("role", "img");
         this.addEventListener("keydown", e => this.onKey(e));
@@ -407,6 +529,12 @@ export class GardenModelViewer extends LitElement {
         this.rotateObserver = null;
         this.resizeObserver?.disconnect();
         this.resizeObserver = null;
+        this.stopEase();
+        this.camera?.onViewMatrixChangedObservable.remove(this.viewObserver as Observer<any>);
+        this.viewObserver = null;
+        window.clearTimeout(this.viewEventTimer);
+        this.viewEventTimer = 0;
+        this.placed = null;
         this.sceneEl = this.cameraEl = this.modelEl = null;
         this.framed = false;
         this.touched = false;
@@ -537,6 +665,7 @@ export class GardenModelViewer extends LitElement {
             // glTF models face +z, which the loader keeps: start in front of the model.
             camera.alpha = this.alpha ?? Math.PI / 2;
             if (this.beta != null) camera.beta = this.beta;
+            this.viewObserver = camera.onViewMatrixChangedObservable.add(() => this.onViewChanged());
         }
         this.applyAutoRotate();
     }
@@ -592,6 +721,7 @@ export class GardenModelViewer extends LitElement {
         await this.cameraEl.updateComplete;
         this.frame();
         this.framed = true;
+        if (this.pendingView) this.setView(this.pendingView, { ease: 0 });
         let scene = this.scene;
         if (this.posterEl && scene)
             scene.onAfterRenderObservable.addOnce(() => this.removePoster());
@@ -634,5 +764,8 @@ export class GardenModelViewer extends LitElement {
         camera.maxZ = (camera.upperRadiusLimit + r) * 2;
         if (this.alpha != null) camera.alpha = this.alpha;
         if (this.beta != null) camera.beta = this.beta;
+        // The viewer's own view, not a person's move.
+        let t = camera.target;
+        this.placed = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, target: { x: t.x, y: t.y, z: t.z } };
     }
 }
