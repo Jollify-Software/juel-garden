@@ -392,9 +392,9 @@ export class GardenWaypoint extends GardenElement {
             dome.infiniteDistance = true;
             dome.isPickable = false;
             const material = new StandardMaterial(`waypoint-panorama-${this.domes.size}`, scene);
-            const texture = new Texture(url, scene);
-            // Seen from inside: flipped so it reads the right way round (as PanoramaSky's).
-            texture.uScale = -1;
+            // As loaded, not flipped (invertY false): on Babylon's sphere, seen from inside, the photo is
+            // then the right way up and the right way round (tests/waypoint-panorama.js looks up and turns).
+            const texture = new Texture(url, scene, false, false);
             material.emissiveTexture = texture;
             material.diffuseColor = Color3.Black();
             material.specularColor = Color3.Black();
