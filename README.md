@@ -49,7 +49,12 @@ to the previous one, which is what presentation clickers send, so a published sc
 (in an iframe, while the iframe has focus); keys typed into a form field or editable text, or with
 Ctrl/Alt/Meta held, are left alone, and `keys="false"` turns it off.
 A stop that moves (one with `orbit`) is followed during the fly, so you land on it and ride its orbit.
-Tests: `node tests/waypoint-dwell.js`, `node tests/waypoint-orbit.js`, `node tests/waypoint-keys.js`.  
+A stop with **`panorama`** (a 360° photo, equirectangular 2:1) puts that photo all round you while
+you're on it: it fades in as you set off for the stop and out as you leave for one without it, behind
+the ground and the other stops (they stay in front, so look-and-hold still finds them); `panoramaShown`
+is the one on show. The photo is the URL as written, so same-origin or CORS-enabled (a Jollify VR
+presentation's photo scene, `![scene](photos/beach.jpg)`).
+Tests: `node tests/waypoint-dwell.js`, `node tests/waypoint-orbit.js`, `node tests/waypoint-keys.js`, `node tests/waypoint-panorama.js`.  
 A stop can circle something: give it `orbit` (and `orbit-angle`, radians per frame) inside the
 element it goes round. Its `position` stays world-space (height included), and a
 `<garden-mesh-model>` parent is waited for until its file has loaded. Test: `node tests/orbit.js`.  
