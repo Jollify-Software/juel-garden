@@ -72,6 +72,7 @@
     "test:waypoint-race": "node tests/waypoint-race.js",
     "test:html-texture": "node tests/html-texture.js",
     "test:waypoint-look": "node tests/waypoint-look.js",
+    "test:waypoint-panorama": "node tests/waypoint-panorama.js",
     "test:opening": "node tests/opening.js",
     "test:doorways": "node tests/doorways.js",
     "test:wall-thickness": "node tests/wall-thickness.js",

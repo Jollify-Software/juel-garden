@@ -8,6 +8,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import type { Observer } from "@babylonjs/core/Misc/observable";
 import type { Scene } from "@babylonjs/core/scene";
 import { customElement, property } from "lit/decorators.js";
@@ -15,6 +16,7 @@ import { StaticConvert } from "../Converters/StaticConvert";
 import { Vector3Convert } from "../Converters/Vector3Convert";
 import { GardenElement } from "../GardenElement";
 import { GardenMesh } from "../GardenMesh";
+import { tween } from "../Utils/tween";
 
 /**
  * Flies the parent camera between a set of target elements when the user
@@ -36,6 +38,13 @@ import { GardenMesh } from "../GardenMesh";
  * which is what presentation clickers send; on by default, `keys="false"`
  * turns it off; keys typed into a form field or editable text, or pressed
  * with Ctrl, Alt or Meta, are left alone).
+ *
+ * A stop with a `panorama` attribute (the URL of an equirectangular, 2:1, 360° photo) puts
+ * that photo all round the viewer while they stand there: a dome at the sky's distance, behind
+ * everything in the scene (the ground and the other stops stay in front of it), fading in as
+ * they set off for the stop and out as they leave for one without it (a Jollify VR
+ * presentation's photo scene, `![scene](photos/beach.jpg)`). {@link panoramaShown} is the URL
+ * on show, for tests and UIs.
  *
  * A stop with a `look-at` attribute (a selector, or an `"x y z"` point) is faced on
  * arrival, the camera turning as it flies, and at start on the first stop; without
@@ -76,6 +85,14 @@ export class GardenWaypoint extends GardenElement {
     private built: { scene: Scene, pointer: Observer<PointerInfo>, frame: Observer<Scene> } | null = null;
     /** The reticle's and next-stop ring's meshes. */
     private markers: Mesh[] = [];
+    /** The stops' 360° photos (`panorama`), one dome per URL, made when first needed. */
+    private domes = new Map<string, Mesh>();
+    /** Each dome's latest fade, by URL. */
+    private fades = new Map<string, number>();
+    /** The `panorama` of the stop you're on or flying to, or "" (none). */
+    panoramaShown = "";
+    /** Seconds a stop's photo takes to fade in or out. */
+    static readonly PanoramaFade = 1;
 
     connectedCallback() {
         super.connectedCallback();
@@ -138,6 +155,7 @@ export class GardenWaypoint extends GardenElement {
             this.setPosition(first.getPosition(), this.lookPointOf(first));
 
             this.disposeBuilt();
+            this.showPanorama(first, 0, scene);
             const pointer = scene.onPointerObservable.add((pointerInfo) => {
                 switch (pointerInfo.type) {
                     case PointerEventTypes.POINTERDOWN:
@@ -172,9 +190,11 @@ export class GardenWaypoint extends GardenElement {
         scene.onPointerObservable.remove(this.built.pointer);
         scene.onBeforeRenderObservable.remove(this.built.frame);
         this.built = null;
-        for (const m of this.markers)
+        for (const m of [...this.markers, ...this.domes.values()])
             if (!m.isDisposed()) m.dispose(false, true);
         this.markers = [];
+        this.domes.clear();
+        this.panoramaShown = "";
         this.reticle = null;
         this.nextRing = null;
     }
@@ -299,6 +319,7 @@ export class GardenWaypoint extends GardenElement {
         }, () => wp.getPosition(), this.lookPointOf(wp));
         this.index = index;
         this.placeNextRing();
+        this.showPanorama(wp, GardenWaypoint.PanoramaFade);
         this.dispatchEvent(new CustomEvent("waypoint-changed", { detail: { index }, bubbles: true, composed: true }));
     }
 
@@ -354,6 +375,47 @@ export class GardenWaypoint extends GardenElement {
             if (tracking) scene.onBeforeRenderObservable.remove(tracking);
             onComplete?.();
         });
+    }
+
+    /**
+     * Fades `stop`'s 360° photo (its `panorama`) in over `seconds`, and any other out; a stop
+     * without one fades them all out. Unlit, so the photo looks as taken; not pickable, so
+     * look-and-hold and taps go through it to the stops.
+     */
+    private showPanorama(stop: Element | undefined, seconds: number, scene = this.getScene()) {
+        const url = stop?.getAttribute("panorama")?.trim() ?? "";
+        if (url === this.panoramaShown || !scene) return;
+        this.panoramaShown = url;
+        let dome = url ? this.domes.get(url) : undefined;
+        if (url && !dome) {
+            dome = MeshBuilder.CreateSphere(`waypoint-panorama-${this.domes.size}`, { diameter: 900, segments: 32, sideOrientation: Mesh.BACKSIDE }, scene);
+            dome.infiniteDistance = true;
+            dome.isPickable = false;
+            const material = new StandardMaterial(`waypoint-panorama-${this.domes.size}`, scene);
+            // As loaded, not flipped (invertY false): on Babylon's sphere, seen from inside, the photo is
+            // then the right way up and the right way round (tests/waypoint-panorama.js looks up and turns).
+            const texture = new Texture(url, scene, false, false);
+            material.emissiveTexture = texture;
+            material.diffuseColor = Color3.Black();
+            material.specularColor = Color3.Black();
+            material.disableLighting = true;
+            material.fogEnabled = false;
+            material.backFaceCulling = false;
+            dome.material = material;
+            dome.visibility = 0;
+            this.domes.set(url, dome);
+        }
+        for (const [key, mesh] of this.domes) {
+            const from = mesh.visibility, to = key === url ? 1 : 0;
+            if (from === to) continue;
+            mesh.setEnabled(true);
+            // A newer fade of this dome (a quick Next, Next) takes over from this one.
+            const fade = (this.fades.get(key) ?? 0) + 1;
+            this.fades.set(key, fade);
+            tween(scene, seconds, k => { if (this.fades.get(key) === fade) mesh.visibility = from + (to - from) * k; }).then(() => {
+                if (this.fades.get(key) === fade && to === 0) mesh.setEnabled(false);
+            });
+        }
     }
 
     /**
