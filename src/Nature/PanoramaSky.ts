@@ -50,9 +50,10 @@ export class PanoramaSky {
             mesh.infiniteDistance = true;
             mesh.isPickable = false;
             let material = new StandardMaterial(`sky-${i}-m`, scene);
-            let texture = new Texture(p.url, scene);
-            // Seen from inside: flip it so it reads the right way round.
-            texture.uScale = -1;
+            // As loaded, not flipped (invertY false) and not mirrored: on Babylon's sphere, seen from inside,
+            // the photo is then the right way up and the right way round, as garden-waypoint's `panorama`
+            // (tests/sky-panorama.js looks up, down and turns). Flipped and mirrored, it showed upside down.
+            let texture = new Texture(p.url, scene, false, false);
             material.diffuseTexture = texture;
             material.disableLighting = true;
             material.diffuseColor = Color3.Black();
